@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation"
+    app:startDestination="@+id/nav_home">
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.example.gestionacademicaapp.ui.home.HomeFragment"
+        android:label="@string/menu_home"
+        tools:layout="@layout/fragment_home" />
+
+    <fragment
+        android:id="@+id/nav_carreras"
+        android:name="com.example.gestionacademicaapp.ui.carreras.CarrerasFragment"
+        android:label="Carreras"
+        tools:layout="@layout/fragment_carreras" />
+    <fragment
+        android:id="@+id/nav_cursos"
+        android:name="com.example.gestionacademicaapp.ui.cursos.CursosFragment"
+        android:label="Cursos"
+        tools:layout="@layout/fragment_cursos" />
+    <fragment
+        android:id="@+id/nav_profesores"
+        android:name="com.example.gestionacademicaapp.ui.profesores.ProfesoresFragment"
+        android:label="Profesores"
+        tools:layout="@layout/fragment_profesores" />
+    <fragment
+        android:id="@+id/nav_alumnos"
+        android:name="com.example.gestionacademicaapp.ui.alumnos.AlumnosFragment"
+        android:label="Alumnos"
+        tools:layout="@layout/fragment_alumnos" />
+    <fragment
+        android:id="@+id/nav_ciclos"
+        android:name="com.example.gestionacademicaapp.ui.ciclos.CiclosFragment"
+        android:label="Ciclos"
+        tools:layout="@layout/fragment_ciclos" />
+    <fragment
+        android:id="@+id/nav_grupos"
+        android:name="com.example.gestionacademicaapp.ui.grupos.GruposFragment"
+        android:label="Grupos"
+        tools:layout="@layout/fragment_grupos" />
+    <fragment
+        android:id="@+id/nav_usuarios"
+        android:name="com.example.gestionacademicaapp.ui.usuarios.UsuariosFragment"
+        android:label="Usuarios"
+        tools:layout="@layout/fragment_usuarios" />
+    <fragment
+        android:id="@+id/nav_matricula"
+        android:name="com.example.gestionacademicaapp.ui.matricula.MatriculaFragment"
+        android:label="Matricula"
+        tools:layout="@layout/fragment_matricula" />
+    <fragment
+        android:id="@+id/nav_notas"
+        android:name="com.example.gestionacademicaapp.ui.notas.NotasFragment"
+        android:label="Notas"
+        tools:layout="@layout/fragment_notas" />
+    <fragment
+        android:id="@+id/nav_historial"
+        android:name="com.example.gestionacademicaapp.ui.historial_academico.HistorialFragment"
+        android:label="Historial Academico"
+        tools:layout="@layout/fragment_historial" />
+</navigation>

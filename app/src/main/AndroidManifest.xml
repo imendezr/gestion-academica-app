@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.GestionAcademicaApp"
+        tools:targetApi="31">
+        <!-- Configuración para LoginActivity como la actividad inicial -->
+        <activity
+            android:name=".ui.LoginActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- InscripcionActivity no tiene filtro MAIN, por lo que no se abre al inicio -->
+        <activity
+            android:name=".ui.InscripcionActivity"
+            android:exported="true" />
+
+        <!-- MainActivity ya no tiene filtro MAIN y LAUNCHER -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.GestionAcademicaApp.NoActionBar">
+        </activity>
+
+    </application>
+
+</manifest>
