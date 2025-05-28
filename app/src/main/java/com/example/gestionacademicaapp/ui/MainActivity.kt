@@ -19,7 +19,9 @@ import com.example.gestionacademicaapp.databinding.ActivityMainBinding
 import com.example.gestionacademicaapp.ui.login.LoginActivity
 import com.example.gestionacademicaapp.utils.RolePermissions
 import com.example.gestionacademicaapp.utils.SessionManager
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
     private lateinit var appBarConfiguration: AppBarConfiguration
@@ -94,6 +96,7 @@ class MainActivity : AppCompatActivity() {
                 showLogoutConfirmationDialog()
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -146,7 +149,8 @@ class MainActivity : AppCompatActivity() {
         menu.findItem(R.id.nav_profesores).isVisible = SessionManager.hasRole(this, "Administrador")
         menu.findItem(R.id.nav_alumnos).isVisible = SessionManager.hasRole(this, "Administrador")
         menu.findItem(R.id.nav_ciclos).isVisible = SessionManager.hasRole(this, "Administrador")
-        menu.findItem(R.id.nav_ofertaAcademica).isVisible = SessionManager.hasRole(this, "Administrador")
+        menu.findItem(R.id.nav_ofertaAcademica).isVisible =
+            SessionManager.hasRole(this, "Administrador")
         menu.findItem(R.id.nav_usuarios).isVisible = SessionManager.hasRole(this, "Administrador")
         menu.findItem(R.id.nav_matricula).isVisible = SessionManager.hasRole(this, "Matriculador")
         menu.findItem(R.id.nav_notas).isVisible = SessionManager.hasRole(this, "Profesor")

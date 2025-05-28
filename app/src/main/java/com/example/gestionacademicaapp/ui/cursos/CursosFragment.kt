@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -15,14 +16,17 @@ import com.example.gestionacademicaapp.ui.common.CampoFormulario
 import com.example.gestionacademicaapp.ui.common.DialogFormularioFragment
 import com.example.gestionacademicaapp.utils.Notificador
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class CursosFragment : Fragment() {
 
+    private val viewModel: CursosViewModel by viewModels()
     private lateinit var recyclerView: RecyclerView
     private lateinit var searchView: SearchView
     private lateinit var adapter: CursosAdapter
     private lateinit var fab: ExtendedFloatingActionButton
-    private val listaCursos = mutableListOf<Curso>()
+    private lateinit var progressBar: View // Añadiremos un ProgressBar al layout
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -34,32 +38,22 @@ class CursosFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recyclerViewCursos)
         searchView = view.findViewById(R.id.searchViewCursos)
         fab = view.findViewById(R.id.fabCursos)
+        progressBar = view.findViewById(R.id.progressBar) // Añadiremos este ID al layout
 
-        // Forzar SearchView expandido y con foco
+        // Configurar SearchView
         searchView.isIconified = false
         searchView.clearFocus()
         searchView.requestFocus()
 
-        // Datos simulados
-        listaCursos.addAll(
-            listOf(
-                Curso(1, "MATE-101", "Matemática I", 4, 5),
-                Curso(2, "PROG-201", "Programación Avanzada", 5, 6),
-                Curso(3, "ING-101", "Inglés Básico", 3, 4),
-                Curso(4, "HIST-102", "Historia Universal", 2, 3),
-                Curso(5, "FIS-202", "Física General", 4, 5),
-                Curso(6, "QUIM-110", "Química Orgánica", 4, 4),
-                Curso(7, "BIO-130", "Biología Celular", 3, 3),
-                Curso(8, "FILO-140", "Filosofía Moderna", 2, 2),
-                Curso(9, "COMP-310", "Compiladores", 5, 6),
-                Curso(10, "ARTE-210", "Historia del Arte", 2, 3)
-            )
+        // Configurar RecyclerView y Adapter
+        adapter = CursosAdapter(
+            onEdit = { curso, position -> mostrarDialogoCurso(curso, position) },
+            onDelete = { curso, position -> viewModel.deleteCurso(curso.idCurso) }
         )
-
-        adapter = CursosAdapter(listaCursos)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
+        // Configurar búsqueda
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?) = false
             override fun onQueryTextChange(newText: String?): Boolean {
@@ -68,6 +62,7 @@ class CursosFragment : Fragment() {
             }
         })
 
+        // Configurar FAB
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 if (dy > 10 && fab.isExtended) fab.shrink()
@@ -75,6 +70,13 @@ class CursosFragment : Fragment() {
             }
         })
 
+        fab.setOnClickListener {
+            searchView.setQuery("", false)
+            searchView.clearFocus()
+            mostrarDialogoCurso(null, null)
+        }
+
+        // Configurar deslizamiento para eliminar/editar
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
             0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
         ) {
@@ -86,31 +88,58 @@ class CursosFragment : Fragment() {
 
             override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
                 val position = viewHolder.adapterPosition
-                val curso = listaCursos[position]
-
                 when (direction) {
-                    ItemTouchHelper.LEFT -> {
-                        adapter.eliminarItem(position)
-                        Notificador.show(
-                            requireView(),
-                            "Curso eliminado: ${curso.nombre}",
-                            R.color.colorError
-                        )
-                    }
-
+                    ItemTouchHelper.LEFT -> adapter.onSwipeDelete(position)
                     ItemTouchHelper.RIGHT -> {
-                        adapter.notifyItemChanged(position)
-                        mostrarDialogoCurso(curso, position)
+                        val curso = adapter.getCursoAt(position)
+                        adapter.triggerEdit(curso, position)
                     }
                 }
             }
         })
         itemTouchHelper.attachToRecyclerView(recyclerView)
 
-        fab.setOnClickListener {
-            searchView.setQuery("", false)
-            searchView.clearFocus()
-            mostrarDialogoCurso(null, null)
+        // Observar estados del ViewModel
+        viewModel.cursosState.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is CursosState.Loading -> {
+                    progressBar.visibility = View.VISIBLE
+                    recyclerView.visibility = View.GONE
+                }
+
+                is CursosState.Success -> {
+                    progressBar.visibility = View.GONE
+                    recyclerView.visibility = View.VISIBLE
+                    adapter.updateCursos(state.cursos)
+                }
+
+                is CursosState.Error -> {
+                    progressBar.visibility = View.GONE
+                    recyclerView.visibility = View.GONE
+                    Notificador.show(requireView(), state.message, R.color.colorError)
+                }
+            }
+        }
+
+        viewModel.actionState.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is ActionState.Loading -> {
+                    progressBar.visibility = View.VISIBLE
+                    fab.isEnabled = false
+                }
+
+                is ActionState.Success -> {
+                    progressBar.visibility = View.GONE
+                    fab.isEnabled = true
+                    Notificador.show(requireView(), state.message, R.color.colorPrimary)
+                }
+
+                is ActionState.Error -> {
+                    progressBar.visibility = View.GONE
+                    fab.isEnabled = true
+                    Notificador.show(requireView(), state.message, R.color.colorError)
+                }
+            }
         }
 
         return view
@@ -118,8 +147,14 @@ class CursosFragment : Fragment() {
 
     private fun mostrarDialogoCurso(curso: Curso?, position: Int?) {
         val campos = listOf(
-            CampoFormulario("codigo", "Código", "text", obligatorio = true),
-            CampoFormulario("nombre", "Nombre", "text", obligatorio = true),
+            CampoFormulario(
+                "codigo",
+                "Código",
+                "texto",
+                obligatorio = true,
+                editable = curso == null
+            ),
+            CampoFormulario("nombre", "Nombre", "texto", obligatorio = true),
             CampoFormulario("creditos", "Créditos", "number", obligatorio = true),
             CampoFormulario("horasSemanales", "Horas Semanales", "number", obligatorio = true)
         )
@@ -139,19 +174,17 @@ class CursosFragment : Fragment() {
             datosIniciales = datosIniciales
         ) { datosMap ->
             val nuevoCurso = Curso(
-                idCurso = curso?.idCurso ?: (listaCursos.maxOfOrNull { it.idCurso }?.plus(1) ?: 1),
+                idCurso = curso?.idCurso ?: 0, // El backend asignará el ID al crear
                 codigo = datosMap["codigo"] ?: "",
                 nombre = datosMap["nombre"] ?: "",
                 creditos = datosMap["creditos"]?.toLongOrNull() ?: 0,
                 horasSemanales = datosMap["horasSemanales"]?.toLongOrNull() ?: 0
             )
 
-            if (position != null) {
-                adapter.actualizarItem(position, nuevoCurso)
-                Notificador.show(requireView(), "Curso actualizado", R.color.colorAccent)
+            if (curso == null) {
+                viewModel.createCurso(nuevoCurso)
             } else {
-                adapter.agregarItem(nuevoCurso)
-                Notificador.show(requireView(), "Curso agregado", R.color.colorPrimary)
+                viewModel.updateCurso(nuevoCurso)
             }
         }
 

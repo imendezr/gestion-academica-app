@@ -6,9 +6,9 @@ import android.view.LayoutInflater
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
+import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.databinding.FragmentDialogFormularioBinding
 import com.example.gestionacademicaapp.utils.Notificador
-import com.example.gestionacademicaapp.R
 
 class DialogFormularioFragment(
     private val titulo: String,
@@ -25,17 +25,18 @@ class DialogFormularioFragment(
         _binding = FragmentDialogFormularioBinding.inflate(LayoutInflater.from(context))
         val contenedor = binding.linearFormulario
 
-        // Generar campos dinámicamente
         campos.forEach { campo ->
             val inputLayout = layoutInflater.inflate(R.layout.item_input_field, contenedor, false)
             val inputText = inputLayout.findViewById<EditText>(R.id.editText)
-            inputLayout.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.textInputLayout).hint = campo.label
+            inputLayout.findViewById<com.google.android.material.textfield.TextInputLayout>(R.id.textInputLayout).hint =
+                campo.label
 
             inputText.inputType = when (campo.tipo) {
                 "number" -> android.text.InputType.TYPE_CLASS_NUMBER
                 else -> android.text.InputType.TYPE_CLASS_TEXT
             }
             inputText.setText(datosIniciales[campo.key] ?: "")
+            inputText.isEnabled = campo.editable // Aplicar el atributo editable
 
             contenedor.addView(inputLayout)
             inputs[campo.key] = inputText
@@ -64,7 +65,11 @@ class DialogFormularioFragment(
                             onGuardar(resultado)
                             dialog.dismiss()
                         } else {
-                            Notificador.show(requireView(), "Completa los campos obligatorios", R.color.colorError)
+                            Notificador.show(
+                                requireView(),
+                                "Completa los campos obligatorios",
+                                R.color.colorError
+                            )
                         }
                     }
                 }
