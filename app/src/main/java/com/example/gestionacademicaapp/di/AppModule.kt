@@ -47,4 +47,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideCarreraCursoRepository(): CarreraCursoRepository = CarreraCursoRepository()
+
+    @Provides
+    @Singleton
+    fun provideMatriculaRepository(): MatriculaRepository = MatriculaRepository()
 }

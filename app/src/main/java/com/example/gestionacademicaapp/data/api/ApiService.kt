@@ -7,70 +7,71 @@ import com.example.gestionacademicaapp.data.api.model.dto.MatriculaAlumnoDto
 
 interface ApiService {
 
-    // Alumnos
-    suspend fun insertAlumno(alumno: Alumno): Alumno
-    suspend fun updateAlumno(alumno: Alumno): Alumno
-    suspend fun deleteAlumno(id: Int): Boolean
-    suspend fun getAllAlumnos(): List<Alumno>
-    suspend fun getAlumnoByCedula(cedula: String): Alumno
-    suspend fun getAlumnosByNombre(nombre: String): List<Alumno>
-    suspend fun getAlumnosByCarrera(idCarrera: Int): List<Alumno>
-    suspend fun getAlumnoHistorial(idAlumno: Int): List<MatriculaAlumnoDto>
+    // ALUMNOS
+    suspend fun insertAlumno(alumno: Alumno): Alumno // POST /api/alumnos/insertar
+    suspend fun updateAlumno(alumno: Alumno): Alumno // PUT /api/alumnos/modificar
+    suspend fun deleteAlumno(id: Long): Boolean       // DELETE /api/alumnos/eliminar/{id}
+    suspend fun getAllAlumnos(): List<Alumno>         // GET /api/alumnos/listar
+    suspend fun getAlumnoByCedula(cedula: String): Alumno // GET /api/alumnos/buscarPorCedula?cedula={}
+    suspend fun getAlumnoByNombre(nombre: String): Alumno // GET /api/alumnos/buscarPorNombre?nombre={}
+    suspend fun getAlumnosByCarrera(idCarrera: Long): List<Alumno> // GET /api/alumnos/buscarPorCarrera?carrera={}
+    suspend fun getAlumnoHistorial(idAlumno: Long): List<MatriculaAlumnoDto> // GET /api/alumnos/historialAlumno/{id}
 
-    // Carreras
-    suspend fun insertCarrera(carrera: Carrera): Carrera
-    suspend fun updateCarrera(carrera: Carrera): Carrera
-    suspend fun deleteCarrera(id: Int): Boolean
-    suspend fun getAllCarreras(): List<Carrera>
-    suspend fun getCarreraByCodigo(codigo: String): Carrera
-    suspend fun getCarrerasByNombre(nombre: String): List<Carrera>
-    suspend fun addCursoToCarrera(idCarrera: Int, idCurso: Int, idCiclo: Int): CarreraCurso
-    suspend fun removeCursoFromCarrera(idCarrera: Int, idCurso: Int): Boolean
-    suspend fun updateCursoOrden(idCarrera: Int, idCurso: Int, nuevoIdCiclo: Int): CarreraCurso
+    // CARRERAS
+    suspend fun insertCarrera(carrera: Carrera): Carrera // POST /api/carreras/insertar
+    suspend fun updateCarrera(carrera: Carrera): Carrera // PUT /api/carreras/modificar
+    suspend fun deleteCarrera(id: Long): Boolean          // DELETE /api/carreras/eliminar/{id}
+    suspend fun getAllCarreras(): List<Carrera>           // GET /api/carreras/listar
+    suspend fun getCarreraByCodigo(codigo: String): Carrera // GET /api/carreras/buscarPorCodigo?codigo={}
+    suspend fun getCarreraByNombre(nombre: String): Carrera // GET /api/carreras/buscarPorNombre?nombre={}
+    suspend fun addCursoToCarrera(idCarrera: Long, idCurso: Long, idCiclo: Long): CarreraCurso // POST /api/carreras/insertarCursoACarrera/{pkCarrera}/{pkCurso}/{pkCiclo}
+    suspend fun removeCursoFromCarrera(idCarrera: Long, idCurso: Long): Boolean // DELETE /api/carreras/eliminarCursoDeCarrera/{pkCarrera}/{pkCurso}
+    suspend fun updateCursoOrden(idCarrera: Long, idCurso: Long, nuevoIdCiclo: Long): CarreraCurso // PUT /api/carreras/modificarOrdenCursoCarrera/{pkCarrera}/{pkCurso}/{nuevoPkCiclo}
 
-    // Ciclos
-    suspend fun insertCiclo(ciclo: Ciclo): Ciclo
-    suspend fun updateCiclo(ciclo: Ciclo): Ciclo
-    suspend fun deleteCiclo(id: Int): Boolean
-    suspend fun getAllCiclos(): List<Ciclo>
-    suspend fun getCicloByAnio(anio: Int): Ciclo
-    suspend fun activateCiclo(id: Int): Ciclo
+    // CICLOS
+    suspend fun insertCiclo(ciclo: Ciclo): Ciclo // POST /api/ciclos/insertar
+    suspend fun updateCiclo(ciclo: Ciclo): Ciclo // PUT /api/ciclos/modificar
+    suspend fun deleteCiclo(id: Long): Boolean   // DELETE /api/ciclos/eliminar/{id}
+    suspend fun getAllCiclos(): List<Ciclo>      // GET /api/ciclos/listar
+    suspend fun getCicloByAnio(anio: Int): Ciclo // GET /api/ciclos/buscarPorAnnio?annio={}
+    suspend fun activateCiclo(id: Long): Boolean   // POST /api/ciclos/activarCiclo/{id}
 
-    // Cursos
-    suspend fun insertCurso(curso: Curso): Curso
-    suspend fun updateCurso(curso: Curso): Curso
-    suspend fun deleteCurso(id: Int): Boolean
-    suspend fun getAllCursos(): List<Curso>
-    suspend fun getCursoByCodigo(codigo: String): Curso
-    suspend fun getCursosByNombre(nombre: String): List<Curso>
-    suspend fun getCursosByCarrera(idCarrera: Int): List<Curso>
+    // CURSOS
+    suspend fun insertCurso(curso: Curso): Curso // POST /api/cursos/insertar
+    suspend fun updateCurso(curso: Curso): Curso // PUT /api/cursos/modificar
+    suspend fun deleteCurso(id: Long): Boolean   // DELETE /api/cursos/eliminar/{id}
+    suspend fun getAllCursos(): List<Curso>      // GET /api/cursos/listar
+    suspend fun getCursoByCodigo(codigo: String): Curso // GET /api/cursos/buscarPorCodigo?codigo={}
+    suspend fun getCursoByNombre(nombre: String): Curso // GET /api/cursos/buscarPorNombre?nombre={}
+    suspend fun getCursosByCarrera(idCarrera: Long): List<Curso> // GET /api/cursos/buscarCursosPorCarrera?idCarrera={}
 
-    // Grupos
-    suspend fun insertGrupo(grupo: Grupo): Grupo
-    suspend fun updateGrupo(grupo: Grupo): Grupo
-    suspend fun deleteGrupo(id: Int): Boolean
-    suspend fun getAllGrupos(): List<Grupo>
-    suspend fun getCursosByCarreraAndCiclo(idCarrera: Int, idCiclo: Int): List<CarreraCicloCursoDto>
-    suspend fun getGruposByCarreraCurso(idCarreraCurso: Int): List<GrupoDto>
+    // GRUPOS
+    suspend fun insertGrupo(grupo: Grupo): Grupo // POST /api/grupos/insertar
+    suspend fun updateGrupo(grupo: Grupo): Grupo // PUT /api/grupos/modificar
+    suspend fun deleteGrupo(id: Long): Boolean   // DELETE /api/grupos/eliminar/{id}
+    suspend fun getAllGrupos(): List<Grupo>      // GET /api/grupos/listar
+    suspend fun getCursosByCarreraAndCurso(idCarrera: Long, idCurso: Long): List<CarreraCicloCursoDto> // GET /api/grupos/buscarCursosPorCarreraYCiclo/{pkCarrera}/{pkCurso}
+    suspend fun getGruposByCarreraCurso(idCarreraCurso: Long): List<GrupoDto> // GET /api/grupos/buscarGruposPorCarreraCurso/{pkCarreraCurso}
 
-    // Matrículas
-    suspend fun insertMatricula(matricula: Matricula): Matricula
-    suspend fun updateMatricula(matricula: Matricula): Matricula
-    suspend fun deleteMatricula(id: Int): Boolean
+    // MATRÍCULAS
+    suspend fun insertMatricula(matricula: Matricula): Matricula // POST /api/matricular/insertar
+    suspend fun updateMatricula(matricula: Matricula): Matricula // PUT /api/matricular/modificar
+    suspend fun deleteMatricula(id: Long): Boolean               // DELETE /api/matricular/eliminar/{id}
+    suspend fun getAllMatriculas(): List<Matricula>              // GET /api/matricular/listar
 
-    // Profesores
-    suspend fun insertProfesor(profesor: Profesor): Profesor
-    suspend fun updateProfesor(profesor: Profesor): Profesor
-    suspend fun deleteProfesor(id: Int): Boolean
-    suspend fun getAllProfesores(): List<Profesor>
-    suspend fun getProfesorByCedula(cedula: String): Profesor
-    suspend fun getProfesoresByNombre(nombre: String): List<Profesor>
+    // PROFESORES
+    suspend fun insertProfesor(profesor: Profesor): Profesor // POST /api/profesores/insertar
+    suspend fun updateProfesor(profesor: Profesor): Profesor // PUT /api/profesores/modificar
+    suspend fun deleteProfesor(id: Long): Boolean             // DELETE /api/profesores/eliminar/{id}
+    suspend fun getAllProfesores(): List<Profesor>            // GET /api/profesores/listar
+    suspend fun getProfesorByCedula(cedula: String): Profesor // GET /api/profesores/buscarPorCedula?cedula={}
+    suspend fun getProfesorByNombre(nombre: String): Profesor // GET /api/profesores/buscarPorNombre?nombre={}
 
-    // Usuarios
-    suspend fun insertUsuario(usuario: Usuario): Usuario
-    suspend fun updateUsuario(usuario: Usuario): Usuario
-    suspend fun deleteUsuario(id: Int): Boolean
-    suspend fun getAllUsuarios(): List<Usuario>
-    suspend fun getUsuarioByCedula(cedula: String): Usuario
-    suspend fun login(cedula: String, contrasena: String): Usuario
+    // USUARIOS
+    suspend fun insertUsuario(usuario: Usuario): Usuario // POST /api/usuarios/insertar
+    suspend fun updateUsuario(usuario: Usuario): Usuario // PUT /api/usuarios/modificar
+    suspend fun deleteUsuario(id: Long): Boolean          // DELETE /api/usuarios/eliminar/{id}
+    suspend fun getAllUsuarios(): List<Usuario>           // GET /api/usuarios/listar
+    suspend fun getUsuarioByCedula(cedula: String): Usuario // GET /api/usuarios/buscarPorCedula?cedula={}
+    suspend fun login(cedula: String, clave: String): Usuario // POST /api/usuarios/login?cedula={}&clave={}
 }
