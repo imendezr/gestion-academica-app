@@ -29,4 +29,24 @@ object SessionManager {
     }
 
     fun isLoggedIn(context: Context): Boolean = getUsuario(context) != null
+
+    // Obtener el rol del usuario
+    fun getUserRole(context: Context): String? {
+        val usuario = getUsuario(context)
+        return usuario?.tipo
+    }
+
+    // Verificar si el usuario tiene un rol específico
+    fun hasRole(context: Context, role: String): Boolean {
+        val usuario = getUsuario(context)
+        return usuario?.tipo?.equals(role, ignoreCase = true) ?: false
+    }
+
+    // Verificar si el usuario tiene alguno de los roles requeridos
+    fun hasAnyRole(context: Context, roles: List<String>): Boolean {
+        val usuario = getUsuario(context)
+        return usuario?.tipo?.let { userRole ->
+            roles.any { role -> userRole.equals(role, ignoreCase = true) }
+        } ?: false
+    }
 }

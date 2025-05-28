@@ -2,11 +2,13 @@ package com.example.gestionacademicaapp.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination
 import androidx.navigation.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
@@ -15,6 +17,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.databinding.ActivityMainBinding
 import com.example.gestionacademicaapp.ui.login.LoginActivity
+import com.example.gestionacademicaapp.utils.RolePermissions
 import com.example.gestionacademicaapp.utils.SessionManager
 
 class MainActivity : AppCompatActivity() {
@@ -55,11 +58,28 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         binding.navView.setupWithNavController(navController)
 
+        // Depuración: Mostrar el rol del usuario
+        val userRole = SessionManager.getUserRole(this)
+        Log.d("MainActivity", "User Role: $userRole")
+
+        // Configurar visibilidad del menú según el rol
+        setupMenuVisibility()
+
+        // Listener para restringir acceso a destinos según el rol
+        navController.addOnDestinationChangedListener { _, destination, _ ->
+            restrictAccessToDestination(destination)
+        }
+
         // Sidebar
         binding.navView.setNavigationItemSelectedListener { menuItem ->
-            val handled = NavigationUI.onNavDestinationSelected(menuItem, navController)
-            if (handled) binding.drawerLayout.closeDrawers()
-            handled
+            val allowed = checkDestinationAccess(menuItem.itemId)
+            if (allowed) {
+                val handled = NavigationUI.onNavDestinationSelected(menuItem, navController)
+                if (handled) binding.drawerLayout.closeDrawers()
+                handled
+            } else {
+                false
+            }
         }
     }
 
@@ -74,7 +94,6 @@ class MainActivity : AppCompatActivity() {
                 showLogoutConfirmationDialog()
                 true
             }
-
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -117,5 +136,33 @@ class MainActivity : AppCompatActivity() {
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
         finish()
+    }
+
+    private fun setupMenuVisibility() {
+        val menu = binding.navView.menu
+        // Log.d("MainActivity", "Setting up menu visibility for role: ${SessionManager.getUserRole(this)}")
+        menu.findItem(R.id.nav_cursos).isVisible = SessionManager.hasRole(this, "Administrador")
+        menu.findItem(R.id.nav_carreras).isVisible = SessionManager.hasRole(this, "Administrador")
+        menu.findItem(R.id.nav_profesores).isVisible = SessionManager.hasRole(this, "Administrador")
+        menu.findItem(R.id.nav_alumnos).isVisible = SessionManager.hasRole(this, "Administrador")
+        menu.findItem(R.id.nav_ciclos).isVisible = SessionManager.hasRole(this, "Administrador")
+        menu.findItem(R.id.nav_ofertaAcademica).isVisible = SessionManager.hasRole(this, "Administrador")
+        menu.findItem(R.id.nav_usuarios).isVisible = SessionManager.hasRole(this, "Administrador")
+        menu.findItem(R.id.nav_matricula).isVisible = SessionManager.hasRole(this, "Matriculador")
+        menu.findItem(R.id.nav_notas).isVisible = SessionManager.hasRole(this, "Profesor")
+        menu.findItem(R.id.nav_historial).isVisible = SessionManager.hasRole(this, "Alumno")
+        menu.findItem(R.id.nav_perfil).isVisible = SessionManager.isLoggedIn(this)
+    }
+
+    private fun restrictAccessToDestination(destination: NavDestination) {
+        val requiredRoles = RolePermissions.DESTINATION_ROLES[destination.id] ?: emptyList()
+        if (requiredRoles.isNotEmpty() && !SessionManager.hasAnyRole(this, requiredRoles)) {
+            navController.navigate(RolePermissions.DEFAULT_DESTINATION)
+        }
+    }
+
+    private fun checkDestinationAccess(destinationId: Int): Boolean {
+        val requiredRoles = RolePermissions.DESTINATION_ROLES[destinationId] ?: emptyList()
+        return requiredRoles.isEmpty() || SessionManager.hasAnyRole(this, requiredRoles)
     }
 }

@@ -38,7 +38,7 @@
     <fragment
         android:id="@+id/nav_ofertaAcademica"
         android:name="com.example.gestionacademicaapp.ui.ofertaAcademica.OfertaAcademicaFragment"
-        android:label="Oferta Academica"
+        android:label="Oferta Académica"
         tools:layout="@layout/fragment_oferta_academica" />
     <fragment
         android:id="@+id/nav_usuarios"
@@ -48,7 +48,7 @@
     <fragment
         android:id="@+id/nav_matricula"
         android:name="com.example.gestionacademicaapp.ui.matricula.MatriculaFragment"
-        android:label="Matricula"
+        android:label="Matrícula"
         tools:layout="@layout/fragment_matricula" />
     <fragment
         android:id="@+id/nav_notas"
@@ -58,7 +58,7 @@
     <fragment
         android:id="@+id/nav_historial"
         android:name="com.example.gestionacademicaapp.ui.historial_academico.HistorialFragment"
-        android:label="Historial Academico"
+        android:label="Historial"
         tools:layout="@layout/fragment_historial" />
     <fragment
         android:id="@+id/nav_perfil"
