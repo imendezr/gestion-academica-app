@@ -16,17 +16,29 @@
 
         <TextView
             android:id="@+id/tvNombre"
-            android:text="Nombre del Alumno"
             android:textStyle="bold"
             android:textSize="18sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
         <TextView
-            android:id="@+id/tvCarrera"
-            android:text="Carrera del alumno"
+            android:id="@+id/tvCedula"
             android:textSize="14sp"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/tvCarrera"
+            android:textSize="14sp"
+            android:layout_marginTop="2dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/tvEmail"
+            android:textSize="13sp"
+            android:layout_marginTop="2dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     </LinearLayout>

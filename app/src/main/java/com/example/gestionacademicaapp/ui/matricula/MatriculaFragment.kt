@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.model.Matricula
+import com.example.gestionacademicaapp.data.api.model.Matricula
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class MatriculaFragment : Fragment() {
@@ -34,9 +34,9 @@ class MatriculaFragment : Fragment() {
         fab = view.findViewById(R.id.fabMatriculas)
 
         // Datos simulados
-        listaMatriculas.add(Matricula(1, 1, "Matemática I", "2023-01-01"))
-        listaMatriculas.add(Matricula(2, 2, "Programación", "2023-01-05"))
-        listaMatriculas.add(Matricula(3, 3, "Inglés Básico", "2023-02-01"))
+        listaMatriculas.add(Matricula(1, 1, 101, 85))
+        listaMatriculas.add(Matricula(2, 2, 102, 90))
+        listaMatriculas.add(Matricula(3, 3, 103, 88))
 
         // Configurar RecyclerView y adaptador
         adapter = MatriculaAdapter(listaMatriculas)
@@ -74,11 +74,11 @@ class MatriculaFragment : Fragment() {
                 when (direction) {
                     ItemTouchHelper.LEFT -> {
                         adapter.eliminarItem(position)
-                        Toast.makeText(requireContext(), "Matrícula eliminada: ${matricula.curso}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Matrícula eliminada: Alumno ${matricula.pkAlumno}, Grupo ${matricula.pkGrupo}", Toast.LENGTH_SHORT).show()
                     }
                     ItemTouchHelper.RIGHT -> {
                         adapter.notifyItemChanged(position)
-                        Toast.makeText(requireContext(), "Editar matrícula: ${matricula.curso}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Editar matrícula: Alumno ${matricula.pkAlumno}, Grupo ${matricula.pkGrupo}", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -90,12 +90,12 @@ class MatriculaFragment : Fragment() {
             searchView.setQuery("", false)
             searchView.clearFocus()
 
-            val nuevoId = listaMatriculas.maxOfOrNull { it.id }?.plus(1) ?: 1
+            val nuevoId = listaMatriculas.maxOfOrNull { it.idMatricula }?.plus(1) ?: 1
             val nuevaMatricula = Matricula(
-                id = nuevoId,
-                alumnoId = 4, // Se asigna dinámicamente más tarde
-                curso = "Nuevo Curso $nuevoId",
-                fecha = "2023-03-01"
+                idMatricula = nuevoId,
+                pkAlumno = 4,
+                pkGrupo = 104,
+                nota = 75
             )
 
             adapter.agregarItem(nuevaMatricula)

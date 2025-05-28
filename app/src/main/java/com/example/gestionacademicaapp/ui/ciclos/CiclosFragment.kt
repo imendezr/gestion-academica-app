@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.model.Ciclo
+import com.example.gestionacademicaapp.data.api.model.Ciclo
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class CiclosFragment : Fragment() {
@@ -34,8 +34,8 @@ class CiclosFragment : Fragment() {
         fab = view.findViewById(R.id.fabCiclos)
 
         // Datos simulados
-        listaCiclos.add(Ciclo(1, "Ciclo 2023-1", "Primer ciclo del 2023", "2023-01-01", "2023-06-30"))
-        listaCiclos.add(Ciclo(2, "Ciclo 2023-2", "Segundo ciclo del 2023", "2023-07-01", "2023-12-31"))
+        listaCiclos.add(Ciclo(1, 2023, 1, "2023-01-01", "2023-06-30", "Activo"))
+        listaCiclos.add(Ciclo(2, 2023, 2, "2023-07-01", "2023-12-31", "Finalizado"))
 
         adapter = CicloAdapter(listaCiclos)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -72,11 +72,11 @@ class CiclosFragment : Fragment() {
                 when (direction) {
                     ItemTouchHelper.LEFT -> {
                         adapter.eliminarItem(position)
-                        Toast.makeText(requireContext(), "Ciclo eliminado: ${ciclo.nombre}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Ciclo eliminado: \"${ciclo.anio}-${ciclo.numero}\"\n", Toast.LENGTH_SHORT).show()
                     }
                     ItemTouchHelper.RIGHT -> {
                         adapter.notifyItemChanged(position)
-                        Toast.makeText(requireContext(), "Editar ciclo: ${ciclo.nombre}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Editar ciclo: \"${ciclo.anio}-${ciclo.numero}\"\n", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -88,13 +88,14 @@ class CiclosFragment : Fragment() {
             searchView.setQuery("", false)
             searchView.clearFocus()
 
-            val nuevoId = listaCiclos.maxOfOrNull { it.id }?.plus(1) ?: 1
+            val nuevoId = listaCiclos.maxOfOrNull { it.idCiclo }?.plus(1) ?: 1
             val nuevoCiclo = Ciclo(
-                id = nuevoId,
-                nombre = "Ciclo 2023-${nuevoId}",
-                descripcion = "Descripción del ciclo ${nuevoId}",
-                fechaInicio = "2023-01-01",
-                fechaFin = "2023-06-30"
+                idCiclo = nuevoId,
+                anio = 2024,
+                numero = nuevoId,
+                fechaInicio = "2024-01-01",
+                fechaFin = "2024-06-30",
+                estado = "Pendiente"
             )
 
             adapter.agregarItem(nuevoCiclo)

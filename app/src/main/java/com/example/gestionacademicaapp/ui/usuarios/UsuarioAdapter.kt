@@ -8,7 +8,7 @@ import android.widget.Filter
 import android.widget.Filterable
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.model.Usuario
+import com.example.gestionacademicaapp.data.api.model.Usuario
 
 class UsuarioAdapter(
     private val usuarios: MutableList<Usuario>
@@ -17,10 +17,8 @@ class UsuarioAdapter(
     private var usuariosFiltrados: MutableList<Usuario> = usuarios.toMutableList()
 
     inner class UsuarioViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val tvUsername: TextView = itemView.findViewById(R.id.tvUsername)
-        val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
-        val tvCorreo: TextView = itemView.findViewById(R.id.tvCorreo)
-        val tvTipoUsuario: TextView = itemView.findViewById(R.id.tvTipoUsuario)
+        val tvCedula: TextView = itemView.findViewById(R.id.tvCedula)
+        val tvTipo: TextView = itemView.findViewById(R.id.tvTipo)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UsuarioViewHolder {
@@ -31,10 +29,8 @@ class UsuarioAdapter(
 
     override fun onBindViewHolder(holder: UsuarioViewHolder, position: Int) {
         val usuario = usuariosFiltrados[position]
-        holder.tvUsername.text = usuario.username
-        holder.tvNombre.text = usuario.nombre
-        holder.tvCorreo.text = usuario.correo
-        holder.tvTipoUsuario.text = usuario.tipoUsuario
+        holder.tvCedula.text = "Cédula: ${usuario.cedula}"
+        holder.tvTipo.text = "Tipo: ${usuario.tipo}"
     }
 
     override fun getItemCount(): Int = usuariosFiltrados.size
@@ -60,13 +56,11 @@ class UsuarioAdapter(
                     usuarios.toList()
                 } else {
                     usuarios.filter {
-                        it.username.lowercase().contains(filtro)
+                        it.cedula.lowercase().contains(filtro)
                     }
                 }
 
-                val filterResults = FilterResults()
-                filterResults.values = resultados
-                return filterResults
+                return FilterResults().apply { values = resultados }
             }
 
             override fun publishResults(constraint: CharSequence?, results: FilterResults?) {

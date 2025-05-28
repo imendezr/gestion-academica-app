@@ -8,7 +8,7 @@ import android.widget.Filter
 import android.widget.Filterable
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.model.Profesor
+import com.example.gestionacademicaapp.data.api.model.Profesor
 
 class ProfesoresAdapter(
     private val profesores: MutableList<Profesor>
@@ -18,7 +18,7 @@ class ProfesoresAdapter(
 
     inner class ProfesorViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
-        val tvEspecialidad: TextView = itemView.findViewById(R.id.tvEspecialidad)
+        val tvCedula: TextView = itemView.findViewById(R.id.tvCedula)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProfesorViewHolder {
@@ -30,7 +30,7 @@ class ProfesoresAdapter(
     override fun onBindViewHolder(holder: ProfesorViewHolder, position: Int) {
         val profesor = profesoresFiltrados[position]
         holder.tvNombre.text = profesor.nombre
-        holder.tvEspecialidad.text = profesor.especialidad
+        holder.tvCedula.text = "Cédula: ${profesor.cedula} · Tel: ${profesor.telefono}"
     }
 
     override fun getItemCount(): Int = profesoresFiltrados.size

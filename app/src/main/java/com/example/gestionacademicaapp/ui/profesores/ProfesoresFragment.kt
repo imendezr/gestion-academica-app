@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.model.Profesor
+import com.example.gestionacademicaapp.data.api.model.Profesor
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class ProfesoresFragment : Fragment() {
@@ -34,9 +34,9 @@ class ProfesoresFragment : Fragment() {
         fab = view.findViewById(R.id.fabProfesores)
 
         // Datos simulados
-        listaProfesores.add(Profesor(1, "Laura Fernández", "Matemáticas"))
-        listaProfesores.add(Profesor(2, "Carlos Pérez", "Física"))
-        listaProfesores.add(Profesor(3, "Ana Gómez", "Lengua y Literatura"))
+        listaProfesores.add(Profesor(1, "101010101", "Laura Fernández", "8888-8888", "laura@correo.com"))
+        listaProfesores.add(Profesor(2, "202020202", "Carlos Pérez", "8999-9999", "carlos@correo.com"))
+        listaProfesores.add(Profesor(3, "303030303", "Ana Gómez", "8777-7777", "ana@correo.com"))
 
         adapter = ProfesoresAdapter(listaProfesores)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -89,11 +89,13 @@ class ProfesoresFragment : Fragment() {
             searchView.setQuery("", false)
             searchView.clearFocus()
 
-            val nuevoId = listaProfesores.maxOfOrNull { it.id }?.plus(1) ?: 1
+            val nuevoId = listaProfesores.maxOfOrNull { it.idProfesor }?.plus(1) ?: 1
             val nuevoProfesor = Profesor(
-                id = nuevoId,
+                idProfesor = nuevoId,
+                cedula = "000000000",
                 nombre = "Nuevo Profesor $nuevoId",
-                especialidad = "Especialidad de ejemplo"
+                telefono = "0000-0000",
+                email = "nuevo$nuevoId@correo.com"
             )
 
             adapter.agregarItem(nuevoProfesor)

@@ -4,62 +4,79 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.model.Curso
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.example.gestionacademicaapp.data.api.model.Curso
+import com.example.gestionacademicaapp.ui.common.CampoFormulario
+import com.example.gestionacademicaapp.ui.common.DialogFormularioFragment
+import com.example.gestionacademicaapp.utils.Notificador
+import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 
 class CursosFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var searchView: SearchView
     private lateinit var adapter: CursosAdapter
-    private lateinit var fab: FloatingActionButton
+    private lateinit var fab: ExtendedFloatingActionButton
     private val listaCursos = mutableListOf<Curso>()
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         val view = inflater.inflate(R.layout.fragment_cursos, container, false)
 
         recyclerView = view.findViewById(R.id.recyclerViewCursos)
         searchView = view.findViewById(R.id.searchViewCursos)
         fab = view.findViewById(R.id.fabCursos)
 
-        // Datos simulados
-        listaCursos.add(Curso(1, "Matemática I", "Curso de fundamentos matemáticos"))
-        listaCursos.add(Curso(2, "Programación", "Curso de lógica y estructuras de datos"))
-        listaCursos.add(Curso(3, "Inglés Básico", "Curso de introducción al idioma inglés"))
+        // Forzar SearchView expandido y con foco
+        searchView.isIconified = false
+        searchView.clearFocus()
+        searchView.requestFocus()
 
-        // Adaptador
+        // Datos simulados
+        listaCursos.addAll(
+            listOf(
+                Curso(1, "MATE-101", "Matemática I", 4, 5),
+                Curso(2, "PROG-201", "Programación Avanzada", 5, 6),
+                Curso(3, "ING-101", "Inglés Básico", 3, 4),
+                Curso(4, "HIST-102", "Historia Universal", 2, 3),
+                Curso(5, "FIS-202", "Física General", 4, 5),
+                Curso(6, "QUIM-110", "Química Orgánica", 4, 4),
+                Curso(7, "BIO-130", "Biología Celular", 3, 3),
+                Curso(8, "FILO-140", "Filosofía Moderna", 2, 2),
+                Curso(9, "COMP-310", "Compiladores", 5, 6),
+                Curso(10, "ARTE-210", "Historia del Arte", 2, 3)
+            )
+        )
+
         adapter = CursosAdapter(listaCursos)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        // Búsqueda
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?): Boolean {
-                adapter.filter.filter(query)
-                return false
-            }
-
+            override fun onQueryTextSubmit(query: String?) = false
             override fun onQueryTextChange(newText: String?): Boolean {
                 adapter.filter.filter(newText)
                 return false
             }
         })
 
-        // Swipe para eliminar o editar
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                if (dy > 10 && fab.isExtended) fab.shrink()
+                else if (dy < -10 && !fab.isExtended) fab.extend()
+            }
+        })
+
         val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            0,
-            ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+            0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
         ) {
             override fun onMove(
                 recyclerView: RecyclerView,
@@ -74,33 +91,70 @@ class CursosFragment : Fragment() {
                 when (direction) {
                     ItemTouchHelper.LEFT -> {
                         adapter.eliminarItem(position)
-                        Toast.makeText(requireContext(), "Curso eliminado: ${curso.nombre}", Toast.LENGTH_SHORT).show()
+                        Notificador.show(
+                            requireView(),
+                            "Curso eliminado: ${curso.nombre}",
+                            R.color.colorError
+                        )
                     }
+
                     ItemTouchHelper.RIGHT -> {
                         adapter.notifyItemChanged(position)
-                        Toast.makeText(requireContext(), "Editar curso: ${curso.nombre}", Toast.LENGTH_SHORT).show()
+                        mostrarDialogoCurso(curso, position)
                     }
                 }
             }
         })
         itemTouchHelper.attachToRecyclerView(recyclerView)
 
-        // FAB para agregar
         fab.setOnClickListener {
             searchView.setQuery("", false)
             searchView.clearFocus()
-
-            val nuevoId = listaCursos.maxOfOrNull { it.id }?.plus(1) ?: 1
-            val nuevoCurso = Curso(
-                id = nuevoId,
-                nombre = "Nuevo Curso $nuevoId",
-                descripcion = "Descripción de ejemplo"
-            )
-
-            adapter.agregarItem(nuevoCurso)
-            Toast.makeText(requireContext(), "Curso agregado", Toast.LENGTH_SHORT).show()
+            mostrarDialogoCurso(null, null)
         }
 
         return view
+    }
+
+    private fun mostrarDialogoCurso(curso: Curso?, position: Int?) {
+        val campos = listOf(
+            CampoFormulario("codigo", "Código", "text", obligatorio = true),
+            CampoFormulario("nombre", "Nombre", "text", obligatorio = true),
+            CampoFormulario("creditos", "Créditos", "number", obligatorio = true),
+            CampoFormulario("horasSemanales", "Horas Semanales", "number", obligatorio = true)
+        )
+
+        val datosIniciales = curso?.let {
+            mapOf(
+                "codigo" to it.codigo,
+                "nombre" to it.nombre,
+                "creditos" to it.creditos.toString(),
+                "horasSemanales" to it.horasSemanales.toString()
+            )
+        } ?: emptyMap()
+
+        val dialog = DialogFormularioFragment(
+            titulo = if (curso == null) "Nuevo Curso" else "Editar Curso",
+            campos = campos,
+            datosIniciales = datosIniciales
+        ) { datosMap ->
+            val nuevoCurso = Curso(
+                idCurso = curso?.idCurso ?: (listaCursos.maxOfOrNull { it.idCurso }?.plus(1) ?: 1),
+                codigo = datosMap["codigo"] ?: "",
+                nombre = datosMap["nombre"] ?: "",
+                creditos = datosMap["creditos"]?.toLongOrNull() ?: 0,
+                horasSemanales = datosMap["horasSemanales"]?.toLongOrNull() ?: 0
+            )
+
+            if (position != null) {
+                adapter.actualizarItem(position, nuevoCurso)
+                Notificador.show(requireView(), "Curso actualizado", R.color.colorAccent)
+            } else {
+                adapter.agregarItem(nuevoCurso)
+                Notificador.show(requireView(), "Curso agregado", R.color.colorPrimary)
+            }
+        }
+
+        dialog.show(parentFragmentManager, "DialogFormularioCurso")
     }
 }

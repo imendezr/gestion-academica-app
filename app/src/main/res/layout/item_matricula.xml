@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    card_view:cardCornerRadius="6dp"
+    card_view:cardCornerRadius="8dp"
     android:elevation="4dp">
 
     <LinearLayout
@@ -15,19 +15,19 @@
         android:layout_height="wrap_content">
 
         <TextView
-            android:id="@+id/tvCurso"
-            android:text="Curso"
-            android:textStyle="bold"
-            android:textSize="18sp"
+            android:id="@+id/tvGrupo"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:text="Grupo: ---"
+            android:textStyle="bold"
+            android:textSize="16sp" />
 
         <TextView
-            android:id="@+id/tvFecha"
-            android:text="Fecha"
-            android:textSize="14sp"
-            android:layout_marginTop="4dp"
+            android:id="@+id/tvNota"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:text="Nota: ---"
+            android:layout_marginTop="4dp"
+            android:textSize="14sp" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>

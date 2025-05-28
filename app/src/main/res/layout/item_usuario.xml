@@ -15,32 +15,16 @@
         android:layout_height="wrap_content">
 
         <TextView
-            android:id="@+id/tvUsername"
-            android:text="Username"
+            android:id="@+id/tvCedula"
+            android:text="Cédula: 000000000"
             android:textStyle="bold"
             android:textSize="18sp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 
         <TextView
-            android:id="@+id/tvNombre"
-            android:text="Nombre"
-            android:textSize="14sp"
-            android:layout_marginTop="4dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/tvCorreo"
-            android:text="Correo"
-            android:textSize="14sp"
-            android:layout_marginTop="4dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-        <TextView
-            android:id="@+id/tvTipoUsuario"
-            android:text="Tipo de Usuario"
+            android:id="@+id/tvTipo"
+            android:text="Tipo: Alumno"
             android:textSize="14sp"
             android:layout_marginTop="4dp"
             android:layout_width="wrap_content"

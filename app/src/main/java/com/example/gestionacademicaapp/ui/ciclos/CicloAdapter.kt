@@ -8,7 +8,7 @@ import android.widget.Filter
 import android.widget.Filterable
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.model.Ciclo
+import com.example.gestionacademicaapp.data.api.model.Ciclo
 
 class CicloAdapter(
     private val ciclos: MutableList<Ciclo>
@@ -31,10 +31,10 @@ class CicloAdapter(
 
     override fun onBindViewHolder(holder: CicloViewHolder, position: Int) {
         val ciclo = ciclosFiltrados[position]
-        holder.tvNombre.text = ciclo.nombre
-        holder.tvDescripcion.text = ciclo.descripcion
-        holder.tvFechaInicio.text = ciclo.fechaInicio
-        holder.tvFechaFin.text = ciclo.fechaFin
+        holder.tvNombre.text = "Año ${ciclo.anio}, Ciclo ${ciclo.numero}"
+        holder.tvDescripcion.text = "Estado: ${ciclo.estado}"
+        holder.tvFechaInicio.text = "Inicio: ${ciclo.fechaInicio}"
+        holder.tvFechaFin.text = "Fin: ${ciclo.fechaFin}"
     }
 
     override fun getItemCount(): Int = ciclosFiltrados.size
@@ -60,7 +60,7 @@ class CicloAdapter(
                     ciclos.toList()
                 } else {
                     ciclos.filter {
-                        it.nombre.lowercase().contains(filtro)
+                        "${it.anio}${it.numero}".contains(filtro)
                     }
                 }
 

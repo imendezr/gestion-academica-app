@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.model.Carrera
+import com.example.gestionacademicaapp.data.api.model.Carrera
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class CarrerasFragment : Fragment() {
@@ -34,9 +34,9 @@ class CarrerasFragment : Fragment() {
         fab = view.findViewById(R.id.fabCarreras)
 
         // Datos simulados
-        listaCarreras.add(Carrera(1, "Ingeniería Informática", "Diseño y desarrollo de software"))
-        listaCarreras.add(Carrera(2, "Administración de Empresas", "Gestión empresarial y liderazgo"))
-        listaCarreras.add(Carrera(3, "Medicina", "Formación médica integral"))
+        listaCarreras.add(Carrera(1, "INFO", "Ingeniería Informática", "Diseño y desarrollo de software"))
+        listaCarreras.add(Carrera(2, "ADME", "Administración de Empresas", "Gestión empresarial y liderazgo"))
+        listaCarreras.add(Carrera(3, "MED", "Medicina", "Formación médica integral"))
 
         // Configurar RecyclerView y adaptador
         adapter = CarrerasAdapter(listaCarreras)
@@ -90,11 +90,12 @@ class CarrerasFragment : Fragment() {
             searchView.setQuery("", false)
             searchView.clearFocus()
 
-            val nuevoId = listaCarreras.maxOfOrNull { it.id }?.plus(1) ?: 1
+            val nuevoId = listaCarreras.maxOfOrNull { it.idCarrera }?.plus(1) ?: 1
             val nuevaCarrera = Carrera(
-                id = nuevoId,
+                idCarrera = nuevoId,
+                codigo = "COD$nuevoId",
                 nombre = "Nueva Carrera $nuevoId",
-                descripcion = "Descripción de ejemplo"
+                titulo = "Título de ejemplo"
             )
 
             adapter.agregarItem(nuevaCarrera)

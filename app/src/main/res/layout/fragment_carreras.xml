@@ -24,6 +24,6 @@
         android:layout_margin="16dp"
         android:layout_gravity="bottom|end"
         app:srcCompat="@android:drawable/ic_input_add"
-        android:contentDescription="@string/fab_agregar_carrera" />
+        android:contentDescription="@string/fab_agregar" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

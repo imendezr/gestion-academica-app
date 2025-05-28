@@ -8,7 +8,7 @@ import android.widget.Filter
 import android.widget.Filterable
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.model.Matricula
+import com.example.gestionacademicaapp.data.api.model.Matricula
 
 class MatriculaAdapter(
     private val matriculas: MutableList<Matricula>
@@ -17,8 +17,8 @@ class MatriculaAdapter(
     private var matriculasFiltradas: MutableList<Matricula> = matriculas.toMutableList()
 
     inner class MatriculaViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val tvCurso: TextView = itemView.findViewById(R.id.tvCurso)
-        val tvFecha: TextView = itemView.findViewById(R.id.tvFecha)
+        val tvGrupo: TextView = itemView.findViewById(R.id.tvGrupo)
+        val tvNota: TextView = itemView.findViewById(R.id.tvNota)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MatriculaViewHolder {
@@ -29,8 +29,8 @@ class MatriculaAdapter(
 
     override fun onBindViewHolder(holder: MatriculaViewHolder, position: Int) {
         val matricula = matriculasFiltradas[position]
-        holder.tvCurso.text = matricula.curso
-        holder.tvFecha.text = matricula.fecha
+        holder.tvGrupo.text = "Grupo: ${matricula.pkGrupo} · Alumno: ${matricula.pkAlumno}"
+        holder.tvNota.text = "Nota: ${matricula.nota}"
     }
 
     override fun getItemCount(): Int = matriculasFiltradas.size
@@ -56,13 +56,11 @@ class MatriculaAdapter(
                     matriculas.toList()
                 } else {
                     matriculas.filter {
-                        it.curso.lowercase().contains(filtro)
+                        it.pkGrupo.toString().contains(filtro) || it.pkAlumno.toString().contains(filtro)
                     }
                 }
 
-                val filterResults = FilterResults()
-                filterResults.values = resultados
-                return filterResults
+                return FilterResults().apply { values = resultados }
             }
 
             override fun publishResults(constraint: CharSequence?, results: FilterResults?) {

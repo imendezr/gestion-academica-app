@@ -5,29 +5,31 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    card_view:cardCornerRadius="6dp"
-    android:elevation="4dp">
+    card_view:cardCornerRadius="10dp"
+    card_view:cardElevation="4dp"
+    card_view:cardBackgroundColor="?attr/colorSurface">
 
     <LinearLayout
-        android:orientation="vertical"
-        android:padding="16dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="10dp">
 
         <TextView
             android:id="@+id/tvNombre"
-            android:text="Nombre del Curso"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:textStyle="bold"
             android:textSize="18sp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/colorTextPrimary" />
 
         <TextView
             android:id="@+id/tvDescripcion"
-            android:text="Descripción del curso"
-            android:textSize="14sp"
-            android:layout_marginTop="4dp"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textSize="13sp"
+            android:textColor="@color/colorTextSecondary" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>

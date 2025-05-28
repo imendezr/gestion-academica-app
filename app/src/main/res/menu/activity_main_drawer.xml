@@ -3,11 +3,11 @@
 
     <group android:checkableBehavior="single">
         <item
-            android:id="@+id/nav_carreras"
-            android:title="Carreras" />
-        <item
             android:id="@+id/nav_cursos"
             android:title="Cursos" />
+        <item
+            android:id="@+id/nav_carreras"
+            android:title="Carreras" />
         <item
             android:id="@+id/nav_profesores"
             android:title="Profesores" />
@@ -18,8 +18,8 @@
             android:id="@+id/nav_ciclos"
             android:title="Ciclos" />
         <item
-            android:id="@+id/nav_grupos"
-            android:title="Grupos" />
+            android:id="@+id/nav_ofertaAcademica"
+            android:title="Oferta Académica" />
         <item
             android:id="@+id/nav_usuarios"
             android:title="Usuarios" />
@@ -31,10 +31,9 @@
             android:title="Notas" />
         <item
             android:id="@+id/nav_historial"
-            android:title="Historial Académico" />
+            android:title="Historial" />
+        <item
+            android:id="@+id/nav_perfil"
+            android:title="Editar Perfil" />
     </group>
-
-    <item
-        android:id="@+id/nav_logout"
-        android:title="Cerrar sesión" />
 </menu>

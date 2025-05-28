@@ -8,7 +8,7 @@ import android.widget.Filter
 import android.widget.Filterable
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.model.Carrera
+import com.example.gestionacademicaapp.data.api.model.Carrera
 
 class CarrerasAdapter(
     private val carreras: MutableList<Carrera>
@@ -29,8 +29,8 @@ class CarrerasAdapter(
 
     override fun onBindViewHolder(holder: CarreraViewHolder, position: Int) {
         val carrera = carrerasFiltradas[position]
-        holder.tvNombre.text = carrera.nombre
-        holder.tvDescripcion.text = carrera.descripcion
+        holder.tvNombre.text = "${carrera.nombre} (${carrera.codigo})"
+        holder.tvDescripcion.text = carrera.titulo
     }
 
     override fun getItemCount(): Int = carrerasFiltradas.size

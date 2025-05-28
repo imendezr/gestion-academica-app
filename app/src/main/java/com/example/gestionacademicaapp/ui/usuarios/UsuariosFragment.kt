@@ -11,7 +11,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.model.Usuario
+import com.example.gestionacademicaapp.data.api.model.Usuario
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class UsuariosFragment : Fragment() {
@@ -34,9 +34,9 @@ class UsuariosFragment : Fragment() {
         fab = view.findViewById(R.id.fabUsuarios)
 
         // Datos simulados
-        listaUsuarios.add(Usuario(1, "admin", "Administrador", "admin@universidad.com", "admin123", "Administrador"))
-        listaUsuarios.add(Usuario(2, "juan", "Juan Pérez", "juan@universidad.com", "juan123", "Alumno"))
-        listaUsuarios.add(Usuario(3, "maria", "María González", "maria@universidad.com", "maria123", "Profesor"))
+        listaUsuarios.add(Usuario(1, "101010101", "admin123", "Administrador"))
+        listaUsuarios.add(Usuario(2, "202020202", "juan123", "Alumno"))
+        listaUsuarios.add(Usuario(3, "303030303", "maria123", "Profesor"))
 
         adapter = UsuarioAdapter(listaUsuarios)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -73,11 +73,11 @@ class UsuariosFragment : Fragment() {
                 when (direction) {
                     ItemTouchHelper.LEFT -> {
                         adapter.eliminarItem(position)
-                        Toast.makeText(requireContext(), "Usuario eliminado: ${usuario.username}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Usuario eliminado: ${usuario.cedula}", Toast.LENGTH_SHORT).show()
                     }
                     ItemTouchHelper.RIGHT -> {
                         adapter.notifyItemChanged(position)
-                        Toast.makeText(requireContext(), "Editar usuario: ${usuario.username}", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), "Editar usuario: ${usuario.cedula}", Toast.LENGTH_SHORT).show()
                     }
                 }
             }
@@ -89,14 +89,12 @@ class UsuariosFragment : Fragment() {
             searchView.setQuery("", false)
             searchView.clearFocus()
 
-            val nuevoId = listaUsuarios.maxOfOrNull { it.id }?.plus(1) ?: 1
+            val nuevoId = listaUsuarios.maxOfOrNull { it.idUsuario }?.plus(1) ?: 1
             val nuevoUsuario = Usuario(
-                id = nuevoId,
-                username = "usuario$nuevoId",
-                nombre = "Nuevo Usuario $nuevoId",
-                correo = "usuario$nuevoId@universidad.com",
-                password = "usuario$123",
-                tipoUsuario = "Alumno"
+                idUsuario = nuevoId,
+                cedula = "000000000",
+                clave = "usuario$nuevoId",
+                tipo = "Alumno"
             )
 
             adapter.agregarItem(nuevoUsuario)

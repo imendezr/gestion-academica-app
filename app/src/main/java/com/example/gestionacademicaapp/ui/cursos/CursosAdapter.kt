@@ -8,7 +8,7 @@ import android.widget.Filter
 import android.widget.Filterable
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.model.Curso
+import com.example.gestionacademicaapp.data.api.model.Curso
 
 class CursosAdapter(
     private val cursos: MutableList<Curso>
@@ -30,7 +30,8 @@ class CursosAdapter(
     override fun onBindViewHolder(holder: CursoViewHolder, position: Int) {
         val curso = cursosFiltrados[position]
         holder.tvNombre.text = curso.nombre
-        holder.tvDescripcion.text = curso.descripcion
+        holder.tvDescripcion.text =
+            "Código: ${curso.codigo} · Créditos: ${curso.creditos} · Horas: ${curso.horasSemanales}"
     }
 
     override fun getItemCount(): Int = cursosFiltrados.size
@@ -39,6 +40,16 @@ class CursosAdapter(
         cursos.add(curso)
         cursosFiltrados.add(curso)
         notifyItemInserted(cursosFiltrados.size - 1)
+    }
+
+    fun actualizarItem(position: Int, cursoActualizado: Curso) {
+        val cursoOriginal = cursosFiltrados[position]
+        val indexEnListaPrincipal = cursos.indexOfFirst { it.idCurso == cursoOriginal.idCurso }
+        if (indexEnListaPrincipal != -1) {
+            cursos[indexEnListaPrincipal] = cursoActualizado
+        }
+        cursosFiltrados[position] = cursoActualizado
+        notifyItemChanged(position)
     }
 
     fun eliminarItem(position: Int) {
@@ -56,13 +67,12 @@ class CursosAdapter(
                     cursos.toList()
                 } else {
                     cursos.filter {
-                        it.nombre.lowercase().contains(filtro)
+                        it.nombre.lowercase().contains(filtro) ||
+                                it.codigo.lowercase().contains(filtro)
                     }
                 }
 
-                val filterResults = FilterResults()
-                filterResults.values = resultados
-                return filterResults
+                return FilterResults().apply { values = resultados }
             }
 
             override fun publishResults(constraint: CharSequence?, results: FilterResults?) {

@@ -1,26 +1,33 @@
 <resources>
-    <string name="app_name">GestionAcademicaApp</string>
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
+    <string name="app_name">Gestión Académica</string>
+    <string name="navigation_drawer_open">Abrir menú de navegación</string>
+    <string name="navigation_drawer_close">Cerrar menú de navegación</string>
+
+    <!-- Encabezado del Navigation Drawer -->
     <string name="nav_header_title">Gestión Académica</string>
     <string name="nav_header_subtitle">Bienvenido al sistema</string>
-    <string name="nav_header_desc">Navigation header</string>
-    <string name="action_settings">Settings</string>
-    <string name="fab_agregar_carrera">Agregar carrera</string>
-    <string name="fab_agregar_curso">Agregar curso</string>
-    <string name="fab_agregar_profesor">Agregar profesor</string>
-    <string name="fab_agregar_alumno">Agregar alumno</string>
-    <string name="fab_agregar_ciclo">Agregar ciclo</string>
-    <string name="fab_agregar_grupo">Agregar grupo</string>
-    <string name="fab_agregar_matricula">Agregar matricula</string>
-    <string name="fab_agregar_nota">Agregar nota</string>
-    <string name="fab_agregar_historial">Agregar historial</string>
+    <string name="nav_header_desc">Encabezado de navegación</string>
 
+    <!-- Menú superior -->
+    <string name="action_settings">Configuración</string>
 
+    <!-- Títulos de fragmentos -->
+    <string name="menu_inicio">Inicio</string>
+    <string name="menu_cursos">Cursos</string>
+    <string name="menu_carreras">Carreras</string>
+    <string name="menu_profesores">Profesores</string>
+    <string name="menu_alumnos">Alumnos</string>
+    <string name="menu_ciclos">Ciclos</string>
+    <string name="menu_oferta_academica">Oferta Académica</string>
+    <string name="menu_usuarios">Gestión de Usuarios</string>
+    <string name="menu_matricula">Matrícula</string>
+    <string name="menu_notas">Asignación de Notas</string>
+    <string name="menu_historial">Historial Académico</string>
+    <string name="menu_perfil">Editar Perfil</string>
 
-    <string name="menu_home">Home</string>
-    <string name="menu_gallery">Gallery</string>
-    <string name="menu_slideshow">Slideshow</string>
-    <!-- TODO: Remove or change this placeholder text -->
+    <!-- Botón flotante genérico -->
+    <string name="fab_agregar">Agregar elemento</string>
+
+    <!-- Placeholder -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>
