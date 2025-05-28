@@ -50,8 +50,16 @@ class CursosAdapter(
     fun updateCursos(newCursos: List<Curso>) {
         cursos.clear()
         cursos.addAll(newCursos)
+        // Restaurar la lista filtrada al actualizar
         cursosFiltrados.clear()
         cursosFiltrados.addAll(newCursos)
+        notifyDataSetChanged()
+    }
+
+    fun restoreFilteredList() {
+        // Restaurar la lista filtrada a la lista completa
+        cursosFiltrados.clear()
+        cursosFiltrados.addAll(cursos)
         notifyDataSetChanged()
     }
 
@@ -89,10 +97,5 @@ class CursosAdapter(
 
     fun getCursoAt(position: Int): Curso {
         return cursosFiltrados[position]
-    }
-
-    fun removeItem(position: Int) {
-        cursosFiltrados.removeAt(position)
-        notifyItemRemoved(position)
     }
 }

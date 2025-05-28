@@ -1,6 +1,7 @@
 package com.example.gestionacademicaapp.ui.cursos
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -31,6 +32,7 @@ class CursosViewModel @Inject constructor(
 
     fun fetchCursos() {
         viewModelScope.launch {
+            Log.d("CursosViewModel", "fetchCursos called")
             _cursosState.value = CursosState.Loading
             val response = cursoRepository.listar(context)
             _cursosState.value = when (response) {
@@ -46,10 +48,13 @@ class CursosViewModel @Inject constructor(
             val response = cursoRepository.insertar(context, curso)
             _actionState.value = when (response) {
                 is ApiResponse.Success -> {
-                    fetchCursos() // Actualizar lista
+                    fetchCursos()
                     ActionState.Success("Curso creado exitosamente")
                 }
-                is ApiResponse.Error -> ActionState.Error(response.message ?: "Error al crear curso")
+
+                is ApiResponse.Error -> ActionState.Error(
+                    response.message ?: "Error al crear curso"
+                )
             }
         }
     }
@@ -60,10 +65,13 @@ class CursosViewModel @Inject constructor(
             val response = cursoRepository.modificar(context, curso)
             _actionState.value = when (response) {
                 is ApiResponse.Success -> {
-                    fetchCursos() // Actualizar lista
+                    fetchCursos()
                     ActionState.Success("Curso actualizado exitosamente")
                 }
-                is ApiResponse.Error -> ActionState.Error(response.message ?: "Error al actualizar curso")
+
+                is ApiResponse.Error -> ActionState.Error(
+                    response.message ?: "Error al actualizar curso"
+                )
             }
         }
     }
@@ -74,10 +82,13 @@ class CursosViewModel @Inject constructor(
             val response = cursoRepository.eliminar(context, id)
             _actionState.value = when (response) {
                 is ApiResponse.Success -> {
-                    fetchCursos() // Actualizar lista
+                    fetchCursos()
                     ActionState.Success("Curso eliminado exitosamente")
                 }
-                is ApiResponse.Error -> ActionState.Error(response.message ?: "Error al eliminar curso")
+
+                is ApiResponse.Error -> ActionState.Error(
+                    response.message ?: "Error al eliminar curso"
+                )
             }
         }
     }

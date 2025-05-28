@@ -14,7 +14,8 @@ class DialogFormularioFragment(
     private val titulo: String,
     private val campos: List<CampoFormulario>,
     private val datosIniciales: Map<String, String> = emptyMap(),
-    private val onGuardar: (Map<String, String>) -> Unit
+    private val onGuardar: (Map<String, String>) -> Unit,
+    private val onCancel: () -> Unit = {}
 ) : DialogFragment() {
 
     private var _binding: FragmentDialogFormularioBinding? = null
@@ -36,7 +37,7 @@ class DialogFormularioFragment(
                 else -> android.text.InputType.TYPE_CLASS_TEXT
             }
             inputText.setText(datosIniciales[campo.key] ?: "")
-            inputText.isEnabled = campo.editable // Aplicar el atributo editable
+            inputText.isEnabled = campo.editable
 
             contenedor.addView(inputLayout)
             inputs[campo.key] = inputText
@@ -46,7 +47,10 @@ class DialogFormularioFragment(
             .setTitle(titulo)
             .setView(binding.root)
             .setPositiveButton("Guardar", null)
-            .setNegativeButton("Cancelar", null)
+            .setNegativeButton("Cancelar") { dialog, _ ->
+                onCancel() // Invocar el callback al cancelar
+                dialog.dismiss()
+            }
             .create().also { dialog ->
                 dialog.setOnShowListener {
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {

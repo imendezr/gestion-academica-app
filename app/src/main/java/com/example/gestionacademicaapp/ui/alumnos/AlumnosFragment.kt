@@ -173,19 +173,22 @@ class AlumnosFragment : Fragment() {
         val dialog = DialogFormularioFragment(
             titulo = if (alumno == null) "Nuevo Alumno" else "Editar Alumno",
             campos = campos,
-            datosIniciales = datosIniciales
-        ) { datosMap ->
-            val nuevoAlumno = Alumno(
-                idAlumno = alumno?.idAlumno ?: System.currentTimeMillis(),
-                cedula = datosMap["cedula"] ?: "",
-                nombre = datosMap["nombre"] ?: "",
-                telefono = datosMap["telefono"] ?: "",
-                email = datosMap["email"] ?: "",
-                fechaNacimiento = datosMap["fechaNacimiento"] ?: "",
-                pkCarrera = datosMap["pkCarrera"]?.toLongOrNull() ?: 0L
-            )
-            onGuardar(nuevoAlumno)
-        }
+            datosIniciales = datosIniciales,
+            onGuardar = { datosMap ->
+                val nuevoAlumno = Alumno(
+                    idAlumno = alumno?.idAlumno ?: System.currentTimeMillis(),
+                    cedula = datosMap["cedula"] ?: "",
+                    nombre = datosMap["nombre"] ?: "",
+                    telefono = datosMap["telefono"] ?: "",
+                    email = datosMap["email"] ?: "",
+                    fechaNacimiento = datosMap["fechaNacimiento"] ?: "",
+                    pkCarrera = datosMap["pkCarrera"]?.toLongOrNull() ?: 0L
+                )
+                onGuardar(nuevoAlumno)
+            },
+            onCancel = {
+            }
+        )
 
         dialog.show(fragmentManager, "DialogFormularioAlumno")
     }

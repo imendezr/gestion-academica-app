@@ -7,7 +7,6 @@ import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
@@ -15,6 +14,8 @@ import com.example.gestionacademicaapp.data.api.model.Curso
 import com.example.gestionacademicaapp.ui.common.CampoFormulario
 import com.example.gestionacademicaapp.ui.common.DialogFormularioFragment
 import com.example.gestionacademicaapp.utils.Notificador
+import com.example.gestionacademicaapp.utils.enableSwipeActions
+import com.example.gestionacademicaapp.utils.isVisible
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -26,7 +27,8 @@ class CursosFragment : Fragment() {
     private lateinit var searchView: SearchView
     private lateinit var adapter: CursosAdapter
     private lateinit var fab: ExtendedFloatingActionButton
-    private lateinit var progressBar: View // Añadiremos un ProgressBar al layout
+    private lateinit var progressBar: View
+    private var currentSearchQuery: String? = null // Para almacenar la consulta actual
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -38,7 +40,7 @@ class CursosFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recyclerViewCursos)
         searchView = view.findViewById(R.id.searchViewCursos)
         fab = view.findViewById(R.id.fabCursos)
-        progressBar = view.findViewById(R.id.progressBar) // Añadiremos este ID al layout
+        progressBar = view.findViewById(R.id.progressBar)
 
         // Configurar SearchView
         searchView.isIconified = false
@@ -57,6 +59,7 @@ class CursosFragment : Fragment() {
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?) = false
             override fun onQueryTextChange(newText: String?): Boolean {
+                currentSearchQuery = newText
                 adapter.filter.filter(newText)
                 return false
             }
@@ -76,46 +79,36 @@ class CursosFragment : Fragment() {
             mostrarDialogoCurso(null, null)
         }
 
-        // Configurar deslizamiento para eliminar/editar
-        val itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
-            0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
-        ) {
-            override fun onMove(
-                recyclerView: RecyclerView,
-                viewHolder: RecyclerView.ViewHolder,
-                target: RecyclerView.ViewHolder
-            ) = false
-
-            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
-                val position = viewHolder.adapterPosition
-                when (direction) {
-                    ItemTouchHelper.LEFT -> adapter.onSwipeDelete(position)
-                    ItemTouchHelper.RIGHT -> {
-                        val curso = adapter.getCursoAt(position)
-                        adapter.triggerEdit(curso, position)
-                    }
-                }
+        // Configurar deslizamiento para eliminar/editar usando la función de extensión
+        recyclerView.enableSwipeActions(
+            onSwipeLeft = { position ->
+                adapter.onSwipeDelete(position)
+            },
+            onSwipeRight = { position ->
+                val curso = adapter.getCursoAt(position)
+                adapter.triggerEdit(curso, position)
             }
-        })
-        itemTouchHelper.attachToRecyclerView(recyclerView)
+        )
 
         // Observar estados del ViewModel
         viewModel.cursosState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is CursosState.Loading -> {
-                    progressBar.visibility = View.VISIBLE
-                    recyclerView.visibility = View.GONE
+                    progressBar.isVisible = true
+                    recyclerView.isVisible = false
                 }
 
                 is CursosState.Success -> {
-                    progressBar.visibility = View.GONE
-                    recyclerView.visibility = View.VISIBLE
+                    progressBar.isVisible = false
+                    recyclerView.isVisible = true
                     adapter.updateCursos(state.cursos)
+                    // Reaplicar el filtro si hay una consulta activa
+                    currentSearchQuery?.let { adapter.filter.filter(it) }
                 }
 
                 is CursosState.Error -> {
-                    progressBar.visibility = View.GONE
-                    recyclerView.visibility = View.GONE
+                    progressBar.isVisible = false
+                    recyclerView.isVisible = false
                     Notificador.show(requireView(), state.message, R.color.colorError)
                 }
             }
@@ -124,18 +117,18 @@ class CursosFragment : Fragment() {
         viewModel.actionState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ActionState.Loading -> {
-                    progressBar.visibility = View.VISIBLE
+                    progressBar.isVisible = true
                     fab.isEnabled = false
                 }
 
                 is ActionState.Success -> {
-                    progressBar.visibility = View.GONE
+                    progressBar.isVisible = false
                     fab.isEnabled = true
                     Notificador.show(requireView(), state.message, R.color.colorPrimary)
                 }
 
                 is ActionState.Error -> {
-                    progressBar.visibility = View.GONE
+                    progressBar.isVisible = false
                     fab.isEnabled = true
                     Notificador.show(requireView(), state.message, R.color.colorError)
                 }
@@ -171,22 +164,29 @@ class CursosFragment : Fragment() {
         val dialog = DialogFormularioFragment(
             titulo = if (curso == null) "Nuevo Curso" else "Editar Curso",
             campos = campos,
-            datosIniciales = datosIniciales
-        ) { datosMap ->
-            val nuevoCurso = Curso(
-                idCurso = curso?.idCurso ?: 0, // El backend asignará el ID al crear
-                codigo = datosMap["codigo"] ?: "",
-                nombre = datosMap["nombre"] ?: "",
-                creditos = datosMap["creditos"]?.toLongOrNull() ?: 0,
-                horasSemanales = datosMap["horasSemanales"]?.toLongOrNull() ?: 0
-            )
+            datosIniciales = datosIniciales,
+            onGuardar = { datosMap ->
+                val nuevoCurso = Curso(
+                    idCurso = curso?.idCurso ?: 0,
+                    codigo = datosMap["codigo"] ?: "",
+                    nombre = datosMap["nombre"] ?: "",
+                    creditos = datosMap["creditos"]?.toLongOrNull() ?: 0,
+                    horasSemanales = datosMap["horasSemanales"]?.toLongOrNull() ?: 0
+                )
 
-            if (curso == null) {
-                viewModel.createCurso(nuevoCurso)
-            } else {
-                viewModel.updateCurso(nuevoCurso)
+                if (curso == null) {
+                    viewModel.createCurso(nuevoCurso)
+                } else {
+                    viewModel.updateCurso(nuevoCurso)
+                }
+            },
+            onCancel = {
+                // Restaurar la lista filtrada al cancelar
+                adapter.restoreFilteredList()
+                // Opcionalmente, reaplicar el filtro si hay una consulta activa
+                currentSearchQuery?.let { adapter.filter.filter(it) }
             }
-        }
+        )
 
         dialog.show(parentFragmentManager, "DialogFormularioCurso")
     }
