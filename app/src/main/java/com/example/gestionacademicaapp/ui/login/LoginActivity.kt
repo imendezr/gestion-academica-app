@@ -9,7 +9,6 @@ import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Usuario
 import com.example.gestionacademicaapp.ui.MainActivity
