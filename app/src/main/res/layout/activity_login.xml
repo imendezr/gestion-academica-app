@@ -26,7 +26,8 @@
             android:textStyle="bold"
             android:textColor="@color/colorPrimary"
             android:gravity="center"
-            android:paddingBottom="32dp" />
+            android:paddingBottom="32dp"
+            android:contentDescription="Título de pantalla de inicio de sesión" />
 
         <!-- Campo: Cédula -->
         <com.google.android.material.textfield.TextInputLayout
@@ -38,7 +39,8 @@
             app:boxStrokeColor="@color/colorPrimary"
             app:hintTextColor="@color/colorTextSecondaryLight"
             app:boxBackgroundMode="outline"
-            app:startIconDrawable="@drawable/ic_account">
+            app:startIconDrawable="@drawable/ic_account"
+            android:contentDescription="Campo para ingresar cédula">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etUsername"
@@ -46,7 +48,8 @@
                 android:layout_height="wrap_content"
                 android:textColor="@color/colorTextPrimary"
                 android:autofillHints="username"
-                android:imeOptions="actionNext" />
+                android:imeOptions="actionNext"
+                android:contentDescription="Editar texto para cédula" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Campo: Contraseña -->
@@ -59,7 +62,8 @@
             app:boxStrokeColor="@color/colorPrimary"
             app:hintTextColor="@color/colorTextSecondaryLight"
             app:boxBackgroundMode="outline"
-            app:startIconDrawable="@drawable/ic_lock">
+            app:startIconDrawable="@drawable/ic_lock"
+            android:contentDescription="Campo para ingresar contraseña">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etPassword"
@@ -68,7 +72,8 @@
                 android:inputType="textPassword"
                 android:textColor="@color/colorTextPrimary"
                 android:autofillHints="password"
-                android:imeOptions="actionDone" />
+                android:imeOptions="actionDone"
+                android:contentDescription="Editar texto para contraseña" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Botón -->
@@ -78,6 +83,17 @@
             android:layout_height="wrap_content"
             android:text="Iniciar Sesión"
             android:backgroundTint="@color/colorPrimary"
-            android:textColor="@android:color/white" />
+            android:textColor="@android:color/white"
+            android:contentDescription="Botón para iniciar sesión" />
+
+        <!-- ProgressBar -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="invisible"
+            android:layout_marginTop="20dp"
+            android:layout_gravity="center"
+            android:contentDescription="Cargando inicio de sesión" />
     </LinearLayout>
 </ScrollView>
