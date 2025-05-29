@@ -5,6 +5,5 @@ data class Grupo(
     var idCarreraCurso: Long,
     var numeroGrupo: Long,
     var horario: String,
-    var idProfesor: Long,
-    var nombreProfesor: String? = null
+    var idProfesor: Long
 )

@@ -6,6 +6,7 @@ import com.example.gestionacademicaapp.data.api.Endpoints
 import com.example.gestionacademicaapp.data.api.model.Curso
 import com.example.gestionacademicaapp.data.api.model.Grupo
 import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
+import com.example.gestionacademicaapp.data.api.model.dto.GrupoDto
 import com.example.gestionacademicaapp.data.response.ApiResponse
 
 class GrupoRepository {
@@ -30,8 +31,12 @@ class GrupoRepository {
         return ApiClient.get(context, Endpoints.cursosByCarreraAndCiclo(idCarrera, idCiclo), Array<CursoDto>::class.java).mapList()
     }
 
-    suspend fun gruposPorCarreraCurso(context: Context, idCarreraCurso: Long): ApiResponse<List<Grupo>> {
-        return ApiClient.get(context, Endpoints.gruposByCarreraCurso(idCarreraCurso), Array<Grupo>::class.java).mapList()
+    suspend fun gruposPorCarreraCurso(context: Context, idCarrera: Long, idCurso: Long): ApiResponse<List<GrupoDto>> {
+        return ApiClient.get(
+            context,
+            Endpoints.gruposByCarreraCurso(idCarrera, idCurso),
+            Array<GrupoDto>::class.java
+        ).mapList()
     }
 
     private inline fun <reified T> ApiResponse<Array<T>>.mapList(): ApiResponse<List<T>> {

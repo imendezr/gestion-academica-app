@@ -2,6 +2,7 @@ package com.example.gestionacademicaapp.data.api
 
 import com.example.gestionacademicaapp.data.api.model.*
 import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
+import com.example.gestionacademicaapp.data.api.model.dto.GrupoDto
 import com.example.gestionacademicaapp.data.api.model.dto.MatriculaAlumnoDto
 
 interface ApiService {
@@ -50,7 +51,7 @@ interface ApiService {
     suspend fun updateGrupo(grupo: Grupo): Grupo // PUT /api/grupos/modificar
     suspend fun deleteGrupo(id: Long): Boolean   // DELETE /api/grupos/eliminar/{id}
     suspend fun getAllGrupos(): List<Grupo>      // GET /api/grupos/listar
-    suspend fun getGruposByCarreraCurso(idCarreraCurso: Long): List<Grupo> // GET /api/grupos/buscarGruposPorCarreraCurso/{pkCarreraCurso}
+    suspend fun getGruposByCarreraCurso(idCarrera: Long, idCurso: Long): List<GrupoDto> // GET /api/grupos//buscarGruposPorCarreraCurso/{pkCarrera}/{pkCurso}}
 
     // MATRÍCULAS
     suspend fun insertMatricula(matricula: Matricula): Matricula // POST /api/matricular/insertar

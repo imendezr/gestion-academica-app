@@ -50,8 +50,8 @@ object Endpoints {
     fun grupoDelete(id: Int) = "grupos/eliminar/$id"
     fun cursosByCarreraAndCiclo(idCarrera: Long, idCiclo: Long) =
         "cursos/buscarCursosPorCarreraYCiclo/$idCarrera/$idCiclo"
-    fun gruposByCarreraCurso(idCarreraCurso: Long) =
-        "grupos/buscarGruposPorCarreraCurso/$idCarreraCurso"
+    fun gruposByCarreraCurso(idCarrera: Long, idCurso: Long) =
+        "grupos/buscarGruposPorCarreraCurso/$idCarrera/$idCurso"
 
     // Matrículas
     const val MATRICULAS_ALL = "matricular/listar"
