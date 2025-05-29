@@ -155,21 +155,29 @@ class CiclosFragment : Fragment() {
     }
 
     private fun mostrarDialogoCiclo(ciclo: Ciclo?) {
-        val campos = listOf(
+        val campos = mutableListOf(
             CampoFormulario(
                 key = "anio",
                 label = "Año",
                 tipo = "number",
                 obligatorio = true,
                 editable = true,
-                rules = { v -> if (v.isNotEmpty()) null else "El año es requerido" }
+                rules = { v ->
+                    if (v.isEmpty()) "El año es requerido"
+                    else {
+                        val year = v.toLongOrNull()
+                        if (year == null || year !in 1900..2100) "El año debe estar entre 1900 y 2100"
+                        else null
+                    }
+                }
             ),
             CampoFormulario(
                 key = "numero",
                 label = "Número",
-                tipo = "number",
+                tipo = "spinner",
                 obligatorio = true,
                 editable = true,
+                opciones = listOf("1" to "1", "2" to "2"),
                 rules = { v -> if (v.isNotEmpty()) null else "El número de ciclo es requerido" }
             ),
             CampoFormulario(
@@ -188,14 +196,30 @@ class CiclosFragment : Fragment() {
             )
         )
 
-        val datosIniciales = ciclo?.let {
-            mapOf(
-                "anio" to it.anio.toString(),
-                "numero" to it.numero.toString(),
-                "fechaInicio" to it.fechaInicio,
-                "fechaFin" to it.fechaFin
+        // Solo agregar campo "estado" si se está editando
+        if (ciclo != null) {
+            campos.add(
+                CampoFormulario(
+                    key = "estado",
+                    label = "Estado",
+                    tipo = "text",
+                    obligatorio = false,
+                    editable = false
+                )
             )
-        } ?: emptyMap()
+        }
+
+        val datosIniciales = mutableMapOf<String, String>().apply {
+            if (ciclo != null) {
+                put("anio", ciclo.anio.toString())
+                put("numero", ciclo.numero.toString())
+                put("fechaInicio", ciclo.fechaInicio)
+                put("fechaFin", ciclo.fechaFin)
+                put("estado", ciclo.estado)
+            } else {
+                put("estado", "Inactivo") // Valor mostrado si el campo se agregara luego
+            }
+        }
 
         val dialog = DialogFormularioFragment(
             titulo = if (ciclo == null) "Nuevo Ciclo" else "Editar Ciclo",
@@ -208,7 +232,6 @@ class CiclosFragment : Fragment() {
                 val fechaFin = datosMap["fechaFin"] ?: ""
                 val estado = ciclo?.estado ?: "Inactivo"
 
-                // Validación básica de fechas
                 if (fechaInicio > fechaFin) {
                     view?.let {
                         Notificador.show(
@@ -229,11 +252,8 @@ class CiclosFragment : Fragment() {
                     estado = estado
                 )
 
-                if (ciclo == null) {
-                    viewModel.createCiclo(nuevoCiclo)
-                } else {
-                    viewModel.updateCiclo(nuevoCiclo)
-                }
+                if (ciclo == null) viewModel.createCiclo(nuevoCiclo)
+                else viewModel.updateCiclo(nuevoCiclo)
             },
             onCancel = {
                 adapter.restoreFilteredList()
