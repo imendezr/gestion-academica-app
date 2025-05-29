@@ -34,7 +34,6 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class CarreraCursosFragment : DialogFragment() {
 
-    // Inyectar el repositorio
     @Inject
     lateinit var carreraCursoRepository: CarreraCursoRepository
 
@@ -67,7 +66,17 @@ class CarreraCursosFragment : DialogFragment() {
 
         adapter = CarreraCursosAdapter(
             onDelete = { carreraCurso ->
-                viewModel.deleteCarreraCurso(carrera.idCarrera, carreraCurso.curso.idCurso)
+                lifecycleScope.launch {
+                    try {
+                        viewModel.deleteCarreraCurso(carrera.idCarrera, carreraCurso.curso.idCurso)
+                    } catch (e: Exception) {
+                        Notificador.show(
+                            view = view,
+                            mensaje = "Error al eliminar: ${e.message}",
+                            colorResId = R.color.colorError
+                        )
+                    }
+                }
             },
             onReorder = { carreraCurso, newCiclo ->
                 val updatedCarreraCurso = CarreraCurso(
@@ -76,11 +85,19 @@ class CarreraCursosFragment : DialogFragment() {
                     pkCurso = carreraCurso.curso.idCurso,
                     pkCiclo = newCiclo.idCiclo
                 )
-                viewModel.updateCarreraCurso(updatedCarreraCurso)
+                lifecycleScope.launch {
+                    try {
+                        viewModel.updateCarreraCurso(updatedCarreraCurso)
+                    } catch (e: Exception) {
+                        Notificador.show(
+                            view = view,
+                            mensaje = "Error al reordenar: ${e.message}",
+                            colorResId = R.color.colorError
+                        )
+                    }
+                }
             },
-            onReorderRequest = { carreraCurso ->
-                mostrarDialogoReordenarCurso(carreraCurso)
-            },
+            onReorderRequest = { carreraCurso -> mostrarDialogoReordenarCurso(carreraCurso) },
             ciclosDisponibles = ciclosDisponibles
         )
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -103,7 +120,7 @@ class CarreraCursosFragment : DialogFragment() {
                     progressBar.isVisible = false
                     fab.isEnabled = true
                     Notificador.show(
-                        view = requireView(),
+                        view = view,
                         mensaje = state.data,
                         colorResId = R.color.colorAccent,
                         anchorView = fab
@@ -114,7 +131,11 @@ class CarreraCursosFragment : DialogFragment() {
                 is SingleUiState.Error -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
-                    Notificador.show(requireView(), state.message, R.color.colorError)
+                    Notificador.show(
+                        view = view,
+                        mensaje = state.message,
+                        colorResId = R.color.colorError
+                    )
                 }
             }
         }
@@ -122,7 +143,9 @@ class CarreraCursosFragment : DialogFragment() {
         return AlertDialog.Builder(requireContext())
             .setView(view)
             .setNegativeButton("Cerrar") { dialog, _ -> dialog.dismiss() }
-            .create()
+            .create().also { dialog ->
+                dialog.window?.setBackgroundDrawableResource(R.drawable.bg_dialog_window)
+            }
     }
 
     private fun mostrarDialogoReordenarCurso(carreraCurso: CarreraCursoUI) {
@@ -132,25 +155,27 @@ class CarreraCursosFragment : DialogFragment() {
                 CampoFormulario(
                     key = "idCiclo",
                     label = "Nuevo Ciclo",
-                    tipo = "select",
+                    tipo = "spinner",
                     obligatorio = true,
                     opciones = ciclosDisponibles.map { it.idCiclo.toString() to "${it.anio} - ${it.numero}" }
                 )
             ),
             datosIniciales = mapOf("idCiclo" to carreraCurso.cicloId.toString()),
             onGuardar = { datosMap ->
-                val nuevoIdCiclo =
-                    datosMap["idCiclo"]?.toLongOrNull() ?: return@DialogFormularioFragment
-                val nuevoCiclo = ciclosDisponibles.find { it.idCiclo == nuevoIdCiclo }
-                if (nuevoCiclo != null) {
-                    viewModel.updateCarreraCurso(
-                        CarreraCurso(
+                val nuevoIdCiclo = datosMap["idCiclo"]?.toLongOrNull()
+                if (nuevoIdCiclo != null) {
+                    val nuevoCiclo = ciclosDisponibles.find { it.idCiclo == nuevoIdCiclo }
+                    if (nuevoCiclo != null) {
+                        val updatedCarreraCurso = CarreraCurso(
                             idCarreraCurso = carreraCurso.idCarreraCurso,
                             pkCarrera = carrera.idCarrera,
                             pkCurso = carreraCurso.curso.idCurso,
                             pkCiclo = nuevoCiclo.idCiclo
                         )
-                    )
+                        viewModel.updateCarreraCurso(updatedCarreraCurso)
+                    } else {
+                        Notificador.show(requireView(), "Ciclo no encontrado", R.color.colorError)
+                    }
                 }
             }
         )
@@ -158,7 +183,6 @@ class CarreraCursosFragment : DialogFragment() {
     }
 
     private fun cargarDatosIniciales() {
-        // Cargar cursos disponibles
         cursosViewModel.cursosState.observe(this) { state ->
             when (state) {
                 is ListUiState.Success -> {
@@ -176,7 +200,6 @@ class CarreraCursosFragment : DialogFragment() {
         }
         cursosViewModel.fetchCursos()
 
-        // Cargar ciclos disponibles
         ciclosViewModel.ciclosState.observe(this) { state ->
             when (state) {
                 is ListUiState.Success -> {
@@ -200,7 +223,16 @@ class CarreraCursosFragment : DialogFragment() {
             if (ciclosDisponibles.isEmpty() || cursosDisponibles.isEmpty()) return@launch
             progressBar.isVisible = true
 
-            val carreraCursosResponse = carreraCursoRepository.listar().getOrNull() ?: emptyList()
+            val carreraCursosResponse = try {
+                carreraCursoRepository.listar().getOrNull() ?: emptyList()
+            } catch (e: Exception) {
+                Notificador.show(
+                    requireView(),
+                    "Error al cargar cursos: ${e.message}",
+                    R.color.colorError
+                )
+                emptyList()
+            }
             val cursosAsociados = mutableListOf<CarreraCursoUI>()
             carreraCursosResponse
                 .filter { it.pkCarrera == carrera.idCarrera }
@@ -243,14 +275,14 @@ class CarreraCursosFragment : DialogFragment() {
             CampoFormulario(
                 key = "idCurso",
                 label = "Curso",
-                tipo = "select",
+                tipo = "spinner",
                 obligatorio = true,
                 opciones = cursosNoAsociados.map { it.idCurso.toString() to it.nombre }
             ),
             CampoFormulario(
                 key = "idCiclo",
                 label = "Ciclo",
-                tipo = "select",
+                tipo = "spinner",
                 obligatorio = true,
                 opciones = ciclosDisponibles.map { it.idCiclo.toString() to "${it.anio} - ${it.numero}" }
             )
@@ -260,15 +292,19 @@ class CarreraCursosFragment : DialogFragment() {
             titulo = "Agregar Curso a ${carrera.nombre}",
             campos = campos,
             onGuardar = { datosMap ->
-                val idCurso = datosMap["idCurso"]?.toLongOrNull() ?: return@DialogFormularioFragment
-                val idCiclo = datosMap["idCiclo"]?.toLongOrNull() ?: return@DialogFormularioFragment
-                val nuevoCarreraCurso = CarreraCurso(
-                    idCarreraCurso = 0,
-                    pkCarrera = carrera.idCarrera,
-                    pkCurso = idCurso,
-                    pkCiclo = idCiclo
-                )
-                viewModel.createCarreraCurso(nuevoCarreraCurso)
+                val idCurso = datosMap["idCurso"]?.toLongOrNull()
+                val idCiclo = datosMap["idCiclo"]?.toLongOrNull()
+                if (idCurso != null && idCiclo != null) {
+                    val nuevoCarreraCurso = CarreraCurso(
+                        idCarreraCurso = 0,
+                        pkCarrera = carrera.idCarrera,
+                        pkCurso = idCurso,
+                        pkCiclo = idCiclo
+                    )
+                    viewModel.createCarreraCurso(nuevoCarreraCurso)
+                } else {
+                    Notificador.show(requireView(), "Datos inválidos", R.color.colorError)
+                }
             }
         )
         dialog.show(parentFragmentManager, "DialogAgregarCurso")

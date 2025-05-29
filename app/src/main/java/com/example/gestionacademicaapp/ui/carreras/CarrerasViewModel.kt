@@ -49,9 +49,7 @@ class CarrerasViewModel @Inject constructor(
                     fetchCarreras()
                     _actionState.value = SingleUiState.Success("Carrera creada exitosamente")
                 }
-                .onFailure {
-                    _actionState.value = SingleUiState.Error(it.toUserMessage())
-                }
+                .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
         }
     }
 
@@ -63,9 +61,7 @@ class CarrerasViewModel @Inject constructor(
                     fetchCarreras()
                     _actionState.value = SingleUiState.Success("Carrera actualizada exitosamente")
                 }
-                .onFailure {
-                    _actionState.value = SingleUiState.Error(it.toUserMessage())
-                }
+                .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
         }
     }
 
@@ -77,9 +73,7 @@ class CarrerasViewModel @Inject constructor(
                     fetchCarreras()
                     _actionState.value = SingleUiState.Success("Carrera eliminada exitosamente")
                 }
-                .onFailure {
-                    _actionState.value = SingleUiState.Error(it.toUserMessage())
-                }
+                .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
         }
     }
 
@@ -90,9 +84,7 @@ class CarrerasViewModel @Inject constructor(
                 .onSuccess {
                     _actionState.value = SingleUiState.Success("Curso agregado a la carrera")
                 }
-                .onFailure {
-                    _actionState.value = SingleUiState.Error(it.toUserMessage())
-                }
+                .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
         }
     }
 
@@ -103,9 +95,7 @@ class CarrerasViewModel @Inject constructor(
                 .onSuccess {
                     _actionState.value = SingleUiState.Success("Orden del curso actualizado")
                 }
-                .onFailure {
-                    _actionState.value = SingleUiState.Error(it.toUserMessage())
-                }
+                .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
         }
     }
 
@@ -116,9 +106,7 @@ class CarrerasViewModel @Inject constructor(
                 .onSuccess {
                     _actionState.value = SingleUiState.Success("Curso eliminado de la carrera")
                 }
-                .onFailure {
-                    _actionState.value = SingleUiState.Error(it.toUserMessage())
-                }
+                .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
         }
     }
 }

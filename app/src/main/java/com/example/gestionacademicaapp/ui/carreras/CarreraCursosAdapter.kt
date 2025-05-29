@@ -30,11 +30,8 @@ class CarreraCursosAdapter(
             val cicloText = carreraCurso.ciclo?.let { "${it.anio} - ${it.numero}" }
                 ?: "Ciclo: ${carreraCurso.cicloId}"
             tvDescripcion.text = "Ciclo: $cicloText"
-
             btnDelete.setOnClickListener { onDelete(carreraCurso) }
-            btnReorder.setOnClickListener {
-                onReorderRequest(carreraCurso) // Disparar evento hacia el Fragment
-            }
+            btnReorder.setOnClickListener { onReorderRequest(carreraCurso) }
         }
     }
 
@@ -53,6 +50,6 @@ class CarreraCursosAdapter(
     fun updateCarreraCursos(newCarreraCursos: List<CarreraCursoUI>) {
         carreraCursos.clear()
         carreraCursos.addAll(newCarreraCursos)
-        notifyDataSetChanged()
+        notifyDataSetChanged() // Asegura que la UI se actualice
     }
 }
