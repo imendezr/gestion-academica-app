@@ -44,9 +44,6 @@ interface ApiService {
     @GET("alumnos/buscarPorCarrera")
     suspend fun getAlumnosByCarrera(@Query("carrera") idCarrera: Long): List<Alumno>
 
-    @GET("alumnos/historialAlumno/{id}")
-    suspend fun getAlumnoHistorial(@Path("id") idAlumno: Long): List<MatriculaAlumnoDto>
-
 
     // CARRERAS
     @POST("carreras/insertar")
@@ -167,8 +164,14 @@ interface ApiService {
     @DELETE("matricular/eliminar/{id}")
     suspend fun deleteMatricula(@Path("id") id: Long): Response<Unit>
 
-    @GET("matricular/listar")
-    suspend fun getAllMatriculas(): List<Matricula>
+    @GET("matricular/listarMatriculasPorAlumno/{idAlumno}")
+    suspend fun getMatriculasPorAlumno(@Path("idAlumno") idAlumno: Long): List<MatriculaAlumnoDto>
+
+    @GET("matricular/listarMatriculasPorAlumnoYCiclo/{idAlumno}/{idCiclo}")
+    suspend fun getMatriculasPorAlumnoYCiclo(
+        @Path("idAlumno") idAlumno: Long,
+        @Path("idCiclo") idCiclo: Long
+    ): List<MatriculaAlumnoDto>
 
 
     // PROFESORES

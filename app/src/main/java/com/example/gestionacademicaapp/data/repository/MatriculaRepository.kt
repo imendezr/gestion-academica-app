@@ -2,16 +2,13 @@ package com.example.gestionacademicaapp.data.repository
 
 import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Matricula
+import com.example.gestionacademicaapp.data.api.model.dto.MatriculaAlumnoDto
 import jakarta.inject.Inject
 import retrofit2.HttpException
 
 class MatriculaRepository @Inject constructor(
     private val apiService: ApiService
 ) {
-
-    suspend fun listar(): Result<List<Matricula>> = safeApiCall {
-        apiService.getAllMatriculas()
-    }
 
     suspend fun insertar(matricula: Matricula): Result<Unit> = safeApiCall {
         val response = apiService.insertMatricula(matricula)
@@ -26,6 +23,17 @@ class MatriculaRepository @Inject constructor(
     suspend fun eliminar(id: Long): Result<Unit> = safeApiCall {
         val response = apiService.deleteMatricula(id)
         if (response.isSuccessful) Unit else throw HttpException(response)
+    }
+
+    suspend fun listarPorAlumno(idAlumno: Long): Result<List<MatriculaAlumnoDto>> = safeApiCall {
+        apiService.getMatriculasPorAlumno(idAlumno)
+    }
+
+    suspend fun listarPorAlumnoYCiclo(
+        idAlumno: Long,
+        idCiclo: Long
+    ): Result<List<MatriculaAlumnoDto>> = safeApiCall {
+        apiService.getMatriculasPorAlumnoYCiclo(idAlumno, idCiclo)
     }
 
     private inline fun <T> safeApiCall(block: () -> T): Result<T> {

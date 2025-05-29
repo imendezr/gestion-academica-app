@@ -2,7 +2,6 @@ package com.example.gestionacademicaapp.data.repository
 
 import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Alumno
-import com.example.gestionacademicaapp.data.api.model.dto.MatriculaAlumnoDto
 import jakarta.inject.Inject
 import retrofit2.HttpException
 
@@ -40,10 +39,6 @@ class AlumnoRepository @Inject constructor(
 
     suspend fun buscarPorCarrera(idCarrera: Int): Result<List<Alumno>> = safeApiCall {
         apiService.getAlumnosByCarrera(idCarrera.toLong())
-    }
-
-    suspend fun historialAlumno(idAlumno: Int): Result<List<MatriculaAlumnoDto>> = safeApiCall {
-        apiService.getAlumnoHistorial(idAlumno.toLong())
     }
 
     private inline fun <T> safeApiCall(block: () -> T): Result<T> {
