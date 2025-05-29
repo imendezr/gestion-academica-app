@@ -3,12 +3,12 @@ package com.example.gestionacademicaapp.ui.common
 import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.databinding.FragmentDialogFormularioBinding
-import com.example.gestionacademicaapp.utils.Notificador
 
 class DialogFormularioFragment(
     private val titulo: String,
@@ -26,6 +26,7 @@ class DialogFormularioFragment(
         _binding = FragmentDialogFormularioBinding.inflate(LayoutInflater.from(context))
         val contenedor = binding.linearFormulario
 
+        // Crear campos dinámicamente
         campos.forEach { campo ->
             val inputLayout = layoutInflater.inflate(R.layout.item_input_field, contenedor, false)
             val inputText = inputLayout.findViewById<EditText>(R.id.editText)
@@ -43,12 +44,15 @@ class DialogFormularioFragment(
             inputs[campo.key] = inputText
         }
 
+        // Obtener referencia al TextView de error
+        val tvError = binding.tvErrorFormulario
+
         return AlertDialog.Builder(requireContext())
             .setTitle(titulo)
             .setView(binding.root)
             .setPositiveButton("Guardar", null)
             .setNegativeButton("Cancelar") { dialog, _ ->
-                onCancel() // Invocar el callback al cancelar
+                onCancel()
                 dialog.dismiss()
             }
             .create().also { dialog ->
@@ -66,14 +70,12 @@ class DialogFormularioFragment(
                         }
 
                         if (esValido) {
+                            tvError.visibility = View.GONE
                             onGuardar(resultado)
                             dialog.dismiss()
                         } else {
-                            Notificador.show(
-                                requireView(),
-                                "Completa los campos obligatorios",
-                                R.color.colorError
-                            )
+                            tvError.text = "Completa los campos obligatorios"
+                            tvError.visibility = View.VISIBLE
                         }
                     }
                 }

@@ -6,15 +6,6 @@
     android:layout_height="match_parent"
     android:padding="8dp">
 
-    <!-- ProgressBar -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:visibility="gone"
-        android:contentDescription="Cargando cursos" />
-
     <!-- Buscador -->
     <androidx.appcompat.widget.SearchView
         android:id="@+id/searchViewCursos"
@@ -33,15 +24,30 @@
         android:paddingTop="6dp"
         android:paddingBottom="6dp" />
 
-    <!-- Lista -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewCursos"
+    <!-- Contenedor para lista + ProgressBar superpuesto -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="58dp"
-        android:clipToPadding="false"
-        android:contentDescription="Listado de cursos"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+        android:layout_marginTop="58dp">
+
+        <!-- Lista -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewCursos"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:contentDescription="Listado de cursos"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+
+        <!-- ProgressBar centrado y superpuesto -->
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone"
+            android:contentDescription="Cargando cursos" />
+    </FrameLayout>
 
     <!-- Botón flotante -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton

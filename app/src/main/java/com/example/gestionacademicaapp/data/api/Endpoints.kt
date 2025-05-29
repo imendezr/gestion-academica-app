@@ -38,7 +38,7 @@ object Endpoints {
     const val CURSOS_ALL = "cursos/listar"
     fun cursoByCodigo(codigo: String) = "cursos/buscarPorCodigo?codigo=$codigo"
     fun cursoByNombre(nombre: String) = "cursos/buscarPorNombre?nombre=$nombre"
-    fun cursosByCarrera(idCarrera: Int) = "cursos/buscarCursosPorCarrera?idCarrera=$idCarrera"
+    fun cursosByCarrera(idCarrera: Long) = "cursos/buscarCursosPorCarrera?idCarrera=$idCarrera"
     const val CURSO_INSERT = "cursos/insertar"
     const val CURSO_UPDATE = "cursos/modificar"
     fun cursoDelete(id: Int) = "cursos/eliminar/$id"
@@ -48,10 +48,10 @@ object Endpoints {
     const val GRUPO_INSERT = "grupos/insertar"
     const val GRUPO_UPDATE = "grupos/modificar"
     fun grupoDelete(id: Int) = "grupos/eliminar/$id"
-    fun cursosByCarreraAndCurso(idCarrera: Int, idCurso: Int) =
-        "grupos/buscarCursosPorCarreraYCiclo/$idCarrera/$idCurso"
-    fun gruposByCarreraCurso(idCarreraCurso: Long) =
-        "grupos/buscarGruposPorCarreraCurso/$idCarreraCurso"
+    fun cursosByCarreraAndCiclo(idCarrera: Long, idCiclo: Long) =
+        "cursos/buscarCursosPorCarreraYCiclo/$idCarrera/$idCiclo"
+    fun gruposByCarreraCurso(idCarrera: Long, idCurso: Long) =
+        "grupos/buscarGruposPorCarreraCurso/$idCarrera/$idCurso"
 
     // Matrículas
     const val MATRICULAS_ALL = "matricular/listar"

@@ -4,6 +4,7 @@ import android.content.Context
 import com.example.gestionacademicaapp.data.api.ApiClient
 import com.example.gestionacademicaapp.data.api.Endpoints
 import com.example.gestionacademicaapp.data.api.model.Curso
+import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
 import com.example.gestionacademicaapp.data.response.ApiResponse
 
 class CursoRepository {
@@ -32,8 +33,12 @@ class CursoRepository {
         return ApiClient.get(context, Endpoints.cursoByNombre(nombre), Curso::class.java)
     }
 
-    suspend fun buscarPorCarrera(context: Context, idCarrera: Int): ApiResponse<List<Curso>> {
-        return ApiClient.get(context, Endpoints.cursosByCarrera(idCarrera), Array<Curso>::class.java).mapList()
+    suspend fun buscarPorCarrera(context: Context, idCarrera: Long): ApiResponse<List<CursoDto>> {
+        return ApiClient.get(
+            context,
+            Endpoints.cursosByCarrera(idCarrera),
+            Array<CursoDto>::class.java
+        ).mapList()
     }
 
     private inline fun <reified T> ApiResponse<Array<T>>.mapList(): ApiResponse<List<T>> {

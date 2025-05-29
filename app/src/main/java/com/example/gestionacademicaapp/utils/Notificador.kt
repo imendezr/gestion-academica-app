@@ -12,19 +12,19 @@ object Notificador {
         view: View,
         mensaje: String,
         @ColorRes colorResId: Int? = null,
-        duracion: Int = Snackbar.LENGTH_LONG, // Cambiado a LONG para mayor visibilidad
-        accionTexto: String? = null, // Acción opcional
-        accion: (() -> Unit)? = null
+        duracion: Int = Snackbar.LENGTH_LONG,
+        accionTexto: String? = null,
+        accion: (() -> Unit)? = null,
+        anchorView: View? = null
     ) {
         val snackbar = Snackbar.make(view, mensaje, duracion)
 
         // Color de fondo
         colorResId?.let {
-            val color = view.context.getColor(it)
-            snackbar.setBackgroundTint(color)
+            snackbar.setBackgroundTint(view.context.getColor(it))
         }
 
-        // Color del texto adaptable al tema
+        // Color del texto adaptado al tema
         val textColor = if (isSystemInDarkTheme(view.context)) {
             android.R.color.white
         } else {
@@ -32,11 +32,16 @@ object Notificador {
         }
         snackbar.setTextColor(view.context.getColor(textColor))
 
-        // Acción solo si se proporciona accionTexto
+        // Acción opcional
         if (accionTexto != null) {
             snackbar.setAction(accionTexto) {
                 accion?.invoke() ?: snackbar.dismiss()
             }
+        }
+
+        // Anclar si se proporciona una vista
+        anchorView?.let {
+            snackbar.anchorView = it
         }
 
         snackbar.show()

@@ -1,7 +1,7 @@
 package com.example.gestionacademicaapp.data.api
 
 import com.example.gestionacademicaapp.data.api.model.*
-import com.example.gestionacademicaapp.data.api.model.dto.CarreraCicloCursoDto
+import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
 import com.example.gestionacademicaapp.data.api.model.dto.GrupoDto
 import com.example.gestionacademicaapp.data.api.model.dto.MatriculaAlumnoDto
 
@@ -43,15 +43,15 @@ interface ApiService {
     suspend fun getAllCursos(): List<Curso>      // GET /api/cursos/listar
     suspend fun getCursoByCodigo(codigo: String): Curso // GET /api/cursos/buscarPorCodigo?codigo={}
     suspend fun getCursoByNombre(nombre: String): Curso // GET /api/cursos/buscarPorNombre?nombre={}
-    suspend fun getCursosByCarrera(idCarrera: Long): List<Curso> // GET /api/cursos/buscarCursosPorCarrera?idCarrera={}
+    suspend fun getCursosByCarrera(idCarrera: Long): List<CursoDto> // GET /api/cursos/buscarCursosPorCarrera?idCarrera={}
+    suspend fun getCursosByCarreraAndCiclo(idCarrera: Long, idCiclo: Long): List<CursoDto> // GET /api/cursos/buscarCursosPorCarreraYCiclo/{pkCarrera}/{pkCiclo}
 
     // GRUPOS
     suspend fun insertGrupo(grupo: Grupo): Grupo // POST /api/grupos/insertar
     suspend fun updateGrupo(grupo: Grupo): Grupo // PUT /api/grupos/modificar
     suspend fun deleteGrupo(id: Long): Boolean   // DELETE /api/grupos/eliminar/{id}
     suspend fun getAllGrupos(): List<Grupo>      // GET /api/grupos/listar
-    suspend fun getCursosByCarreraAndCurso(idCarrera: Long, idCurso: Long): List<CarreraCicloCursoDto> // GET /api/grupos/buscarCursosPorCarreraYCiclo/{pkCarrera}/{pkCurso}
-    suspend fun getGruposByCarreraCurso(idCarreraCurso: Long): List<GrupoDto> // GET /api/grupos/buscarGruposPorCarreraCurso/{pkCarreraCurso}
+    suspend fun getGruposByCarreraCurso(idCarrera: Long, idCurso: Long): List<GrupoDto> // GET /api/grupos//buscarGruposPorCarreraCurso/{pkCarrera}/{pkCurso}}
 
     // MATRÍCULAS
     suspend fun insertMatricula(matricula: Matricula): Matricula // POST /api/matricular/insertar
