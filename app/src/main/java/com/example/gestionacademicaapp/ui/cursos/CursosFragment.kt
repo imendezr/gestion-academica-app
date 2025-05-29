@@ -49,8 +49,8 @@ class CursosFragment : Fragment() {
 
         // Configurar RecyclerView y Adapter
         adapter = CursosAdapter(
-            onEdit = { curso, position -> mostrarDialogoCurso(curso, position) },
-            onDelete = { curso, position -> viewModel.deleteCurso(curso.idCurso) }
+            onEdit = { curso, _ -> mostrarDialogoCurso(curso) },
+            onDelete = { curso, _ -> viewModel.deleteCurso(curso.idCurso) }
         )
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
@@ -76,7 +76,7 @@ class CursosFragment : Fragment() {
         fab.setOnClickListener {
             searchView.setQuery("", false)
             searchView.clearFocus()
-            mostrarDialogoCurso(null, null)
+            mostrarDialogoCurso(null)
         }
 
         // Configurar deslizamiento para eliminar/editar usando la función de extensión
@@ -124,7 +124,20 @@ class CursosFragment : Fragment() {
                 is ActionState.Success -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
-                    Notificador.show(requireView(), state.message, R.color.colorPrimary)
+
+                    val color = when {
+                        state.message.contains("creado", true) ||
+                                state.message.contains("actualizado", true) -> R.color.colorAccent
+                        state.message.contains("eliminado", true) -> R.color.colorError
+                        else -> R.color.colorPrimary
+                    }
+
+                    Notificador.show(
+                        view = requireView(),
+                        mensaje = state.message,
+                        colorResId = color,
+                        anchorView = fab
+                    )
                 }
 
                 is ActionState.Error -> {
@@ -138,13 +151,10 @@ class CursosFragment : Fragment() {
         return view
     }
 
-    private fun mostrarDialogoCurso(curso: Curso?, position: Int?) {
+    private fun mostrarDialogoCurso(curso: Curso?) {
         val campos = listOf(
             CampoFormulario(
-                "codigo",
-                "Código",
-                "texto",
-                obligatorio = true,
+                "codigo", "Código", "texto", obligatorio = true,
                 editable = curso == null
             ),
             CampoFormulario("nombre", "Nombre", "texto", obligatorio = true),
@@ -181,9 +191,7 @@ class CursosFragment : Fragment() {
                 }
             },
             onCancel = {
-                // Restaurar la lista filtrada al cancelar
                 adapter.restoreFilteredList()
-                // Opcionalmente, reaplicar el filtro si hay una consulta activa
                 currentSearchQuery?.let { adapter.filter.filter(it) }
             }
         )

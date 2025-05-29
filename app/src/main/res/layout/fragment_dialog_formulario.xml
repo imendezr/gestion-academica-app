@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scrollView"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="24dp">
@@ -8,5 +8,20 @@
         android:id="@+id/linearFormulario"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical" />
+        android:orientation="vertical">
+
+        <!-- Mensaje de error (mostrado arriba) -->
+        <TextView
+            android:id="@+id/tvErrorFormulario"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorError"
+            android:visibility="gone"
+            android:text="Error"
+            android:textSize="14sp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Los campos se agregarán dinámicamente aquí -->
+
+    </LinearLayout>
 </ScrollView>
