@@ -13,6 +13,8 @@ import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Curso
 import com.example.gestionacademicaapp.ui.common.CampoFormulario
 import com.example.gestionacademicaapp.ui.common.DialogFormularioFragment
+import com.example.gestionacademicaapp.ui.common.state.ListUiState
+import com.example.gestionacademicaapp.ui.common.state.SingleUiState
 import com.example.gestionacademicaapp.utils.Notificador
 import com.example.gestionacademicaapp.utils.enableSwipeActions
 import com.example.gestionacademicaapp.utils.isVisible
@@ -93,20 +95,19 @@ class CursosFragment : Fragment() {
         // Observar estados del ViewModel
         viewModel.cursosState.observe(viewLifecycleOwner) { state ->
             when (state) {
-                is CursosState.Loading -> {
+                is ListUiState.Loading -> {
                     progressBar.isVisible = true
                     recyclerView.isVisible = false
                 }
 
-                is CursosState.Success -> {
+                is ListUiState.Success -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = true
-                    adapter.updateCursos(state.cursos)
-                    // Reaplicar el filtro si hay una consulta activa
+                    adapter.updateCursos(state.data)
                     currentSearchQuery?.let { adapter.filter.filter(it) }
                 }
 
-                is CursosState.Error -> {
+                is ListUiState.Error -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = false
                     Notificador.show(requireView(), state.message, R.color.colorError)
@@ -116,31 +117,32 @@ class CursosFragment : Fragment() {
 
         viewModel.actionState.observe(viewLifecycleOwner) { state ->
             when (state) {
-                is ActionState.Loading -> {
+                is SingleUiState.Loading -> {
                     progressBar.isVisible = true
                     fab.isEnabled = false
                 }
 
-                is ActionState.Success -> {
+                is SingleUiState.Success -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
 
                     val color = when {
-                        state.message.contains("creado", true) ||
-                                state.message.contains("actualizado", true) -> R.color.colorAccent
-                        state.message.contains("eliminado", true) -> R.color.colorError
+                        state.data.contains("creado", true) ||
+                                state.data.contains("actualizado", true) -> R.color.colorAccent
+
+                        state.data.contains("eliminado", true) -> R.color.colorError
                         else -> R.color.colorPrimary
                     }
 
                     Notificador.show(
                         view = requireView(),
-                        mensaje = state.message,
+                        mensaje = state.data,
                         colorResId = color,
                         anchorView = fab
                     )
                 }
 
-                is ActionState.Error -> {
+                is SingleUiState.Error -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
                     Notificador.show(requireView(), state.message, R.color.colorError)
