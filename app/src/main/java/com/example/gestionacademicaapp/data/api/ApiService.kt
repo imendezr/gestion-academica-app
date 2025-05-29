@@ -2,6 +2,7 @@ package com.example.gestionacademicaapp.data.api
 
 import com.example.gestionacademicaapp.data.api.model.Alumno
 import com.example.gestionacademicaapp.data.api.model.Carrera
+import com.example.gestionacademicaapp.data.api.model.CarreraCurso
 import com.example.gestionacademicaapp.data.api.model.Ciclo
 import com.example.gestionacademicaapp.data.api.model.Curso
 import com.example.gestionacademicaapp.data.api.model.Grupo
@@ -83,6 +84,28 @@ interface ApiService {
         @Path("idCurso") idCurso: Long,
         @Path("nuevoIdCiclo") nuevoIdCiclo: Long
     ): Response<Unit>
+
+    // CARRERA-CURSO
+    @POST("carrera-curso/insertar")
+    suspend fun insertCarreraCurso(@Body carreraCurso: CarreraCurso): Response<Unit>
+
+    @PUT("carrera-curso/modificar")
+    suspend fun updateCarreraCurso(@Body carreraCurso: CarreraCurso): Response<Unit>
+
+    @DELETE("carrera-curso/eliminar")
+    suspend fun deleteCarreraCurso(
+        @Query("idCarrera") idCarrera: Long,
+        @Query("idCurso") idCurso: Long
+    ): Response<Unit>
+
+    @GET("carrera-curso/cursos")
+    suspend fun getCursosByCarreraYCiclo(
+        @Query("idCarrera") idCarrera: Long,
+        @Query("idCiclo") idCiclo: Long
+    ): List<CursoDto>
+
+    @GET("carrera-curso/listar")
+    suspend fun getAllCarreraCurso(): List<CarreraCurso>
 
 
     // CICLOS
