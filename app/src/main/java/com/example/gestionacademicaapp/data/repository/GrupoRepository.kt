@@ -3,9 +3,9 @@ package com.example.gestionacademicaapp.data.repository
 import android.content.Context
 import com.example.gestionacademicaapp.data.api.ApiClient
 import com.example.gestionacademicaapp.data.api.Endpoints
+import com.example.gestionacademicaapp.data.api.model.Curso
 import com.example.gestionacademicaapp.data.api.model.Grupo
-import com.example.gestionacademicaapp.data.api.model.dto.CarreraCicloCursoDto
-import com.example.gestionacademicaapp.data.api.model.dto.GrupoDto
+import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
 import com.example.gestionacademicaapp.data.response.ApiResponse
 
 class GrupoRepository {
@@ -26,12 +26,12 @@ class GrupoRepository {
         return ApiClient.delete(context, Endpoints.grupoDelete(id.toInt()))
     }
 
-    suspend fun cursosPorCarreraYCiclo(context: Context, idCarrera: Long, idCurso: Long): ApiResponse<List<CarreraCicloCursoDto>> {
-        return ApiClient.get(context, Endpoints.cursosByCarreraAndCurso(idCarrera.toInt(), idCurso.toInt()), Array<CarreraCicloCursoDto>::class.java).mapList()
+    suspend fun cursosPorCarreraYCiclo(context: Context, idCarrera: Long, idCiclo: Long): ApiResponse<List<CursoDto>> {
+        return ApiClient.get(context, Endpoints.cursosByCarreraAndCiclo(idCarrera, idCiclo), Array<CursoDto>::class.java).mapList()
     }
 
-    suspend fun gruposPorCarreraCurso(context: Context, idCarreraCurso: Long): ApiResponse<List<GrupoDto>> {
-        return ApiClient.get(context, Endpoints.gruposByCarreraCurso(idCarreraCurso), Array<GrupoDto>::class.java).mapList()
+    suspend fun gruposPorCarreraCurso(context: Context, idCarreraCurso: Long): ApiResponse<List<Grupo>> {
+        return ApiClient.get(context, Endpoints.gruposByCarreraCurso(idCarreraCurso), Array<Grupo>::class.java).mapList()
     }
 
     private inline fun <reified T> ApiResponse<Array<T>>.mapList(): ApiResponse<List<T>> {
