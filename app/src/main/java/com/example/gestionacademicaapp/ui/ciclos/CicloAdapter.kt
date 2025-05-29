@@ -53,7 +53,21 @@ class CiclosAdapter(
         holder.tvNombre.text = "${ciclo.anio} - ${ciclo.numero}"
         holder.tvDescripcion.text =
             "Inicio: ${ciclo.fechaInicio} · Fin: ${ciclo.fechaFin} · Estado: ${ciclo.estado}"
-        holder.btnActivate.isVisible = ciclo.estado != "ACTIVO"
+
+        holder.btnActivate.isVisible = true
+
+        if (ciclo.estado.equals("ACTIVO", ignoreCase = true)) {
+            holder.btnActivate.setImageResource(R.drawable.ic_active)
+            holder.btnActivate.setOnClickListener(null)
+        } else {
+            holder.btnActivate.setImageResource(R.drawable.ic_activate)
+            holder.btnActivate.setOnClickListener {
+                val pos = holder.adapterPosition
+                if (pos != RecyclerView.NO_POSITION) {
+                    onActivate(ciclosFiltrados[pos])
+                }
+            }
+        }
     }
 
     override fun getItemCount(): Int = ciclosFiltrados.size
