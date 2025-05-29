@@ -49,5 +49,15 @@
             android:contentDescription="Activar ciclo"
             android:src="@drawable/ic_activate"
             android:visibility="gone" />
+
+        <!-- Ícono de edición (opcional, para consistencia con swipe) -->
+        <ImageButton
+            android:id="@+id/btnEdit"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Editar ciclo"
+            android:src="@drawable/ic_edit"
+            android:visibility="gone" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>

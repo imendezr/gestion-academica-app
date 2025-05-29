@@ -21,7 +21,7 @@
         android:paddingTop="6dp"
         android:paddingEnd="12dp"
         android:paddingBottom="6dp"
-        android:queryHint="Buscar ciclos" />
+        android:queryHint="Buscar por año" />
 
     <!-- Contenedor para lista + ProgressBar superpuesto -->
     <FrameLayout

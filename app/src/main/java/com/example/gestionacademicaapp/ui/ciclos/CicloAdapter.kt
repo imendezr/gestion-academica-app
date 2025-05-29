@@ -53,8 +53,7 @@ class CiclosAdapter(
         holder.tvNombre.text = "${ciclo.anio} - ${ciclo.numero}"
         holder.tvDescripcion.text =
             "Inicio: ${ciclo.fechaInicio} · Fin: ${ciclo.fechaFin} · Estado: ${ciclo.estado}"
-        holder.btnActivate.isVisible =
-            ciclo.estado != "ACTIVO" // Mostrar botón solo si no está activo
+        holder.btnActivate.isVisible = ciclo.estado != "ACTIVO"
     }
 
     override fun getItemCount(): Int = ciclosFiltrados.size
@@ -80,10 +79,7 @@ class CiclosAdapter(
                 val resultados = if (filtro.isEmpty()) {
                     ciclos.toList()
                 } else {
-                    ciclos.filter {
-                        it.anio.toString().contains(filtro) ||
-                                it.numero.toString().contains(filtro)
-                    }
+                    ciclos.filter { it.anio.toString().contains(filtro) }
                 }
                 return FilterResults().apply { values = resultados }
             }

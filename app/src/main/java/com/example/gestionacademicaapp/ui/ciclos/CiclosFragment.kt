@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.SearchView
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -48,6 +48,7 @@ class CiclosFragment : Fragment() {
         searchView.isIconified = false
         searchView.clearFocus()
         searchView.requestFocus()
+        searchView.queryHint = "Buscar por año"
 
         // Configurar RecyclerView y Adapter
         adapter = CiclosAdapter(
@@ -111,7 +112,7 @@ class CiclosFragment : Fragment() {
                 is ListUiState.Error -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = false
-                    Notificador.show(requireView(), state.message, R.color.colorError)
+                    Notificador.show(view, state.message, R.color.colorError)
                 }
             }
         }
@@ -135,7 +136,7 @@ class CiclosFragment : Fragment() {
                         else -> R.color.colorPrimary
                     }
                     Notificador.show(
-                        view = requireView(),
+                        view = view,
                         mensaje = state.data,
                         colorResId = color,
                         anchorView = fab
@@ -145,7 +146,7 @@ class CiclosFragment : Fragment() {
                 is SingleUiState.Error -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
-                    Notificador.show(requireView(), state.message, R.color.colorError)
+                    Notificador.show(view, state.message, R.color.colorError)
                 }
             }
         }
@@ -156,19 +157,34 @@ class CiclosFragment : Fragment() {
     private fun mostrarDialogoCiclo(ciclo: Ciclo?) {
         val campos = listOf(
             CampoFormulario(
-                "anio", "Año", "numero", obligatorio = true,
-                editable = ciclo == null
+                key = "anio",
+                label = "Año",
+                tipo = "number",
+                obligatorio = true,
+                editable = true,
+                rules = { v -> if (v.isNotEmpty()) null else "El año es requerido" }
             ),
             CampoFormulario(
-                "numero", "Número", "numero", obligatorio = true,
-                editable = ciclo == null
+                key = "numero",
+                label = "Número",
+                tipo = "number",
+                obligatorio = true,
+                editable = true,
+                rules = { v -> if (v.isNotEmpty()) null else "El número de ciclo es requerido" }
             ),
-            CampoFormulario("fechaInicio", "Fecha de Inicio", "fecha", obligatorio = true),
-            CampoFormulario("fechaFin", "Fecha de Fin", "fecha", obligatorio = true),
             CampoFormulario(
-                "estado", "Estado", "select", obligatorio = true,
-                opciones = listOf("ACTIVO" to "Activo", "INACTIVO" to "Inactivo"),
-                editable = false
+                key = "fechaInicio",
+                label = "Fecha de Inicio",
+                tipo = "date",
+                obligatorio = true,
+                rules = { v -> if (v.isNotEmpty()) null else "La fecha de inicio es requerida" }
+            ),
+            CampoFormulario(
+                key = "fechaFin",
+                label = "Fecha de Fin",
+                tipo = "date",
+                obligatorio = true,
+                rules = { v -> if (v.isNotEmpty()) null else "La fecha final es requerida" }
             )
         )
 
@@ -177,8 +193,7 @@ class CiclosFragment : Fragment() {
                 "anio" to it.anio.toString(),
                 "numero" to it.numero.toString(),
                 "fechaInicio" to it.fechaInicio,
-                "fechaFin" to it.fechaFin,
-                "estado" to it.estado
+                "fechaFin" to it.fechaFin
             )
         } ?: emptyMap()
 
@@ -187,14 +202,33 @@ class CiclosFragment : Fragment() {
             campos = campos,
             datosIniciales = datosIniciales,
             onGuardar = { datosMap ->
+                val anio = datosMap["anio"]?.toLongOrNull() ?: 0
+                val numero = datosMap["numero"]?.toLongOrNull() ?: 0
+                val fechaInicio = datosMap["fechaInicio"] ?: ""
+                val fechaFin = datosMap["fechaFin"] ?: ""
+                val estado = ciclo?.estado ?: "Inactivo"
+
+                // Validación básica de fechas
+                if (fechaInicio > fechaFin) {
+                    view?.let {
+                        Notificador.show(
+                            it,
+                            "La fecha de inicio debe ser anterior a la fecha final",
+                            R.color.colorError
+                        )
+                    }
+                    return@DialogFormularioFragment
+                }
+
                 val nuevoCiclo = Ciclo(
                     idCiclo = ciclo?.idCiclo ?: 0,
-                    anio = datosMap["anio"]?.toLongOrNull() ?: 0,
-                    numero = datosMap["numero"]?.toLongOrNull() ?: 0,
-                    fechaInicio = datosMap["fechaInicio"] ?: "",
-                    fechaFin = datosMap["fechaFin"] ?: "",
-                    estado = datosMap["estado"] ?: "INACTIVO"
+                    anio = anio,
+                    numero = numero,
+                    fechaInicio = fechaInicio,
+                    fechaFin = fechaFin,
+                    estado = estado
                 )
+
                 if (ciclo == null) {
                     viewModel.createCiclo(nuevoCiclo)
                 } else {
