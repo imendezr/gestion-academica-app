@@ -3,8 +3,8 @@ package com.example.gestionacademicaapp.ui.carreras
 import android.app.AlertDialog
 import android.app.Dialog
 import android.os.Bundle
-import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
@@ -40,14 +40,18 @@ class CarreraCursosFragment : DialogFragment() {
     private val viewModel: CarrerasViewModel by viewModels()
     private val cursosViewModel: CursosViewModel by viewModels()
     private val ciclosViewModel: CiclosViewModel by viewModels()
+
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: CarreraCursosAdapter
     private lateinit var fab: ExtendedFloatingActionButton
     private lateinit var progressBar: View
     private lateinit var tvTitle: TextView
+    private lateinit var dialogView: View
 
+    @Suppress("DEPRECATION")
     private val carrera: Carrera by lazy {
-        arguments?.getParcelable("carrera") ?: throw IllegalArgumentException("Carrera is required")
+        val result = arguments?.getParcelable<Carrera>("carrera")
+        requireNotNull(result) { "Carrera is required" }
     }
 
     private val cursosDisponibles = mutableListOf<Curso>()
@@ -55,14 +59,15 @@ class CarreraCursosFragment : DialogFragment() {
     private val carreraCursos = mutableListOf<CarreraCursoUI>()
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val view = LayoutInflater.from(context).inflate(R.layout.fragment_carrera_cursos, null)
+        val container = requireActivity().findViewById<ViewGroup>(android.R.id.content)
+        dialogView = layoutInflater.inflate(R.layout.fragment_carrera_cursos, container, false)
 
-        recyclerView = view.findViewById(R.id.recyclerViewCarreraCursos)
-        fab = view.findViewById(R.id.fabAddCurso)
-        progressBar = view.findViewById(R.id.progressBar)
-        tvTitle = view.findViewById(R.id.tvTitle)
+        recyclerView = dialogView.findViewById(R.id.recyclerViewCarreraCursos)
+        fab = dialogView.findViewById(R.id.fabAddCurso)
+        progressBar = dialogView.findViewById(R.id.progressBar)
+        tvTitle = dialogView.findViewById(R.id.tvTitle)
 
-        tvTitle.text = "Cursos de ${carrera.nombre}"
+        tvTitle.text = getString(R.string.titulo_cursos_de, carrera.nombre)
 
         adapter = CarreraCursosAdapter(
             onDelete = { carreraCurso ->
@@ -71,35 +76,16 @@ class CarreraCursosFragment : DialogFragment() {
                         viewModel.deleteCarreraCurso(carrera.idCarrera, carreraCurso.curso.idCurso)
                     } catch (e: Exception) {
                         Notificador.show(
-                            view = view,
+                            view = dialogView,
                             mensaje = "Error al eliminar: ${e.message}",
                             colorResId = R.color.colorError
                         )
                     }
                 }
             },
-            onReorder = { carreraCurso, newCiclo ->
-                val updatedCarreraCurso = CarreraCurso(
-                    idCarreraCurso = carreraCurso.idCarreraCurso,
-                    pkCarrera = carrera.idCarrera,
-                    pkCurso = carreraCurso.curso.idCurso,
-                    pkCiclo = newCiclo.idCiclo
-                )
-                lifecycleScope.launch {
-                    try {
-                        viewModel.updateCarreraCurso(updatedCarreraCurso)
-                    } catch (e: Exception) {
-                        Notificador.show(
-                            view = view,
-                            mensaje = "Error al reordenar: ${e.message}",
-                            colorResId = R.color.colorError
-                        )
-                    }
-                }
-            },
-            onReorderRequest = { carreraCurso -> mostrarDialogoReordenarCurso(carreraCurso) },
-            ciclosDisponibles = ciclosDisponibles
+            onReorderRequest = { carreraCurso -> mostrarDialogoReordenarCurso(carreraCurso) }
         )
+
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
@@ -120,7 +106,7 @@ class CarreraCursosFragment : DialogFragment() {
                     progressBar.isVisible = false
                     fab.isEnabled = true
                     Notificador.show(
-                        view = view,
+                        view = dialogView,
                         mensaje = state.data,
                         colorResId = R.color.colorAccent,
                         anchorView = fab
@@ -132,7 +118,7 @@ class CarreraCursosFragment : DialogFragment() {
                     progressBar.isVisible = false
                     fab.isEnabled = true
                     Notificador.show(
-                        view = view,
+                        view = dialogView,
                         mensaje = state.message,
                         colorResId = R.color.colorError
                     )
@@ -141,10 +127,13 @@ class CarreraCursosFragment : DialogFragment() {
         }
 
         return AlertDialog.Builder(requireContext())
-            .setView(view)
-            .setNegativeButton("Cerrar") { dialog, _ -> dialog.dismiss() }
+            .setView(dialogView)
             .create().also { dialog ->
                 dialog.window?.setBackgroundDrawableResource(R.drawable.bg_dialog_window)
+
+                dialogView.findViewById<TextView>(R.id.btnCerrar).setOnClickListener {
+                    dialog.dismiss()
+                }
             }
     }
 
@@ -174,7 +163,7 @@ class CarreraCursosFragment : DialogFragment() {
                         )
                         viewModel.updateCarreraCurso(updatedCarreraCurso)
                     } else {
-                        Notificador.show(requireView(), "Ciclo no encontrado", R.color.colorError)
+                        Notificador.show(dialogView, "Ciclo no encontrado", R.color.colorError)
                     }
                 }
             }
@@ -192,7 +181,7 @@ class CarreraCursosFragment : DialogFragment() {
                 }
 
                 is ListUiState.Error -> {
-                    Notificador.show(requireView(), state.message, R.color.colorError)
+                    Notificador.show(dialogView, state.message, R.color.colorError)
                 }
 
                 else -> {}
@@ -209,7 +198,7 @@ class CarreraCursosFragment : DialogFragment() {
                 }
 
                 is ListUiState.Error -> {
-                    Notificador.show(requireView(), state.message, R.color.colorError)
+                    Notificador.show(dialogView, state.message, R.color.colorError)
                 }
 
                 else -> {}
@@ -227,33 +216,35 @@ class CarreraCursosFragment : DialogFragment() {
                 carreraCursoRepository.listar().getOrNull() ?: emptyList()
             } catch (e: Exception) {
                 Notificador.show(
-                    requireView(),
+                    dialogView,
                     "Error al cargar cursos: ${e.message}",
                     R.color.colorError
                 )
                 emptyList()
             }
-            val cursosAsociados = mutableListOf<CarreraCursoUI>()
-            carreraCursosResponse
+
+            val cursosAsociados = carreraCursosResponse
                 .filter { it.pkCarrera == carrera.idCarrera }
-                .forEach { carreraCurso ->
+                .mapNotNull { carreraCurso ->
                     val curso = cursosDisponibles.find { it.idCurso == carreraCurso.pkCurso }
                     val ciclo = ciclosDisponibles.find { it.idCiclo == carreraCurso.pkCiclo }
-                    if (curso != null) {
-                        cursosAsociados.add(
-                            CarreraCursoUI(
-                                idCarreraCurso = carreraCurso.idCarreraCurso,
-                                carreraId = carrera.idCarrera,
-                                curso = curso,
-                                cicloId = carreraCurso.pkCiclo,
-                                ciclo = ciclo
-                            )
+                    curso?.let {
+                        CarreraCursoUI(
+                            idCarreraCurso = carreraCurso.idCarreraCurso,
+                            carreraId = carrera.idCarrera,
+                            curso = curso,
+                            cicloId = carreraCurso.pkCiclo,
+                            ciclo = ciclo
                         )
                     }
                 }
+
+            val cursosAsociadosUnicos = cursosAsociados.distinctBy { it.curso.idCurso }
+
             carreraCursos.clear()
-            carreraCursos.addAll(cursosAsociados)
-            adapter.updateCarreraCursos(carreraCursos)
+            carreraCursos.addAll(cursosAsociadosUnicos)
+            adapter.submitList(cursosAsociadosUnicos)
+
             progressBar.isVisible = false
         }
     }
@@ -264,7 +255,7 @@ class CarreraCursosFragment : DialogFragment() {
         }
         if (cursosNoAsociados.isEmpty()) {
             Notificador.show(
-                requireView(),
+                dialogView,
                 "No hay cursos disponibles para agregar",
                 R.color.colorError
             )
@@ -303,7 +294,7 @@ class CarreraCursosFragment : DialogFragment() {
                     )
                     viewModel.createCarreraCurso(nuevoCarreraCurso)
                 } else {
-                    Notificador.show(requireView(), "Datos inválidos", R.color.colorError)
+                    Notificador.show(dialogView, "Datos inválidos", R.color.colorError)
                 }
             }
         )

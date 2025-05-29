@@ -30,4 +30,8 @@
 
     <!-- Placeholder -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="label_ciclo">Ciclo: %1$s</string>
+    <string name="titulo_cursos_de">Cursos de %1$s</string>
+
 </resources>

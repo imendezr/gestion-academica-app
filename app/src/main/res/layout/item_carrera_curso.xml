@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -15,12 +14,14 @@
         android:orientation="horizontal"
         android:padding="16dp">
 
+        <!-- Zona izquierda -->
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical">
 
+            <!-- Título fijo arriba -->
             <TextView
                 android:id="@+id/tvNombre"
                 android:layout_width="wrap_content"
@@ -31,31 +32,50 @@
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/tvDescripcion"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:contentDescription="Ciclo del curso"
-                android:textColor="@color/colorTextSecondary"
-                android:textSize="15sp" />
+            <!-- Descripción centrada verticalmente -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvDescripcion"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:contentDescription="Ciclo del curso"
+                    android:textColor="@color/colorTextSecondary"
+                    android:textSize="15sp" />
+            </LinearLayout>
         </LinearLayout>
 
-        <ImageButton
-            android:id="@+id/btnReorder"
+        <!-- Zona derecha: botones con tamaño accesible -->
+        <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Reordenar curso"
-            android:src="@drawable/ic_reorder" />
+            android:layout_height="match_parent"
+            android:layout_marginStart="12dp"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="4dp">
 
-        <ImageButton
-            android:id="@+id/btnDelete"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Eliminar curso"
-            android:src="@drawable/ic_delete" />
+            <ImageButton
+                android:id="@+id/btnReorder"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginBottom="8dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Reordenar curso"
+                android:src="@drawable/ic_reorder"
+                card_view:tint="@color/colorTextPrimary" />
+
+            <ImageButton
+                android:id="@+id/btnDelete"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Eliminar curso"
+                android:src="@drawable/ic_delete"
+                card_view:tint="@color/colorTextPrimary" />
+        </LinearLayout>
     </LinearLayout>
 </androidx.cardview.widget.CardView>

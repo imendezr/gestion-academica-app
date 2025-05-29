@@ -5,31 +5,29 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.data.api.model.Ciclo
 import com.example.gestionacademicaapp.ui.carreras.model.CarreraCursoUI
 
 class CarreraCursosAdapter(
     private val onDelete: (CarreraCursoUI) -> Unit,
-    private val onReorder: (CarreraCursoUI, Ciclo) -> Unit,
-    private val onReorderRequest: (CarreraCursoUI) -> Unit,
-    private val ciclosDisponibles: List<Ciclo>
-) : RecyclerView.Adapter<CarreraCursosAdapter.CarreraCursoViewHolder>() {
-
-    private val carreraCursos: MutableList<CarreraCursoUI> = mutableListOf()
+    private val onReorderRequest: (CarreraCursoUI) -> Unit
+) : ListAdapter<CarreraCursoUI, CarreraCursosAdapter.CarreraCursoViewHolder>(DiffCallback) {
 
     inner class CarreraCursoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
-        val tvDescripcion: TextView = itemView.findViewById(R.id.tvDescripcion)
-        val btnDelete: ImageButton = itemView.findViewById(R.id.btnDelete)
-        val btnReorder: ImageButton = itemView.findViewById(R.id.btnReorder)
+        private val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
+        private val tvDescripcion: TextView = itemView.findViewById(R.id.tvDescripcion)
+        private val btnDelete: ImageButton = itemView.findViewById(R.id.btnDelete)
+        private val btnReorder: ImageButton = itemView.findViewById(R.id.btnReorder)
 
         fun bind(carreraCurso: CarreraCursoUI) {
             tvNombre.text = carreraCurso.curso.nombre
             val cicloText = carreraCurso.ciclo?.let { "${it.anio} - ${it.numero}" }
                 ?: "Ciclo: ${carreraCurso.cicloId}"
-            tvDescripcion.text = "Ciclo: $cicloText"
+            tvDescripcion.text = itemView.context.getString(R.string.label_ciclo, cicloText)
+
             btnDelete.setOnClickListener { onDelete(carreraCurso) }
             btnReorder.setOnClickListener { onReorderRequest(carreraCurso) }
         }
@@ -42,14 +40,24 @@ class CarreraCursosAdapter(
     }
 
     override fun onBindViewHolder(holder: CarreraCursoViewHolder, position: Int) {
-        holder.bind(carreraCursos[position])
+        holder.bind(getItem(position))
     }
 
-    override fun getItemCount(): Int = carreraCursos.size
+    companion object {
+        private val DiffCallback = object : DiffUtil.ItemCallback<CarreraCursoUI>() {
+            override fun areItemsTheSame(
+                oldItem: CarreraCursoUI,
+                newItem: CarreraCursoUI
+            ): Boolean {
+                return oldItem.idCarreraCurso == newItem.idCarreraCurso
+            }
 
-    fun updateCarreraCursos(newCarreraCursos: List<CarreraCursoUI>) {
-        carreraCursos.clear()
-        carreraCursos.addAll(newCarreraCursos)
-        notifyDataSetChanged() // Asegura que la UI se actualice
+            override fun areContentsTheSame(
+                oldItem: CarreraCursoUI,
+                newItem: CarreraCursoUI
+            ): Boolean {
+                return oldItem == newItem
+            }
+        }
     }
 }
