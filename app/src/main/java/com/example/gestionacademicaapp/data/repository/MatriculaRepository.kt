@@ -1,33 +1,38 @@
 package com.example.gestionacademicaapp.data.repository
 
-import android.content.Context
-import com.example.gestionacademicaapp.data.api.ApiClient
-import com.example.gestionacademicaapp.data.api.Endpoints
+import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Matricula
-import com.example.gestionacademicaapp.data.response.ApiResponse
+import jakarta.inject.Inject
+import retrofit2.HttpException
 
-class MatriculaRepository {
+class MatriculaRepository @Inject constructor(
+    private val apiService: ApiService
+) {
 
-    suspend fun listar(context: Context): ApiResponse<List<Matricula>> {
-        return ApiClient.get(context, Endpoints.MATRICULAS_ALL, Array<Matricula>::class.java).mapList()
+    suspend fun listar(): Result<List<Matricula>> = safeApiCall {
+        apiService.getAllMatriculas()
     }
 
-    suspend fun insertar(context: Context, matricula: Matricula): ApiResponse<Matricula> {
-        return ApiClient.post(context, Endpoints.MATRICULA_INSERT, matricula, Matricula::class.java)
+    suspend fun insertar(matricula: Matricula): Result<Unit> = safeApiCall {
+        val response = apiService.insertMatricula(matricula)
+        if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun modificar(context: Context, matricula: Matricula): ApiResponse<Matricula> {
-        return ApiClient.put(context, Endpoints.MATRICULA_UPDATE, matricula, Matricula::class.java)
+    suspend fun modificar(matricula: Matricula): Result<Unit> = safeApiCall {
+        val response = apiService.updateMatricula(matricula)
+        if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun eliminar(context: Context, id: Long): ApiResponse<Boolean> {
-        return ApiClient.delete(context, Endpoints.matriculaDelete(id.toInt()))
+    suspend fun eliminar(id: Long): Result<Unit> = safeApiCall {
+        val response = apiService.deleteMatricula(id)
+        if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    private inline fun <reified T> ApiResponse<Array<T>>.mapList(): ApiResponse<List<T>> {
-        return when (this) {
-            is ApiResponse.Success -> ApiResponse.success(this.data.toList())
-            is ApiResponse.Error -> this
+    private inline fun <T> safeApiCall(block: () -> T): Result<T> {
+        return try {
+            Result.success(block())
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

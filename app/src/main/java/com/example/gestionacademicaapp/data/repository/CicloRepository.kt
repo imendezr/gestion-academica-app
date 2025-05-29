@@ -1,41 +1,47 @@
 package com.example.gestionacademicaapp.data.repository
 
-import android.content.Context
-import com.example.gestionacademicaapp.data.api.ApiClient
-import com.example.gestionacademicaapp.data.api.Endpoints
+import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Ciclo
-import com.example.gestionacademicaapp.data.response.ApiResponse
+import jakarta.inject.Inject
+import retrofit2.HttpException
 
-class CicloRepository {
+class CicloRepository @Inject constructor(
+    private val apiService: ApiService
+) {
 
-    suspend fun listar(context: Context): ApiResponse<List<Ciclo>> {
-        return ApiClient.get(context, Endpoints.CICLOS_ALL, Array<Ciclo>::class.java).mapList()
+    suspend fun listar(): Result<List<Ciclo>> = safeApiCall {
+        apiService.getAllCiclos()
     }
 
-    suspend fun insertar(context: Context, ciclo: Ciclo): ApiResponse<Ciclo> {
-        return ApiClient.post(context, Endpoints.CICLO_INSERT, ciclo, Ciclo::class.java)
+    suspend fun insertar(ciclo: Ciclo): Result<Unit> = safeApiCall {
+        val response = apiService.insertCiclo(ciclo)
+        if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun modificar(context: Context, ciclo: Ciclo): ApiResponse<Ciclo> {
-        return ApiClient.put(context, Endpoints.CICLO_UPDATE, ciclo, Ciclo::class.java)
+    suspend fun modificar(ciclo: Ciclo): Result<Unit> = safeApiCall {
+        val response = apiService.updateCiclo(ciclo)
+        if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun eliminar(context: Context, id: Long): ApiResponse<Boolean> {
-        return ApiClient.delete(context, Endpoints.cicloDelete(id.toInt()))
+    suspend fun eliminar(id: Long): Result<Unit> = safeApiCall {
+        val response = apiService.deleteCiclo(id)
+        if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun buscarPorAnio(context: Context, anio: Int): ApiResponse<Ciclo> {
-        return ApiClient.get(context, Endpoints.cicloByAnio(anio), Ciclo::class.java)
+    suspend fun buscarPorAnio(anio: Int): Result<Ciclo> = safeApiCall {
+        apiService.getCicloByAnio(anio)
     }
 
-    suspend fun activar(context: Context, id: Long): ApiResponse<Boolean> {
-        return ApiClient.post(context, Endpoints.cicloActivate(id.toInt()), Any(), Boolean::class.java)
+    suspend fun activar(id: Long): Result<Unit> = safeApiCall {
+        val response = apiService.activateCiclo(id)
+        if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    private inline fun <reified T> ApiResponse<Array<T>>.mapList(): ApiResponse<List<T>> {
-        return when (this) {
-            is ApiResponse.Success -> ApiResponse.success(this.data.toList())
-            is ApiResponse.Error -> this
+    private inline fun <T> safeApiCall(block: () -> T): Result<T> {
+        return try {
+            Result.success(block())
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

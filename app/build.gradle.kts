@@ -42,6 +42,9 @@ android {
 }
 
 dependencies {
+    implementation(libs.retrofit)
+    implementation(libs.okhttp.logging)
+    implementation(libs.converter.gson)
     implementation(libs.hilt.android)
     ksp(libs.hilt.android.compiler)
     implementation(libs.gson)

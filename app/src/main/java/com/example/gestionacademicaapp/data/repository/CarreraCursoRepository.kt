@@ -1,22 +1,36 @@
 package com.example.gestionacademicaapp.data.repository
 
-import android.content.Context
-import com.example.gestionacademicaapp.data.api.ApiClient
-import com.example.gestionacademicaapp.data.api.Endpoints
-import com.example.gestionacademicaapp.data.api.model.CarreraCurso
-import com.example.gestionacademicaapp.data.response.ApiResponse
+import com.example.gestionacademicaapp.data.api.ApiService
+import jakarta.inject.Inject
+import retrofit2.HttpException
 
-class CarreraCursoRepository {
+class CarreraCursoRepository @Inject constructor(
+    private val apiService: ApiService
+) {
 
-    suspend fun insertar(context: Context, idCarrera: Long, idCurso: Long, idCiclo: Long): ApiResponse<CarreraCurso> {
-        return ApiClient.post(context, Endpoints.addCursoToCarrera(idCarrera.toInt(), idCurso.toInt(), idCiclo.toInt()), Any(), CarreraCurso::class.java)
-    }
+    suspend fun insertar(idCarrera: Long, idCurso: Long, idCiclo: Long): Result<Unit> =
+        safeApiCall {
+            val response = apiService.addCursoToCarrera(idCarrera, idCurso, idCiclo)
+            if (response.isSuccessful) Unit else throw HttpException(response)
+        }
 
-    suspend fun eliminar(context: Context, idCarrera: Long, idCurso: Long): ApiResponse<Boolean> {
-        return ApiClient.delete(context, Endpoints.removeCursoFromCarrera(idCarrera.toInt(), idCurso.toInt()))
-    }
+    suspend fun eliminar(idCarrera: Long, idCurso: Long): Result<Unit> =
+        safeApiCall {
+            val response = apiService.removeCursoFromCarrera(idCarrera, idCurso)
+            if (response.isSuccessful) Unit else throw HttpException(response)
+        }
 
-    suspend fun modificarOrden(context: Context, idCarrera: Long, idCurso: Long, nuevoIdCiclo: Long): ApiResponse<CarreraCurso> {
-        return ApiClient.put(context, Endpoints.updateCursoOrden(idCarrera.toInt(), idCurso.toInt(), nuevoIdCiclo.toInt()), Any(), CarreraCurso::class.java)
+    suspend fun modificarOrden(idCarrera: Long, idCurso: Long, nuevoIdCiclo: Long): Result<Unit> =
+        safeApiCall {
+            val response = apiService.updateCursoOrden(idCarrera, idCurso, nuevoIdCiclo)
+            if (response.isSuccessful) Unit else throw HttpException(response)
+        }
+
+    private inline fun <T> safeApiCall(block: () -> T): Result<T> {
+        return try {
+            Result.success(block())
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

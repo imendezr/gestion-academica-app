@@ -1,48 +1,52 @@
 package com.example.gestionacademicaapp.data.repository
 
-import android.content.Context
-import com.example.gestionacademicaapp.data.api.ApiClient
-import com.example.gestionacademicaapp.data.api.Endpoints
-import com.example.gestionacademicaapp.data.api.model.Curso
+import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Grupo
 import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
 import com.example.gestionacademicaapp.data.api.model.dto.GrupoDto
-import com.example.gestionacademicaapp.data.response.ApiResponse
+import jakarta.inject.Inject
+import retrofit2.HttpException
 
-class GrupoRepository {
+class GrupoRepository @Inject constructor(
+    private val apiService: ApiService
+) {
 
-    suspend fun listar(context: Context): ApiResponse<List<Grupo>> {
-        return ApiClient.get(context, Endpoints.GRUPOS_ALL, Array<Grupo>::class.java).mapList()
+    suspend fun listar(): Result<List<Grupo>> = safeApiCall {
+        apiService.getAllGrupos()
     }
 
-    suspend fun insertar(context: Context, grupo: Grupo): ApiResponse<Grupo> {
-        return ApiClient.post(context, Endpoints.GRUPO_INSERT, grupo, Grupo::class.java)
+    suspend fun insertar(grupo: Grupo): Result<Unit> = safeApiCall {
+        val response = apiService.insertGrupo(grupo)
+        if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun modificar(context: Context, grupo: Grupo): ApiResponse<Grupo> {
-        return ApiClient.put(context, Endpoints.GRUPO_UPDATE, grupo, Grupo::class.java)
+    suspend fun modificar(grupo: Grupo): Result<Unit> = safeApiCall {
+        val response = apiService.updateGrupo(grupo)
+        if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun eliminar(context: Context, id: Long): ApiResponse<Boolean> {
-        return ApiClient.delete(context, Endpoints.grupoDelete(id.toInt()))
+    suspend fun eliminar(id: Long): Result<Unit> = safeApiCall {
+        val response = apiService.deleteGrupo(id)
+        if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun cursosPorCarreraYCiclo(context: Context, idCarrera: Long, idCiclo: Long): ApiResponse<List<CursoDto>> {
-        return ApiClient.get(context, Endpoints.cursosByCarreraAndCiclo(idCarrera, idCiclo), Array<CursoDto>::class.java).mapList()
+    suspend fun cursosPorCarreraYCiclo(
+        idCarrera: Long,
+        idCiclo: Long
+    ): Result<List<CursoDto>> = safeApiCall {
+        apiService.getCursosByCarreraAndCiclo(idCarrera, idCiclo)
     }
 
-    suspend fun gruposPorCarreraCurso(context: Context, idCarrera: Long, idCurso: Long): ApiResponse<List<GrupoDto>> {
-        return ApiClient.get(
-            context,
-            Endpoints.gruposByCarreraCurso(idCarrera, idCurso),
-            Array<GrupoDto>::class.java
-        ).mapList()
-    }
+    suspend fun gruposPorCarreraCurso(idCarrera: Long, idCurso: Long): Result<List<GrupoDto>> =
+        safeApiCall {
+            apiService.getGruposByCarreraCurso(idCarrera, idCurso)
+        }
 
-    private inline fun <reified T> ApiResponse<Array<T>>.mapList(): ApiResponse<List<T>> {
-        return when (this) {
-            is ApiResponse.Success -> ApiResponse.success(this.data.toList())
-            is ApiResponse.Error -> this
+    private inline fun <T> safeApiCall(block: () -> T): Result<T> {
+        return try {
+            Result.success(block())
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }
