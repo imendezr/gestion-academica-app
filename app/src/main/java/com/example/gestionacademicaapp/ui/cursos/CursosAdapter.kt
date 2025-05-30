@@ -3,32 +3,32 @@ package com.example.gestionacademicaapp.ui.cursos
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Filter
-import android.widget.Filterable
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Curso
 
 class CursosAdapter(
-    private val onEdit: (Curso, Int) -> Unit,
-    private val onDelete: (Curso, Int) -> Unit
-) : RecyclerView.Adapter<CursosAdapter.CursoViewHolder>(), Filterable {
-
-    private val cursos: MutableList<Curso> = mutableListOf()
-    private var cursosFiltrados: MutableList<Curso> = mutableListOf()
+    private val onEdit: (Curso) -> Unit,
+    private val onDelete: (Curso) -> Unit
+) : ListAdapter<Curso, CursosAdapter.CursoViewHolder>(DiffCallback) {
 
     inner class CursoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
-        val tvDescripcion: TextView = itemView.findViewById(R.id.tvDescripcion)
+        private val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
+        private val tvDescripcion: TextView = itemView.findViewById(R.id.tvDescripcion)
 
-        init {
-            itemView.setOnClickListener {
-                val position = adapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    onEdit(cursosFiltrados[position], position)
-                }
-            }
+        fun bind(curso: Curso) {
+            tvNombre.text = curso.nombre
+            tvDescripcion.text = itemView.context.getString(
+                R.string.label_curso_detalle,
+                curso.codigo,
+                curso.creditos,
+                curso.horasSemanales
+            )
+
+            itemView.setOnClickListener { onEdit(curso) }
         }
     }
 
@@ -39,63 +39,22 @@ class CursosAdapter(
     }
 
     override fun onBindViewHolder(holder: CursoViewHolder, position: Int) {
-        val curso = cursosFiltrados[position]
-        holder.tvNombre.text = curso.nombre
-        holder.tvDescripcion.text =
-            "Código: ${curso.codigo} · Créditos: ${curso.creditos} · Horas: ${curso.horasSemanales}"
-    }
-
-    override fun getItemCount(): Int = cursosFiltrados.size
-
-    fun updateCursos(newCursos: List<Curso>) {
-        cursos.clear()
-        cursos.addAll(newCursos)
-        // Restaurar la lista filtrada al actualizar
-        cursosFiltrados.clear()
-        cursosFiltrados.addAll(newCursos)
-        notifyDataSetChanged()
-    }
-
-    fun restoreFilteredList() {
-        // Restaurar la lista filtrada a la lista completa
-        cursosFiltrados.clear()
-        cursosFiltrados.addAll(cursos)
-        notifyDataSetChanged()
-    }
-
-    override fun getFilter(): Filter {
-        return object : Filter() {
-            override fun performFiltering(constraint: CharSequence?): FilterResults {
-                val filtro = constraint?.toString()?.lowercase() ?: ""
-                val resultados = if (filtro.isEmpty()) {
-                    cursos.toList()
-                } else {
-                    cursos.filter {
-                        it.nombre.lowercase().contains(filtro) ||
-                                it.codigo.lowercase().contains(filtro)
-                    }
-                }
-                return FilterResults().apply { values = resultados }
-            }
-
-            override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-                cursosFiltrados =
-                    (results?.values as? List<Curso>)?.toMutableList() ?: mutableListOf()
-                notifyDataSetChanged()
-            }
-        }
+        holder.bind(getItem(position))
     }
 
     fun onSwipeDelete(position: Int) {
-        val curso = cursosFiltrados[position]
-        onDelete(curso, position)
+        onDelete(getItem(position))
     }
 
-    fun triggerEdit(curso: Curso, position: Int) {
-        onEdit(curso, position)
-    }
+    fun getCursoAt(position: Int): Curso = getItem(position)
 
-    fun getCursoAt(position: Int): Curso {
-        return cursosFiltrados[position]
+    companion object {
+        private val DiffCallback = object : DiffUtil.ItemCallback<Curso>() {
+            override fun areItemsTheSame(oldItem: Curso, newItem: Curso): Boolean =
+                oldItem.idCurso == newItem.idCurso
+
+            override fun areContentsTheSame(oldItem: Curso, newItem: Curso): Boolean =
+                oldItem == newItem
+        }
     }
 }

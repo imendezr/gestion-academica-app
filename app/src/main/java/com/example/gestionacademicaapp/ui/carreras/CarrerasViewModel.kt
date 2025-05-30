@@ -32,7 +32,7 @@ class CarrerasViewModel @Inject constructor(
         fetchCarreras()
     }
 
-    fun fetchCarreras() {
+    private fun fetchCarreras() {
         viewModelScope.launch {
             _carrerasState.value = ListUiState.Loading
             carreraRepository.listar()
@@ -68,12 +68,25 @@ class CarrerasViewModel @Inject constructor(
     fun deleteCarrera(id: Long) {
         viewModelScope.launch {
             _actionState.value = SingleUiState.Loading
+
+            // Validación antes de eliminar
+            val tieneCursos = carreraCursoRepository.listar().getOrNull()
+                ?.any { it.pkCarrera == id } == true
+
+            if (tieneCursos) {
+                _actionState.value =
+                    SingleUiState.Error("No se puede eliminar una carrera con cursos asignados.")
+                return@launch
+            }
+
             carreraRepository.eliminar(id)
                 .onSuccess {
                     fetchCarreras()
                     _actionState.value = SingleUiState.Success("Carrera eliminada exitosamente")
                 }
-                .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
+                .onFailure {
+                    _actionState.value = SingleUiState.Error(it.toUserMessage())
+                }
         }
     }
 

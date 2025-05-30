@@ -30,12 +30,12 @@ class CursosFragment : Fragment() {
     private lateinit var adapter: CursosAdapter
     private lateinit var fab: ExtendedFloatingActionButton
     private lateinit var progressBar: View
-    private var currentSearchQuery: String? = null // Para almacenar la consulta actual
+
+    private var currentSearchQuery: String? = null
+    private var cursosOriginal: List<Curso> = emptyList()
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         val view = inflater.inflate(R.layout.fragment_cursos, container, false)
 
@@ -44,32 +44,29 @@ class CursosFragment : Fragment() {
         fab = view.findViewById(R.id.fabCursos)
         progressBar = view.findViewById(R.id.progressBar)
 
-        // Configurar SearchView
+        // SearchView
         searchView.isIconified = false
         searchView.clearFocus()
-        searchView.requestFocus()
+        searchView.queryHint = getString(R.string.search_hint_codigo_nombre)
 
-        // Configurar RecyclerView y Adapter
         adapter = CursosAdapter(
-            onEdit = { curso, _ -> mostrarDialogoCurso(curso) },
-            onDelete = { curso, _ -> viewModel.deleteCurso(curso.idCurso) }
+            onEdit = { curso -> mostrarDialogoCurso(curso) },
+            onDelete = { curso -> viewModel.deleteCurso(curso.idCurso) }
         )
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        // Configurar búsqueda
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?) = false
             override fun onQueryTextChange(newText: String?): Boolean {
                 currentSearchQuery = newText
-                adapter.filter.filter(newText)
-                return false
+                filtrarLista(newText)
+                return true
             }
         })
 
-        // Configurar FAB
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
                 if (dy > 10 && fab.isExtended) fab.shrink()
                 else if (dy < -10 && !fab.isExtended) fab.extend()
             }
@@ -81,18 +78,11 @@ class CursosFragment : Fragment() {
             mostrarDialogoCurso(null)
         }
 
-        // Configurar deslizamiento para eliminar/editar usando la función de extensión
         recyclerView.enableSwipeActions(
-            onSwipeLeft = { position ->
-                adapter.onSwipeDelete(position)
-            },
-            onSwipeRight = { position ->
-                val curso = adapter.getCursoAt(position)
-                adapter.triggerEdit(curso, position)
-            }
+            onSwipeLeft = { pos -> adapter.onSwipeDelete(pos) },
+            onSwipeRight = { pos -> mostrarDialogoCurso(adapter.getCursoAt(pos)) }
         )
 
-        // Observar estados del ViewModel
         viewModel.cursosState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ListUiState.Loading -> {
@@ -103,8 +93,8 @@ class CursosFragment : Fragment() {
                 is ListUiState.Success -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = true
-                    adapter.updateCursos(state.data)
-                    currentSearchQuery?.let { adapter.filter.filter(it) }
+                    cursosOriginal = state.data
+                    filtrarLista(currentSearchQuery)
                 }
 
                 is ListUiState.Error -> {
@@ -125,7 +115,6 @@ class CursosFragment : Fragment() {
                 is SingleUiState.Success -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
-
                     val color = when {
                         state.data.contains("creado", true) ||
                                 state.data.contains("actualizado", true) -> R.color.colorAccent
@@ -133,13 +122,7 @@ class CursosFragment : Fragment() {
                         state.data.contains("eliminado", true) -> R.color.colorError
                         else -> R.color.colorPrimary
                     }
-
-                    Notificador.show(
-                        view = requireView(),
-                        mensaje = state.data,
-                        colorResId = color,
-                        anchorView = fab
-                    )
+                    Notificador.show(requireView(), state.data, color, anchorView = fab)
                 }
 
                 is SingleUiState.Error -> {
@@ -153,10 +136,26 @@ class CursosFragment : Fragment() {
         return view
     }
 
+    private fun filtrarLista(query: String?) {
+        val texto = query?.lowercase()?.trim() ?: ""
+        if (texto.isEmpty()) {
+            adapter.submitList(cursosOriginal)
+        } else {
+            val filtrados = cursosOriginal.filter {
+                it.nombre.lowercase().contains(texto) ||
+                        it.codigo.lowercase().contains(texto)
+            }
+            adapter.submitList(filtrados)
+        }
+    }
+
     private fun mostrarDialogoCurso(curso: Curso?) {
         val campos = listOf(
             CampoFormulario(
-                "codigo", "Código", "texto", obligatorio = true,
+                "codigo",
+                "Código",
+                "texto",
+                obligatorio = true,
                 editable = curso == null
             ),
             CampoFormulario("nombre", "Nombre", "texto", obligatorio = true),
@@ -173,6 +172,9 @@ class CursosFragment : Fragment() {
             )
         } ?: emptyMap()
 
+        val cursoIndex =
+            curso?.let { cursosOriginal.indexOfFirst { c -> c.idCurso == it.idCurso } } ?: -1
+
         val dialog = DialogFormularioFragment(
             titulo = if (curso == null) "Nuevo Curso" else "Editar Curso",
             campos = campos,
@@ -186,15 +188,13 @@ class CursosFragment : Fragment() {
                     horasSemanales = datosMap["horasSemanales"]?.toLongOrNull() ?: 0
                 )
 
-                if (curso == null) {
-                    viewModel.createCurso(nuevoCurso)
-                } else {
-                    viewModel.updateCurso(nuevoCurso)
-                }
+                if (curso == null) viewModel.createCurso(nuevoCurso)
+                else viewModel.updateCurso(nuevoCurso)
             },
             onCancel = {
-                adapter.restoreFilteredList()
-                currentSearchQuery?.let { adapter.filter.filter(it) }
+                if (cursoIndex != -1) {
+                    adapter.notifyItemChanged(cursoIndex)
+                }
             }
         )
 

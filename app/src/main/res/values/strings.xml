@@ -1,17 +1,17 @@
 <resources>
+
+    <!-- Nombre de la aplicación -->
     <string name="app_name">Gestión Académica</string>
+
+    <!-- Navegación (Drawer y Toolbar) -->
     <string name="navigation_drawer_open">Abrir menú de navegación</string>
     <string name="navigation_drawer_close">Cerrar menú de navegación</string>
-
-    <!-- Encabezado del Navigation Drawer -->
     <string name="nav_header_title">Gestión Académica</string>
     <string name="nav_header_subtitle">Bienvenido al sistema</string>
     <string name="nav_header_desc">Encabezado de navegación</string>
-
-    <!-- Menú superior -->
     <string name="action_settings">Configuración</string>
 
-    <!-- Títulos de fragmentos -->
+    <!-- Menú principal (Navigation Drawer) -->
     <string name="menu_inicio">Inicio</string>
     <string name="menu_cursos">Cursos</string>
     <string name="menu_carreras">Carreras</string>
@@ -25,13 +25,23 @@
     <string name="menu_historial">Historial Académico</string>
     <string name="menu_perfil">Editar Perfil</string>
 
-    <!-- Botón flotante genérico -->
+    <!-- Botones -->
     <string name="fab_agregar">Agregar elemento</string>
 
-    <!-- Placeholder -->
+    <!-- Placeholders o textos temporales -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
+    <!-- Etiquetas y descripciones de UI -->
     <string name="label_ciclo">Ciclo: %1$s</string>
+    <string name="label_ciclo_nombre">%1$d - %2$d</string>
+    <string name="label_ciclo_detalle">Inicio: %1$s · Fin: %2$s · Estado: %3$s</string>
+    <string name="label_curso_detalle">Código: %1$s · Créditos: %2$d · Horas: %3$d</string>
+    <string name="descripcion_carrera">Código: %1$s · Título: %2$s</string>
     <string name="titulo_cursos_de">Cursos de %1$s</string>
+    <string name="desc_activar_ciclo">Activar ciclo</string>
+
+    <!-- Textos de ayuda para búsqueda -->
+    <string name="search_hint_anio">Buscar por año</string>
+    <string name="search_hint_codigo_nombre">Buscar por código o nombre</string>
 
 </resources>

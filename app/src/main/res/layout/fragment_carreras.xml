@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Título -->
+    <!-- Buscador -->
     <androidx.appcompat.widget.SearchView
         android:id="@+id/searchViewCarreras"
         android:layout_width="match_parent"
@@ -16,7 +16,7 @@
         android:iconifiedByDefault="false"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
-        android:queryHint="Buscar carreras" />
+        android:queryHint="@string/search_hint_codigo_nombre" />
 
     <!-- Lista y progress -->
     <FrameLayout
@@ -45,7 +45,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingTop="8dp">
 
         <View
             android:layout_width="0dp"

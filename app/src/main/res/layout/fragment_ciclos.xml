@@ -40,11 +40,12 @@
             android:visibility="gone" />
     </FrameLayout>
 
-    <!-- FAB a la derecha -->
+    <!-- FAB a la derecha con margen superior -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:paddingTop="8dp">
 
         <View
             android:layout_width="0dp"

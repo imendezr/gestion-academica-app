@@ -3,42 +3,49 @@ package com.example.gestionacademicaapp.ui.ciclos
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Filter
-import android.widget.Filterable
 import android.widget.ImageButton
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Ciclo
 import com.example.gestionacademicaapp.utils.isVisible
 
 class CiclosAdapter(
-    private val onEdit: (Ciclo, Int) -> Unit,
-    private val onDelete: (Ciclo, Int) -> Unit,
+    private val onEdit: (Ciclo) -> Unit,
+    private val onDelete: (Ciclo) -> Unit,
     private val onActivate: (Ciclo) -> Unit
-) : RecyclerView.Adapter<CiclosAdapter.CicloViewHolder>(), Filterable {
-
-    private val ciclos: MutableList<Ciclo> = mutableListOf()
-    private var ciclosFiltrados: MutableList<Ciclo> = mutableListOf()
+) : ListAdapter<Ciclo, CiclosAdapter.CicloViewHolder>(DiffCallback) {
 
     inner class CicloViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
-        val tvDescripcion: TextView = itemView.findViewById(R.id.tvDescripcion)
-        val btnActivate: ImageButton = itemView.findViewById(R.id.btnActivate)
+        private val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
+        private val tvDescripcion: TextView = itemView.findViewById(R.id.tvDescripcion)
+        private val btnActivate: ImageButton = itemView.findViewById(R.id.btnActivate)
 
-        init {
-            itemView.setOnClickListener {
-                val position = adapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    onEdit(ciclosFiltrados[position], position)
-                }
+        fun bind(ciclo: Ciclo) {
+            tvNombre.text =
+                itemView.context.getString(R.string.label_ciclo_nombre, ciclo.anio, ciclo.numero)
+            tvDescripcion.text = itemView.context.getString(
+                R.string.label_ciclo_detalle,
+                ciclo.fechaInicio,
+                ciclo.fechaFin,
+                ciclo.estado
+            )
+
+            btnActivate.isVisible = true
+            btnActivate.setImageResource(
+                if (ciclo.estado.equals("ACTIVO", ignoreCase = true)) R.drawable.ic_active
+                else R.drawable.ic_activate
+            )
+            btnActivate.contentDescription = itemView.context.getString(R.string.desc_activar_ciclo)
+
+            btnActivate.setOnClickListener(null)
+            if (!ciclo.estado.equals("ACTIVO", ignoreCase = true)) {
+                btnActivate.setOnClickListener { onActivate(ciclo) }
             }
-            btnActivate.setOnClickListener {
-                val position = adapterPosition
-                if (position != RecyclerView.NO_POSITION) {
-                    onActivate(ciclosFiltrados[position])
-                }
-            }
+
+            itemView.setOnClickListener { onEdit(ciclo) }
         }
     }
 
@@ -49,73 +56,22 @@ class CiclosAdapter(
     }
 
     override fun onBindViewHolder(holder: CicloViewHolder, position: Int) {
-        val ciclo = ciclosFiltrados[position]
-        holder.tvNombre.text = "${ciclo.anio} - ${ciclo.numero}"
-        holder.tvDescripcion.text =
-            "Inicio: ${ciclo.fechaInicio} · Fin: ${ciclo.fechaFin} · Estado: ${ciclo.estado}"
-
-        holder.btnActivate.isVisible = true
-
-        if (ciclo.estado.equals("ACTIVO", ignoreCase = true)) {
-            holder.btnActivate.setImageResource(R.drawable.ic_active)
-            holder.btnActivate.setOnClickListener(null)
-        } else {
-            holder.btnActivate.setImageResource(R.drawable.ic_activate)
-            holder.btnActivate.setOnClickListener {
-                val pos = holder.adapterPosition
-                if (pos != RecyclerView.NO_POSITION) {
-                    onActivate(ciclosFiltrados[pos])
-                }
-            }
-        }
-    }
-
-    override fun getItemCount(): Int = ciclosFiltrados.size
-
-    fun updateCiclos(newCiclos: List<Ciclo>) {
-        ciclos.clear()
-        ciclos.addAll(newCiclos)
-        ciclosFiltrados.clear()
-        ciclosFiltrados.addAll(newCiclos)
-        notifyDataSetChanged()
-    }
-
-    fun restoreFilteredList() {
-        ciclosFiltrados.clear()
-        ciclosFiltrados.addAll(ciclos)
-        notifyDataSetChanged()
-    }
-
-    override fun getFilter(): Filter {
-        return object : Filter() {
-            override fun performFiltering(constraint: CharSequence?): FilterResults {
-                val filtro = constraint?.toString()?.lowercase() ?: ""
-                val resultados = if (filtro.isEmpty()) {
-                    ciclos.toList()
-                } else {
-                    ciclos.filter { it.anio.toString().contains(filtro) }
-                }
-                return FilterResults().apply { values = resultados }
-            }
-
-            override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-                ciclosFiltrados =
-                    (results?.values as? List<Ciclo>)?.toMutableList() ?: mutableListOf()
-                notifyDataSetChanged()
-            }
-        }
+        holder.bind(getItem(position))
     }
 
     fun onSwipeDelete(position: Int) {
-        val ciclo = ciclosFiltrados[position]
-        onDelete(ciclo, position)
+        onDelete(getItem(position))
     }
 
-    fun triggerEdit(ciclo: Ciclo, position: Int) {
-        onEdit(ciclo, position)
-    }
+    fun getCicloAt(position: Int): Ciclo = getItem(position)
 
-    fun getCicloAt(position: Int): Ciclo {
-        return ciclosFiltrados[position]
+    companion object {
+        private val DiffCallback = object : DiffUtil.ItemCallback<Ciclo>() {
+            override fun areItemsTheSame(oldItem: Ciclo, newItem: Ciclo): Boolean =
+                oldItem.idCiclo == newItem.idCiclo
+
+            override fun areContentsTheSame(oldItem: Ciclo, newItem: Ciclo): Boolean =
+                oldItem == newItem
+        }
     }
 }

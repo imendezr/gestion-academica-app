@@ -30,7 +30,7 @@ class CarrerasFragment : Fragment() {
     private lateinit var adapter: CarrerasAdapter
     private lateinit var fab: ExtendedFloatingActionButton
     private lateinit var progressBar: View
-    private var currentSearchQuery: String? = null
+    private var allCarreras: List<Carrera> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,43 +41,45 @@ class CarrerasFragment : Fragment() {
 
         recyclerView = view.findViewById(R.id.recyclerViewCarreras)
         searchView = view.findViewById(R.id.searchViewCarreras)
+        searchView = view.findViewById(R.id.searchViewCarreras)
+        searchView.queryHint = getString(R.string.search_hint_codigo_nombre)
         fab = view.findViewById(R.id.fabCarreras)
         progressBar = view.findViewById(R.id.progressBar)
 
-        // Configurar SearchView
-        searchView.isIconified = false
-        searchView.clearFocus()
-        searchView.requestFocus()
-
-        // Configurar RecyclerView y Adapter
+        // Configurar RecyclerView
         adapter = CarrerasAdapter(
-            onEdit = { carrera, _ -> mostrarDialogoCarrera(carrera) },
-            onDelete = { carrera, _ -> viewModel.deleteCarrera(carrera.idCarrera) },
+            onEdit = { carrera -> mostrarDialogoCarrera(carrera) },
             onViewCursos = { carrera ->
-                val fragment = CarreraCursosFragment().apply {
+                CarreraCursosFragment().apply {
                     arguments = Bundle().apply {
                         putParcelable("carrera", carrera)
                     }
-                }
-                fragment.show(parentFragmentManager, "CarreraCursosFragment")
+                }.show(parentFragmentManager, "CarreraCursosFragment")
             }
         )
+
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        // Configurar búsqueda
+        // Buscar
+        searchView.isIconified = false
+        searchView.clearFocus()
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?) = false
             override fun onQueryTextChange(newText: String?): Boolean {
-                currentSearchQuery = newText
-                adapter.filter.filter(newText)
-                return false
+                val query = newText.orEmpty().trim().lowercase()
+                val resultados = allCarreras.filter {
+                    it.nombre.lowercase().contains(query) ||
+                            it.codigo.lowercase().contains(query)
+                }
+                adapter.submitList(resultados)
+                return true
             }
         })
 
-        // Configurar FAB
+        // FAB animado
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
                 if (dy > 10 && fab.isExtended) fab.shrink()
                 else if (dy < -10 && !fab.isExtended) fab.extend()
             }
@@ -89,18 +91,25 @@ class CarrerasFragment : Fragment() {
             mostrarDialogoCarrera(null)
         }
 
-        // Configurar deslizamiento para eliminar/editar
+        // Swipe para eliminar y editar
         recyclerView.enableSwipeActions(
             onSwipeLeft = { position ->
-                adapter.onSwipeDelete(position)
+                val carrera = adapter.getCarreraAt(position)
+                viewModel.deleteCarrera(carrera.idCarrera)
+
+                // Restaurar visualmente el ítem si la eliminación falla
+                recyclerView.postDelayed({
+                    if (!recyclerView.isComputingLayout) {
+                        adapter.notifyItemChanged(position)
+                    }
+                }, 300)
             },
             onSwipeRight = { position ->
-                val carrera = adapter.getCarreraAt(position)
-                adapter.triggerEdit(carrera, position)
+                mostrarDialogoCarrera(adapter.getCarreraAt(position))
             }
         )
 
-        // Observar estados del ViewModel
+        // Observar estado de carreras
         viewModel.carrerasState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ListUiState.Loading -> {
@@ -111,8 +120,8 @@ class CarrerasFragment : Fragment() {
                 is ListUiState.Success -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = true
-                    adapter.updateCarreras(state.data)
-                    currentSearchQuery?.let { adapter.filter.filter(it) }
+                    allCarreras = state.data
+                    adapter.submitList(allCarreras)
                 }
 
                 is ListUiState.Error -> {
@@ -123,6 +132,7 @@ class CarrerasFragment : Fragment() {
             }
         }
 
+        // Acción de feedback
         viewModel.actionState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is SingleUiState.Loading -> {
@@ -133,21 +143,14 @@ class CarrerasFragment : Fragment() {
                 is SingleUiState.Success -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
-
                     val color = when {
+                        state.data.contains("eliminada", true) -> R.color.colorError
                         state.data.contains("creada", true) ||
                                 state.data.contains("actualizada", true) -> R.color.colorAccent
 
-                        state.data.contains("eliminada", true) -> R.color.colorError
                         else -> R.color.colorPrimary
                     }
-
-                    Notificador.show(
-                        view = requireView(),
-                        mensaje = state.data,
-                        colorResId = color,
-                        anchorView = fab
-                    )
+                    Notificador.show(requireView(), state.data, color, anchorView = fab)
                 }
 
                 is SingleUiState.Error -> {
@@ -162,9 +165,16 @@ class CarrerasFragment : Fragment() {
     }
 
     private fun mostrarDialogoCarrera(carrera: Carrera?) {
+        val carreraIndex = carrera?.let {
+            allCarreras.indexOfFirst { it.idCarrera == carrera.idCarrera }
+        } ?: -1
+
         val campos = listOf(
             CampoFormulario(
-                "codigo", "Código", "texto", obligatorio = true,
+                "codigo",
+                "Código",
+                "texto",
+                obligatorio = true,
                 editable = carrera == null
             ),
             CampoFormulario("nombre", "Nombre", "texto", obligatorio = true),
@@ -172,11 +182,7 @@ class CarrerasFragment : Fragment() {
         )
 
         val datosIniciales = carrera?.let {
-            mapOf(
-                "codigo" to it.codigo,
-                "nombre" to it.nombre,
-                "titulo" to it.titulo
-            )
+            mapOf("codigo" to it.codigo, "nombre" to it.nombre, "titulo" to it.titulo)
         } ?: emptyMap()
 
         val dialog = DialogFormularioFragment(
@@ -190,15 +196,13 @@ class CarrerasFragment : Fragment() {
                     nombre = datosMap["nombre"] ?: "",
                     titulo = datosMap["titulo"] ?: ""
                 )
-                if (carrera == null) {
-                    viewModel.createCarrera(nuevaCarrera)
-                } else {
-                    viewModel.updateCarrera(nuevaCarrera)
-                }
+                if (carrera == null) viewModel.createCarrera(nuevaCarrera)
+                else viewModel.updateCarrera(nuevaCarrera)
             },
             onCancel = {
-                adapter.restoreFilteredList()
-                currentSearchQuery?.let { adapter.filter.filter(it) }
+                if (carreraIndex != -1) {
+                    adapter.notifyItemChanged(carreraIndex)
+                }
             }
         )
 

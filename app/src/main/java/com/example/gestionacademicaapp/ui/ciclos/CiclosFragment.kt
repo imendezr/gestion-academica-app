@@ -30,12 +30,10 @@ class CiclosFragment : Fragment() {
     private lateinit var adapter: CiclosAdapter
     private lateinit var fab: ExtendedFloatingActionButton
     private lateinit var progressBar: View
-    private var currentSearchQuery: String? = null
+    private var ciclosOriginal: List<Ciclo> = emptyList()
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         val view = inflater.inflate(R.layout.fragment_ciclos, container, false)
 
@@ -44,34 +42,29 @@ class CiclosFragment : Fragment() {
         fab = view.findViewById(R.id.fabCiclos)
         progressBar = view.findViewById(R.id.progressBar)
 
-        // Configurar SearchView
+        // SearchView configuración
         searchView.isIconified = false
         searchView.clearFocus()
-        searchView.requestFocus()
-        searchView.queryHint = "Buscar por año"
+        searchView.queryHint = getString(R.string.search_hint_anio)
 
-        // Configurar RecyclerView y Adapter
         adapter = CiclosAdapter(
-            onEdit = { ciclo, _ -> mostrarDialogoCiclo(ciclo) },
-            onDelete = { ciclo, _ -> viewModel.deleteCiclo(ciclo.idCiclo) },
-            onActivate = { ciclo -> viewModel.activateCiclo(ciclo.idCiclo) }
+            onEdit = { mostrarDialogoCiclo(it) },
+            onDelete = { viewModel.deleteCiclo(it.idCiclo) },
+            onActivate = { viewModel.activateCiclo(it.idCiclo) }
         )
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        // Configurar búsqueda
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?) = false
             override fun onQueryTextChange(newText: String?): Boolean {
-                currentSearchQuery = newText
-                adapter.filter.filter(newText)
-                return false
+                filtrarLista(newText)
+                return true
             }
         })
 
-        // Configurar FAB
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
                 if (dy > 10 && fab.isExtended) fab.shrink()
                 else if (dy < -10 && !fab.isExtended) fab.extend()
             }
@@ -83,18 +76,11 @@ class CiclosFragment : Fragment() {
             mostrarDialogoCiclo(null)
         }
 
-        // Configurar deslizamiento para eliminar/editar
         recyclerView.enableSwipeActions(
-            onSwipeLeft = { position ->
-                adapter.onSwipeDelete(position)
-            },
-            onSwipeRight = { position ->
-                val ciclo = adapter.getCicloAt(position)
-                adapter.triggerEdit(ciclo, position)
-            }
+            onSwipeLeft = { pos -> adapter.onSwipeDelete(pos) },
+            onSwipeRight = { pos -> mostrarDialogoCiclo(adapter.getCicloAt(pos)) }
         )
 
-        // Observar estados del ViewModel
         viewModel.ciclosState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ListUiState.Loading -> {
@@ -105,8 +91,8 @@ class CiclosFragment : Fragment() {
                 is ListUiState.Success -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = true
-                    adapter.updateCiclos(state.data)
-                    currentSearchQuery?.let { adapter.filter.filter(it) }
+                    ciclosOriginal = state.data
+                    adapter.submitList(ciclosOriginal)
                 }
 
                 is ListUiState.Error -> {
@@ -135,12 +121,7 @@ class CiclosFragment : Fragment() {
                         state.data.contains("eliminado", true) -> R.color.colorError
                         else -> R.color.colorPrimary
                     }
-                    Notificador.show(
-                        view = view,
-                        mensaje = state.data,
-                        colorResId = color,
-                        anchorView = fab
-                    )
+                    Notificador.show(view, state.data, color, anchorView = fab)
                 }
 
                 is SingleUiState.Error -> {
@@ -154,59 +135,50 @@ class CiclosFragment : Fragment() {
         return view
     }
 
+    private fun filtrarLista(query: String?) {
+        val texto = query?.lowercase()?.trim() ?: ""
+        if (texto.isEmpty()) {
+            adapter.submitList(ciclosOriginal)
+        } else {
+            val filtrados = ciclosOriginal.filter {
+                it.anio.toString().contains(texto)
+            }
+            adapter.submitList(filtrados)
+        }
+    }
+
     private fun mostrarDialogoCiclo(ciclo: Ciclo?) {
+        // Obtener el índice del ciclo en la lista original
+        val cicloIndex =
+            if (ciclo != null) ciclosOriginal.indexOfFirst { it.idCiclo == ciclo.idCiclo } else -1
+
         val campos = mutableListOf(
-            CampoFormulario(
-                key = "anio",
-                label = "Año",
-                tipo = "number",
-                obligatorio = true,
-                editable = true,
-                rules = { v ->
-                    if (v.isEmpty()) "El año es requerido"
-                    else {
-                        val year = v.toLongOrNull()
-                        if (year == null || year !in 1900..2100) "El año debe estar entre 1900 y 2100"
-                        else null
-                    }
+            CampoFormulario("anio", "Año", "number", true, editable = true) {
+                if (it.isEmpty()) "El año es requerido"
+                else {
+                    val year = it.toLongOrNull()
+                    if (year == null || year !in 1900..2100) "Debe estar entre 1900 y 2100"
+                    else null
                 }
-            ),
+            },
             CampoFormulario(
-                key = "numero",
-                label = "Número",
-                tipo = "spinner",
-                obligatorio = true,
+                "numero",
+                "Número",
+                "spinner",
+                true,
                 editable = true,
-                opciones = listOf("1" to "1", "2" to "2"),
-                rules = { v -> if (v.isNotEmpty()) null else "El número de ciclo es requerido" }
+                opciones = listOf("1" to "1", "2" to "2")
             ),
-            CampoFormulario(
-                key = "fechaInicio",
-                label = "Fecha de Inicio",
-                tipo = "date",
-                obligatorio = true,
-                rules = { v -> if (v.isNotEmpty()) null else "La fecha de inicio es requerida" }
-            ),
-            CampoFormulario(
-                key = "fechaFin",
-                label = "Fecha de Fin",
-                tipo = "date",
-                obligatorio = true,
-                rules = { v -> if (v.isNotEmpty()) null else "La fecha final es requerida" }
-            )
+            CampoFormulario("fechaInicio", "Fecha de Inicio", "date", true) {
+                if (it.isEmpty()) "La fecha de inicio es requerida" else null
+            },
+            CampoFormulario("fechaFin", "Fecha de Fin", "date", true) {
+                if (it.isEmpty()) "La fecha de fin es requerida" else null
+            }
         )
 
-        // Solo agregar campo "estado" si se está editando
         if (ciclo != null) {
-            campos.add(
-                CampoFormulario(
-                    key = "estado",
-                    label = "Estado",
-                    tipo = "text",
-                    obligatorio = false,
-                    editable = false
-                )
-            )
+            campos.add(CampoFormulario("estado", "Estado", "text", false, editable = false))
         }
 
         val datosIniciales = mutableMapOf<String, String>().apply {
@@ -216,8 +188,6 @@ class CiclosFragment : Fragment() {
                 put("fechaInicio", ciclo.fechaInicio)
                 put("fechaFin", ciclo.fechaFin)
                 put("estado", ciclo.estado)
-            } else {
-                put("estado", "Inactivo") // Valor mostrado si el campo se agregara luego
             }
         }
 
@@ -236,14 +206,14 @@ class CiclosFragment : Fragment() {
                     view?.let {
                         Notificador.show(
                             it,
-                            "La fecha de inicio debe ser anterior a la fecha final",
+                            "La fecha de inicio debe ser anterior a la final",
                             R.color.colorError
                         )
                     }
                     return@DialogFormularioFragment
                 }
 
-                val nuevoCiclo = Ciclo(
+                val nuevo = Ciclo(
                     idCiclo = ciclo?.idCiclo ?: 0,
                     anio = anio,
                     numero = numero,
@@ -252,12 +222,13 @@ class CiclosFragment : Fragment() {
                     estado = estado
                 )
 
-                if (ciclo == null) viewModel.createCiclo(nuevoCiclo)
-                else viewModel.updateCiclo(nuevoCiclo)
+                if (ciclo == null) viewModel.createCiclo(nuevo) else viewModel.updateCiclo(nuevo)
             },
             onCancel = {
-                adapter.restoreFilteredList()
-                currentSearchQuery?.let { adapter.filter.filter(it) }
+                // Actualizar solo el elemento afectado si existe
+                if (cicloIndex != -1) {
+                    adapter.notifyItemChanged(cicloIndex)
+                }
             }
         )
 
