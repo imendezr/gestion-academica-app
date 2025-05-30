@@ -25,6 +25,7 @@ import com.example.gestionacademicaapp.ui.common.state.ListUiState
 import com.example.gestionacademicaapp.ui.common.state.SingleUiState
 import com.example.gestionacademicaapp.ui.cursos.CursosViewModel
 import com.example.gestionacademicaapp.utils.Notificador
+import com.example.gestionacademicaapp.utils.enableSwipeActions
 import com.example.gestionacademicaapp.utils.isVisible
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
@@ -89,6 +90,22 @@ class CarreraCursosFragment : DialogFragment() {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
+        // Habilitar acciones de swipe
+        recyclerView.enableSwipeActions(
+            onSwipeLeft = { position ->
+                adapter.onSwipeDelete(position)
+                // Restaurar visualmente el ítem si la eliminación falla
+                recyclerView.postDelayed({
+                    if (!recyclerView.isComputingLayout) {
+                        adapter.notifyItemChanged(position)
+                    }
+                }, 300)
+            },
+            onSwipeRight = { position ->
+                adapter.onSwipeReorder(position)
+            }
+        )
+
         fab.setOnClickListener {
             mostrarDialogoAgregarCurso()
         }
@@ -138,6 +155,10 @@ class CarreraCursosFragment : DialogFragment() {
     }
 
     private fun mostrarDialogoReordenarCurso(carreraCurso: CarreraCursoUI) {
+        // Calcular el índice del elemento para manejar el bug visual
+        val cursoIndex =
+            carreraCursos.indexOfFirst { it.idCarreraCurso == carreraCurso.idCarreraCurso }
+
         val dialog = DialogFormularioFragment(
             titulo = "Reordenar ${carreraCurso.curso.nombre}",
             campos = listOf(
@@ -165,6 +186,11 @@ class CarreraCursosFragment : DialogFragment() {
                     } else {
                         Notificador.show(dialogView, "Ciclo no encontrado", R.color.colorError)
                     }
+                }
+            },
+            onCancel = {
+                if (cursoIndex != -1) {
+                    adapter.notifyItemChanged(cursoIndex)
                 }
             }
         )

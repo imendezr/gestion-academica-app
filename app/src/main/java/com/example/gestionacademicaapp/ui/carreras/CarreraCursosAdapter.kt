@@ -3,7 +3,6 @@ package com.example.gestionacademicaapp.ui.carreras
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -19,17 +18,12 @@ class CarreraCursosAdapter(
     inner class CarreraCursoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
         private val tvDescripcion: TextView = itemView.findViewById(R.id.tvDescripcion)
-        private val btnDelete: ImageButton = itemView.findViewById(R.id.btnDelete)
-        private val btnReorder: ImageButton = itemView.findViewById(R.id.btnReorder)
 
         fun bind(carreraCurso: CarreraCursoUI) {
             tvNombre.text = carreraCurso.curso.nombre
             val cicloText = carreraCurso.ciclo?.let { "${it.anio} - ${it.numero}" }
                 ?: "Ciclo: ${carreraCurso.cicloId}"
             tvDescripcion.text = itemView.context.getString(R.string.label_ciclo, cicloText)
-
-            btnDelete.setOnClickListener { onDelete(carreraCurso) }
-            btnReorder.setOnClickListener { onReorderRequest(carreraCurso) }
         }
     }
 
@@ -41,6 +35,14 @@ class CarreraCursosAdapter(
 
     override fun onBindViewHolder(holder: CarreraCursoViewHolder, position: Int) {
         holder.bind(getItem(position))
+    }
+
+    fun onSwipeDelete(position: Int) {
+        onDelete(getItem(position))
+    }
+
+    fun onSwipeReorder(position: Int) {
+        onReorderRequest(getItem(position))
     }
 
     companion object {
