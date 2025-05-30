@@ -77,7 +77,16 @@ class CiclosFragment : Fragment() {
         }
 
         recyclerView.enableSwipeActions(
-            onSwipeLeft = { pos -> adapter.onSwipeDelete(pos) },
+            onSwipeLeft = { pos ->
+                val ciclo = adapter.getCicloAt(pos)
+                viewModel.deleteCiclo(ciclo.idCiclo)
+
+                recyclerView.postDelayed({
+                    if (!recyclerView.isComputingLayout) {
+                        adapter.notifyItemChanged(pos)
+                    }
+                }, 300)
+            },
             onSwipeRight = { pos -> mostrarDialogoCiclo(adapter.getCicloAt(pos)) }
         )
 

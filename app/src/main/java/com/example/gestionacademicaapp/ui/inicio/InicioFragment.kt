@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
+import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.databinding.FragmentInicioBinding
 
 class InicioFragment : Fragment() {
@@ -20,7 +21,7 @@ class InicioFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         val inicioViewModel =
-            ViewModelProvider(this).get(InicioViewModel::class.java)
+            ViewModelProvider(this)[InicioViewModel::class.java]
 
         _binding = FragmentInicioBinding.inflate(inflater, container, false)
         val root: View = binding.root
@@ -30,7 +31,7 @@ class InicioFragment : Fragment() {
 
         inicioViewModel.text.observe(viewLifecycleOwner) {
             textHome.text = it
-            textSub.text = "Dashboard según tu rol"
+            textSub.text = getString(R.string.dashboard_según_rol)
         }
 
         return root

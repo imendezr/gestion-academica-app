@@ -10,6 +10,8 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:gravity="center_vertical"
         android:minHeight="80dp"
         android:orientation="horizontal"
         android:padding="16dp">
@@ -17,42 +19,36 @@
         <!-- Texto a la izquierda -->
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical">
 
-            <!-- Título fijo arriba -->
+            <!-- Título -->
             <TextView
                 android:id="@+id/tvNombre"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:contentDescription="Nombre del ciclo"
+                android:contentDescription="@string/content_desc_nombre_ciclo"
                 android:fontFamily="sans-serif-medium"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <!-- Descripción centrada verticalmente -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/tvDescripcion"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:contentDescription="Descripción del ciclo"
-                    android:textColor="@color/colorTextSecondary"
-                    android:textSize="15sp" />
-            </LinearLayout>
+            <!-- Descripción -->
+            <TextView
+                android:id="@+id/tvDescripcion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:contentDescription="@string/content_desc_descripcion_ciclo"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="15sp" />
         </LinearLayout>
 
         <!-- Botones a la derecha -->
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginStart="12dp"
             android:gravity="center"
             android:orientation="vertical"
@@ -64,7 +60,8 @@
                 android:layout_height="48dp"
                 android:layout_marginBottom="8dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Activar ciclo"
+                android:contentDescription="@string/content_desc_activar_ciclo"
+                android:scaleType="centerInside"
                 android:src="@drawable/ic_activate"
                 android:visibility="gone"
                 card_view:tint="@color/colorTextPrimary" />
@@ -74,7 +71,8 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Editar ciclo"
+                android:contentDescription="@string/content_desc_editar_ciclo"
+                android:scaleType="centerInside"
                 android:src="@drawable/ic_edit"
                 android:visibility="gone"
                 card_view:tint="@color/colorTextPrimary" />

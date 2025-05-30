@@ -7,47 +7,45 @@
     card_view:cardCornerRadius="10dp"
     card_view:cardElevation="4dp">
 
+    <!-- Contenedor horizontal principal -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:baselineAligned="false"
         android:minHeight="80dp"
         android:orientation="horizontal"
         android:padding="16dp">
 
-        <!-- Texto alineado a la izquierda -->
+        <!-- Columna de texto (izquierda) -->
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical">
 
+            <!-- Nombre de la carrera -->
             <TextView
                 android:id="@+id/tvNombre"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:contentDescription="Nombre de la carrera"
+                android:contentDescription="@string/content_desc_nombre_carrera"
                 android:fontFamily="sans-serif-medium"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/tvDescripcion"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:contentDescription="Descripción de la carrera"
-                    android:textColor="@color/colorTextSecondary"
-                    android:textSize="15sp" />
-            </LinearLayout>
+            <!-- Descripción -->
+            <TextView
+                android:id="@+id/tvDescripcion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:contentDescription="@string/content_desc_descripcion_carrera"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="15sp" />
         </LinearLayout>
 
-        <!-- Botón a la derecha con tamaño mayor -->
+        <!-- Botón de acción (derecha) -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
@@ -61,7 +59,7 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Ver cursos de la carrera"
+                android:contentDescription="@string/content_desc_ver_cursos"
                 android:src="@drawable/ic_view_cursos"
                 card_view:tint="@color/colorTextPrimary" />
         </LinearLayout>

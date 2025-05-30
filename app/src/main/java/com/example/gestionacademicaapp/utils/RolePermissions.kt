@@ -5,7 +5,7 @@ import com.example.gestionacademicaapp.R
 object RolePermissions {
     // Mapa de destinos a roles permitidos
     val DESTINATION_ROLES = mapOf(
-        R.id.nav_inicio to emptyList<String>(), // Accesible para todos los autenticados
+        R.id.nav_inicio to emptyList(), // Accesible para todos los autenticados
         R.id.nav_cursos to listOf("Administrador"),
         R.id.nav_carreras to listOf("Administrador"),
         R.id.nav_profesores to listOf("Administrador"),
@@ -16,7 +16,7 @@ object RolePermissions {
         R.id.nav_matricula to listOf("Matriculador"),
         R.id.nav_notas to listOf("Profesor"),
         R.id.nav_historial to listOf("Alumno"),
-        R.id.nav_perfil to emptyList<String>() // Accesible para todos los autenticados
+        R.id.nav_perfil to emptyList() // Accesible para todos los autenticados
     )
 
     // Destino por defecto si no se tiene acceso

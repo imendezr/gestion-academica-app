@@ -19,7 +19,7 @@
         android:iconifiedByDefault="false"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
-        android:queryHint="Buscar cursos" />
+        android:queryHint="@string/search_hint_curso" />
 
     <!-- Lista y progress -->
     <FrameLayout
@@ -40,7 +40,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:contentDescription="Cargando cursos"
+            android:contentDescription="@string/content_desc_cargando_cursos"
             android:visibility="gone" />
     </FrameLayout>
 
@@ -62,7 +62,7 @@
             android:layout_height="wrap_content"
             android:elevation="0dp"
             android:stateListAnimator="@null"
-            android:text="Agregar"
+            android:text="@string/fab_agregar_curso"
             android:textSize="14sp"
             android:tint="@android:color/white"
             app:backgroundTint="@color/colorPrimary"

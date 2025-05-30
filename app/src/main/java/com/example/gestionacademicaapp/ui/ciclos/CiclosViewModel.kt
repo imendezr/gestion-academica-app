@@ -68,6 +68,19 @@ class CiclosViewModel @Inject constructor(
     fun deleteCiclo(id: Long) {
         viewModelScope.launch {
             _actionState.value = SingleUiState.Loading
+
+            // Buscar el ciclo a eliminar desde la lista actual
+            val cicloActivo = _ciclosState.value
+                .takeIf { it is ListUiState.Success }
+                ?.let { (it as ListUiState.Success).data.firstOrNull { ciclo -> ciclo.idCiclo == id } }
+
+            // Validar si es activo
+            if (cicloActivo?.estado?.equals("ACTIVO", ignoreCase = true) == true) {
+                _actionState.value =
+                    SingleUiState.Error("No se puede eliminar un ciclo activo.")
+                return@launch
+            }
+
             cicloRepository.eliminar(id)
                 .onSuccess {
                     fetchCiclos()

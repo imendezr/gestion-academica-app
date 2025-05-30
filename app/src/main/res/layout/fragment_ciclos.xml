@@ -16,7 +16,7 @@
         android:iconifiedByDefault="false"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
-        android:queryHint="Buscar por año" />
+        android:queryHint="@string/search_hint_anio" />
 
     <!-- Lista y progress -->
     <FrameLayout
@@ -40,7 +40,7 @@
             android:visibility="gone" />
     </FrameLayout>
 
-    <!-- FAB a la derecha con margen superior -->
+    <!-- Botón flotante: Agregar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -58,7 +58,7 @@
             android:layout_height="wrap_content"
             android:elevation="0dp"
             android:stateListAnimator="@null"
-            android:text="Agregar"
+            android:text="@string/accion_agregar"
             android:textSize="14sp"
             android:tint="@android:color/white"
             app:backgroundTint="@color/colorPrimary"

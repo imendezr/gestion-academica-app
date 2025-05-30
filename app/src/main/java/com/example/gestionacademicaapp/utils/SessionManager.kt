@@ -1,9 +1,9 @@
 package com.example.gestionacademicaapp.utils
 
 import android.content.Context
+import androidx.core.content.edit
 import com.example.gestionacademicaapp.data.api.model.Usuario
 import com.google.gson.Gson
-import androidx.core.content.edit
 
 object SessionManager {
 
@@ -15,7 +15,7 @@ object SessionManager {
         }
     }
 
-    fun getUsuario(context: Context): Usuario? {
+    private fun getUsuario(context: Context): Usuario? {
         val prefs = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
         val json = prefs.getString(Constants.USER_KEY, null)
         return if (json != null) Gson().fromJson(json, Usuario::class.java) else null

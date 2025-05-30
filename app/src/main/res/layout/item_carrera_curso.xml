@@ -10,53 +10,45 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:baselineAligned="false"
+        android:gravity="center_vertical"
         android:minHeight="80dp"
         android:orientation="horizontal"
         android:padding="16dp">
 
-        <!-- Zona izquierda -->
+        <!-- Texto a la izquierda -->
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
             android:orientation="vertical">
 
-            <!-- Título fijo arriba -->
             <TextView
                 android:id="@+id/tvNombre"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:contentDescription="Nombre del curso"
+                android:contentDescription="@string/content_desc_nombre_curso"
                 android:fontFamily="sans-serif-medium"
                 android:textColor="@color/colorTextPrimary"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
-            <!-- Descripción centrada verticalmente -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/tvDescripcion"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:contentDescription="Ciclo del curso"
-                    android:textColor="@color/colorTextSecondary"
-                    android:textSize="15sp" />
-            </LinearLayout>
+            <TextView
+                android:id="@+id/tvDescripcion"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:contentDescription="@string/content_desc_ciclo_curso"
+                android:textColor="@color/colorTextSecondary"
+                android:textSize="15sp" />
         </LinearLayout>
 
-        <!-- Zona derecha: botones con tamaño accesible -->
+        <!-- Botones a la derecha -->
         <LinearLayout
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:layout_marginStart="12dp"
+            android:layout_height="wrap_content"
             android:gravity="center"
-            android:orientation="vertical"
-            android:padding="4dp">
+            android:orientation="vertical">
 
             <ImageButton
                 android:id="@+id/btnReorder"
@@ -64,7 +56,8 @@
                 android:layout_height="48dp"
                 android:layout_marginBottom="8dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Reordenar curso"
+                android:contentDescription="@string/content_desc_reordenar_curso"
+                android:scaleType="centerInside"
                 android:src="@drawable/ic_reorder"
                 card_view:tint="@color/colorTextPrimary" />
 
@@ -73,7 +66,8 @@
                 android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="Eliminar curso"
+                android:contentDescription="@string/content_desc_eliminar_curso"
+                android:scaleType="centerInside"
                 android:src="@drawable/ic_delete"
                 card_view:tint="@color/colorTextPrimary" />
         </LinearLayout>

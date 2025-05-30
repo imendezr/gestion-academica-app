@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Usuario
 import com.example.gestionacademicaapp.ui.MainActivity
+import com.example.gestionacademicaapp.ui.common.state.SingleUiState
 import com.example.gestionacademicaapp.utils.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -32,23 +33,23 @@ class LoginActivity : AppCompatActivity() {
         etCedula = findViewById(R.id.etUsername)
         etPassword = findViewById(R.id.etPassword)
         btnLogin = findViewById(R.id.btnLogin)
-        progressBar = findViewById(R.id.progressBar) // Asegúrate de agregar este ID al layout
+        progressBar = findViewById(R.id.progressBar)
 
         // Observar estados del ViewModel
         viewModel.loginState.observe(this) { state ->
             when (state) {
-                is LoginViewModel.LoginState.Loading -> {
+                is SingleUiState.Loading -> {
                     progressBar.visibility = View.VISIBLE
                     btnLogin.isEnabled = false
                 }
 
-                is LoginViewModel.LoginState.Success -> {
+                is SingleUiState.Success -> {
                     progressBar.visibility = View.INVISIBLE
                     btnLogin.isEnabled = true
-                    onLoginSuccess(state.usuario)
+                    onLoginSuccess(state.data)
                 }
 
-                is LoginViewModel.LoginState.Error -> {
+                is SingleUiState.Error -> {
                     progressBar.visibility = View.INVISIBLE
                     btnLogin.isEnabled = true
                     Toast.makeText(this, state.message, Toast.LENGTH_SHORT).show()
@@ -62,11 +63,11 @@ class LoginActivity : AppCompatActivity() {
             val password = etPassword.text.toString().trim()
 
             if (cedula.isEmpty()) {
-                etCedula.error = "Ingrese su cédula"
+                etCedula.error = getString(R.string.ingrese_cedula)
                 return@setOnClickListener
             }
             if (password.isEmpty()) {
-                etPassword.error = "Ingrese su contraseña"
+                etPassword.error = getString(R.string.ingrese_contrasena)
                 return@setOnClickListener
             }
 
@@ -75,17 +76,13 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun onLoginSuccess(usuario: Usuario) {
-        // Guardar usuario en SessionManager
         SessionManager.setUsuario(this, usuario)
-        // Navegar a MainActivity
-        val intent = Intent(this, MainActivity::class.java)
-        startActivity(intent)
-        finish() // Cierra LoginActivity para que no quede en la pila
+        startActivity(Intent(this, MainActivity::class.java))
+        finish()
     }
 
     override fun onStart() {
         super.onStart()
-        // Verificar si ya hay sesión activa
         if (SessionManager.isLoggedIn(this)) {
             startActivity(Intent(this, MainActivity::class.java))
             finish()

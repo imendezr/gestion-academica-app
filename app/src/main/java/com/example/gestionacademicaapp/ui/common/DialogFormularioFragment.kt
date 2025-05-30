@@ -5,7 +5,6 @@ import android.app.Dialog
 import android.os.Bundle
 import android.text.InputType
 import android.text.method.DigitsKeyListener
-import android.view.LayoutInflater
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.EditText
@@ -16,6 +15,7 @@ import androidx.fragment.app.DialogFragment
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.databinding.FragmentDialogFormularioBinding
 import com.google.android.material.textfield.TextInputLayout
+import java.util.Locale
 
 class DialogFormularioFragment(
     private val titulo: String,
@@ -30,92 +30,99 @@ class DialogFormularioFragment(
     private val inputs: MutableMap<String, View> = mutableMapOf()
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        _binding = FragmentDialogFormularioBinding.inflate(LayoutInflater.from(context))
+        _binding = FragmentDialogFormularioBinding.inflate(layoutInflater)
         val contenedor = binding.linearFormulario
         inputs.clear()
 
         campos.forEach { campo ->
             val inputLayout = when (campo.tipo) {
                 "spinner" -> {
-                    val spinnerLayout =
-                        layoutInflater.inflate(R.layout.item_spinner_field, contenedor, false)
-                    val spinner = spinnerLayout.findViewById<Spinner>(R.id.spinner)
-                    val label = spinnerLayout.findViewById<TextView>(R.id.tvSpinnerLabel)
-                    label.text = campo.label
+                    layoutInflater.inflate(R.layout.item_spinner_field, contenedor, false)
+                        .also { spinnerLayout ->
+                            val spinner = spinnerLayout.findViewById<Spinner>(R.id.spinner)
+                            val label = spinnerLayout.findViewById<TextView>(R.id.tvSpinnerLabel)
+                            label.text = campo.label
 
-                    val adapter = ArrayAdapter(
-                        requireContext(),
-                        android.R.layout.simple_spinner_item,
-                        campo.opciones.map { it.second }
-                    )
-                    adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-                    spinner.adapter = adapter
+                            val adapter = ArrayAdapter(
+                                requireContext(),
+                                android.R.layout.simple_spinner_item,
+                                campo.opciones.map { it.second }
+                            )
+                            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                            spinner.adapter = adapter
 
-                    val valorInicial = datosIniciales[campo.key]
-                    val index = campo.opciones.indexOfFirst { it.first == valorInicial }
-                    if (index != -1) spinner.setSelection(index)
+                            val valorInicial = datosIniciales[campo.key]
+                            val index = campo.opciones.indexOfFirst { it.first == valorInicial }
+                            if (index != -1) spinner.setSelection(index)
 
-                    spinner.isEnabled = campo.editable
-                    spinner.isClickable = campo.editable
+                            spinner.isEnabled = campo.editable
+                            spinner.isClickable = campo.editable
 
-                    inputs[campo.key] = spinner
-                    spinnerLayout
+                            inputs[campo.key] = spinner
+                        }
                 }
 
                 "date" -> {
-                    val dateLayout =
-                        layoutInflater.inflate(R.layout.item_date_field, contenedor, false)
-                    val dateInput = dateLayout.findViewById<EditText>(R.id.editTextDate)
-                    val label = dateLayout.findViewById<TextInputLayout>(R.id.textInputLayoutDate)
-                    label.hint = campo.label
+                    layoutInflater.inflate(R.layout.item_date_field, contenedor, false)
+                        .also { dateLayout ->
+                            val dateInput = dateLayout.findViewById<EditText>(R.id.editTextDate)
+                            val label =
+                                dateLayout.findViewById<TextInputLayout>(R.id.textInputLayoutDate)
+                            label.hint = campo.label
 
-                    dateInput.setText(datosIniciales[campo.key] ?: "")
-                    dateInput.inputType = InputType.TYPE_NULL
-                    dateInput.keyListener = null
-                    dateInput.isFocusable = false
-                    dateInput.isFocusableInTouchMode = false
-                    dateInput.isCursorVisible = false
-                    dateInput.isEnabled = campo.editable
+                            dateInput.setText(datosIniciales[campo.key] ?: "")
+                            dateInput.inputType = InputType.TYPE_NULL
+                            dateInput.keyListener = null
+                            dateInput.isFocusable = false
+                            dateInput.isFocusableInTouchMode = false
+                            dateInput.isCursorVisible = false
+                            dateInput.isEnabled = campo.editable
 
-                    if (campo.editable) {
-                        dateInput.setOnClickListener {
-                            val datePicker =
-                                DatePickerDialog(requireContext(), { _, year, month, day ->
-                                    val selectedDate =
-                                        String.format("%04d-%02d-%02d", year, month + 1, day)
-                                    dateInput.setText(selectedDate)
-                                }, 2023, 0, 1)
-                            datePicker.show()
+                            if (campo.editable) {
+                                dateInput.setOnClickListener {
+                                    val datePicker = DatePickerDialog(
+                                        requireContext(), { _, year, month, day ->
+                                            val selectedDate = String.format(
+                                                Locale.US,
+                                                "%04d-%02d-%02d",
+                                                year,
+                                                month + 1,
+                                                day
+                                            )
+                                            dateInput.setText(selectedDate)
+                                        }, 2023, 0, 1
+                                    )
+                                    datePicker.show()
+                                }
+                            }
+
+                            inputs[campo.key] = dateInput
                         }
-                    }
-
-                    inputs[campo.key] = dateInput
-                    dateLayout
                 }
 
                 else -> {
-                    val textLayout =
-                        layoutInflater.inflate(R.layout.item_input_field, contenedor, false)
-                    val inputText = textLayout.findViewById<EditText>(R.id.editText)
-                    textLayout.findViewById<TextInputLayout>(R.id.textInputLayout).hint =
-                        campo.label
+                    layoutInflater.inflate(R.layout.item_input_field, contenedor, false)
+                        .also { textLayout ->
+                            val inputText = textLayout.findViewById<EditText>(R.id.editText)
+                            textLayout.findViewById<TextInputLayout>(R.id.textInputLayout).hint =
+                                campo.label
 
-                    inputText.inputType = when (campo.tipo) {
-                        "number" -> InputType.TYPE_CLASS_NUMBER
-                        else -> InputType.TYPE_CLASS_TEXT
-                    }
+                            inputText.inputType = when (campo.tipo) {
+                                "number" -> InputType.TYPE_CLASS_NUMBER
+                                else -> InputType.TYPE_CLASS_TEXT
+                            }
 
-                    if (campo.tipo == "number") {
-                        inputText.keyListener = DigitsKeyListener.getInstance("0123456789")
-                    }
+                            if (campo.tipo == "number") {
+                                inputText.keyListener = DigitsKeyListener.getInstance("0123456789")
+                            }
 
-                    inputText.setText(datosIniciales[campo.key] ?: "")
-                    inputText.isEnabled = campo.editable
-                    inputText.isFocusable = campo.editable
-                    inputText.isFocusableInTouchMode = campo.editable
+                            inputText.setText(datosIniciales[campo.key] ?: "")
+                            inputText.isEnabled = campo.editable
+                            inputText.isFocusable = campo.editable
+                            inputText.isFocusableInTouchMode = campo.editable
 
-                    inputs[campo.key] = inputText
-                    textLayout
+                            inputs[campo.key] = inputText
+                        }
                 }
             }
 
@@ -127,8 +134,8 @@ class DialogFormularioFragment(
         return AlertDialog.Builder(requireContext())
             .setTitle(titulo)
             .setView(binding.root)
-            .setPositiveButton("Guardar", null)
-            .setNegativeButton("Cancelar") { dialog, _ ->
+            .setPositiveButton(getString(R.string.guardar), null)
+            .setNegativeButton(getString(R.string.cancelar)) { dialog, _ ->
                 onCancel()
                 dialog.dismiss()
             }
@@ -139,8 +146,7 @@ class DialogFormularioFragment(
                         var esValido = true
 
                         campos.forEach { campo ->
-                            val view = inputs[campo.key]
-                            val valor = when (view) {
+                            val valor = when (val view = inputs[campo.key]) {
                                 is EditText -> view.text.toString().trim()
                                 is Spinner -> {
                                     val pos = view.selectedItemPosition
@@ -150,19 +156,17 @@ class DialogFormularioFragment(
                                 else -> ""
                             }
 
-                            // Validación por función personalizada
                             val rule = campo.rules?.invoke(valor)
-                            if (campo.editable && rule != null && rule.isNotEmpty()) {
+                            if (campo.editable && !rule.isNullOrEmpty()) {
                                 esValido = false
                                 tvError.text = rule
                                 tvError.visibility = View.VISIBLE
                                 return@forEach
                             }
 
-                            // Validación por obligatorio
                             if (campo.obligatorio && campo.editable && valor.isEmpty()) {
                                 esValido = false
-                                tvError.text = "Completa los campos obligatorios"
+                                tvError.text = getString(R.string.error_campos_obligatorios)
                                 tvError.visibility = View.VISIBLE
                                 return@forEach
                             }
