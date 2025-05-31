@@ -26,7 +26,7 @@ class DialogFormularioFragment : DialogFragment() {
 
     private var _binding: FragmentDialogFormularioBinding? = null
     private val binding get() = _binding!!
-    private val inputs: MutableMap<String, View> = mutableMapOf()
+    private val inputs: MutableMap<String, Triple<View, Any?, TextView?>> = mutableMapOf() // (vista, contenedor padre, label)
     private val currentValues: MutableMap<String, String> = mutableMapOf()
 
     private lateinit var titulo: String
@@ -73,9 +73,21 @@ class DialogFormularioFragment : DialogFragment() {
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                         val resultado = mutableMapOf<String, String>()
                         var esValido = true
+                        val camposConError = mutableListOf<String>()
 
+                        // Limpiar errores previos en todos los campos
                         campos.forEach { campo ->
-                            val valor = when (val view = inputs[campo.key]) {
+                            val (view, parentLayout, label) = inputs[campo.key] ?: return@forEach
+                            when {
+                                parentLayout is TextInputLayout -> parentLayout.error = null
+                                view is Spinner && label != null -> label.setTextColor(ContextCompat.getColor(requireContext(), android.R.color.darker_gray))
+                            }
+                        }
+
+                        // Validar cada campo
+                        campos.forEach { campo ->
+                            val (view, parentLayout, label) = inputs[campo.key] ?: return@forEach
+                            val valor = when (view) {
                                 is EditText -> view.text.toString().trim()
                                 is Spinner -> campo.opciones.getOrNull(view.selectedItemPosition)?.first ?: ""
                                 else -> currentValues[campo.key] ?: ""
@@ -86,23 +98,32 @@ class DialogFormularioFragment : DialogFragment() {
                                 esValido = false
                                 tvError.text = rule
                                 tvError.visibility = View.VISIBLE
+                                if (parentLayout is TextInputLayout) parentLayout.error = rule
                                 return@forEach
                             }
 
                             if (campo.obligatorio && campo.editable && valor.isEmpty()) {
                                 esValido = false
-                                tvError.text = getString(R.string.error_campos_obligatorios)
-                                tvError.visibility = View.VISIBLE
-                                return@forEach
+                                camposConError.add(campo.label)
+                                when {
+                                    parentLayout is TextInputLayout -> parentLayout.error = getString(R.string.error_campo_obligatorio)
+                                    view is Spinner && label != null -> label.setTextColor(ContextCompat.getColor(requireContext(), R.color.colorError))
+                                }
                             }
 
                             resultado[campo.key] = valor
                         }
 
-                        if (esValido) {
+                        // Mostrar mensaje de error si hay campos obligatorios vacíos
+                        if (camposConError.isNotEmpty()) {
+                            tvError.text = getString(R.string.error_campos_obligatorios, camposConError.joinToString(", "))
+                            tvError.visibility = View.VISIBLE
+                        } else if (esValido) {
                             tvError.visibility = View.GONE
                             onGuardar(resultado)
                             dialog.dismiss()
+                        } else {
+                            tvError.visibility = View.GONE // Asegurar que si no hay campos vacíos pero hay otras reglas, se oculte
                         }
                     }
                 }
@@ -113,21 +134,6 @@ class DialogFormularioFragment : DialogFragment() {
     private fun renderCampos(contenedor: LinearLayout) {
         contenedor.removeAllViews()
         inputs.clear() // Limpiar los inputs para evitar referencias obsoletas
-
-        // Agregar el TextView de error
-        contenedor.addView(
-            TextView(requireContext()).apply {
-                id = R.id.tvErrorFormulario
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { bottomMargin = 8 }
-                text = getString(R.string.error_mensaje)
-                setTextColor(ContextCompat.getColor(context, R.color.colorError))
-                textSize = 14f
-                visibility = View.GONE
-            }
-        )
 
         campos.forEach { campo ->
             val inputLayout = when (campo.tipo) {
@@ -160,16 +166,16 @@ class DialogFormularioFragment : DialogFragment() {
                             }
                             override fun onNothingSelected(parent: AdapterView<*>) {}
                         }
-                        inputs[campo.key] = spinner
+                        inputs[campo.key] = Triple(spinner, null, label)
                     }
                 }
                 "date" -> {
                     layoutInflater.inflate(R.layout.item_date_field, contenedor, false).also { dateLayout ->
                         val dateInput = dateLayout.findViewById<EditText>(R.id.editTextDate)
-                        val label = dateLayout.findViewById<TextInputLayout>(R.id.textInputLayoutDate)
-                        label.hint = campo.label
-                        label.isHintAnimationEnabled = false
-                        label.isHintEnabled = true
+                        val textInputLayout = dateLayout.findViewById<TextInputLayout>(R.id.textInputLayoutDate)
+                        textInputLayout.hint = campo.label
+                        textInputLayout.isHintAnimationEnabled = false
+                        textInputLayout.isHintEnabled = true
 
                         // Cargar el valor preservado o inicial
                         dateInput.setText(currentValues[campo.key] ?: datosIniciales[campo.key] ?: "")
@@ -192,7 +198,7 @@ class DialogFormularioFragment : DialogFragment() {
                                 ).show()
                             }
                         }
-                        inputs[campo.key] = dateInput
+                        inputs[campo.key] = Triple(dateInput, textInputLayout, null)
                     }
                 }
                 else -> {
@@ -224,7 +230,7 @@ class DialogFormularioFragment : DialogFragment() {
                                 campo.onValueChanged?.invoke(newValue)
                             }
                         })
-                        inputs[campo.key] = inputText
+                        inputs[campo.key] = Triple(inputText, textInputLayout, null)
                     }
                 }
             }
@@ -235,7 +241,8 @@ class DialogFormularioFragment : DialogFragment() {
     fun updateDynamicFields(newCampos: List<CampoFormulario>) {
         // Preservar los valores actuales de los campos existentes
         campos.forEach { campo ->
-            val valor = when (val view = inputs[campo.key]) {
+            val (view, _, _) = inputs[campo.key] ?: return@forEach
+            val valor = when (view) {
                 is EditText -> view.text.toString().trim()
                 is Spinner -> campo.opciones.getOrNull(view.selectedItemPosition)?.first ?: ""
                 else -> currentValues[campo.key] ?: ""

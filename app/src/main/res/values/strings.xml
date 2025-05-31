@@ -91,7 +91,8 @@
     <string name="content_desc_tipo_usuario">Tipo de usuario</string>
     <string name="desc_cargando_usuarios">Cargando usuarios</string>
     <string name="desc_listado_usuarios">Listado de usuarios</string>
-    <string name="error_campos_obligatorios">Completa los campos obligatorios</string>
+    <string name="error_campos_obligatorios">Por favor, completa los siguientes campos obligatorios: %s</string>
+    <string name="error_campo_obligatorio">Campo obligatorio</string>
     <string name="error_mensaje">Error</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="rol_usuario">Rol: %1$s</string>
