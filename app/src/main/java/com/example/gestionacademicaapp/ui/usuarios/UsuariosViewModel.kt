@@ -4,18 +4,30 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.gestionacademicaapp.data.api.model.Alumno
+import com.example.gestionacademicaapp.data.api.model.Profesor
 import com.example.gestionacademicaapp.data.api.model.Usuario
+import com.example.gestionacademicaapp.data.api.model.support.AlumnoData
+import com.example.gestionacademicaapp.data.api.model.support.NuevoUsuario
+import com.example.gestionacademicaapp.data.api.model.support.ProfesorData
+import com.example.gestionacademicaapp.data.repository.AlumnoRepository
+import com.example.gestionacademicaapp.data.repository.ProfesorRepository
 import com.example.gestionacademicaapp.data.repository.UsuarioRepository
 import com.example.gestionacademicaapp.ui.common.state.ListUiState
 import com.example.gestionacademicaapp.ui.common.state.SingleUiState
 import com.example.gestionacademicaapp.utils.toUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class UsuariosViewModel @Inject constructor(
-    private val usuarioRepository: UsuarioRepository
+    private val usuarioRepository: UsuarioRepository,
+    private val profesorRepository: ProfesorRepository,
+    private val alumnoRepository: AlumnoRepository
 ) : ViewModel() {
 
     private val _usuariosState = MutableLiveData<ListUiState<Usuario>>()
@@ -23,6 +35,9 @@ class UsuariosViewModel @Inject constructor(
 
     private val _actionState = MutableLiveData<SingleUiState<String>>()
     val actionState: LiveData<SingleUiState<String>> get() = _actionState
+
+    private val _showDialogEvent = MutableStateFlow<Event<Usuario?>?>(null)
+    val showDialogEvent: StateFlow<Event<Usuario?>?> get() = _showDialogEvent.asStateFlow()
 
     var idUsuarioActual: Long = -1L
 
@@ -39,13 +54,59 @@ class UsuariosViewModel @Inject constructor(
         }
     }
 
-    fun createUsuario(usuario: Usuario) {
+    fun createUsuario(nuevoUsuario: NuevoUsuario) {
         viewModelScope.launch {
             _actionState.value = SingleUiState.Loading
+            val usuario = nuevoUsuario.usuario
+
             usuarioRepository.insertar(usuario)
                 .onSuccess {
-                    fetchUsuarios()
-                    _actionState.value = SingleUiState.Success("Usuario creado exitosamente")
+                    when (usuario.tipo) {
+                        "Profesor" -> {
+                            nuevoUsuario.profesorData?.let { data ->
+                                val profesor = Profesor(
+                                    idProfesor = 0,
+                                    cedula = usuario.cedula,
+                                    nombre = data.nombre,
+                                    telefono = data.telefono,
+                                    email = data.email
+                                )
+                                profesorRepository.insertar(profesor)
+                                    .onSuccess {
+                                        fetchUsuarios()
+                                        _actionState.value = SingleUiState.Success("Usuario y Profesor creados exitosamente")
+                                    }
+                                    .onFailure {
+                                        _actionState.value = SingleUiState.Error(it.toUserMessage())
+                                    }
+                            }
+                        }
+                        "Alumno" -> {
+                            nuevoUsuario.alumnoData?.let { data ->
+                                val alumno = Alumno(
+                                    idAlumno = 0,
+                                    cedula = usuario.cedula,
+                                    nombre = data.nombre,
+                                    telefono = data.telefono,
+                                    email = data.email,
+                                    fechaNacimiento = data.fechaNacimiento,
+                                    pkCarrera = data.pkCarrera
+                                )
+                                alumnoRepository.insertar(alumno)
+                                    .onSuccess {
+                                        fetchUsuarios()
+                                        _actionState.value = SingleUiState.Success("Usuario y Alumno creados exitosamente")
+                                    }
+                                    .onFailure {
+                                        _actionState.value = SingleUiState.Error(it.toUserMessage())
+                                    }
+                            }
+                        }
+                        else -> {
+                            fetchUsuarios()
+                            _actionState.value = SingleUiState.Success("Usuario creado exitosamente")
+                        }
+                    }
                 }
                 .onFailure {
                     _actionState.value = SingleUiState.Error(it.toUserMessage())
@@ -53,7 +114,7 @@ class UsuariosViewModel @Inject constructor(
         }
     }
 
-    fun updateUsuario(usuario: Usuario) {
+    fun updateUsuario(usuario: Usuario, profesorData: ProfesorData?, alumnoData: AlumnoData?) {
         viewModelScope.launch {
             _actionState.value = SingleUiState.Loading
 
@@ -67,6 +128,52 @@ class UsuariosViewModel @Inject constructor(
 
             usuarioRepository.modificar(usuarioFinal)
                 .onSuccess {
+                    when (usuario.tipo) {
+                        "Profesor" -> {
+                            alumnoRepository.buscarPorCedula(usuario.cedula)
+                                .onSuccess { alumno -> alumnoRepository.eliminar(alumno.idAlumno) }
+                            profesorData?.let { data ->
+                                val profesor = Profesor(
+                                    idProfesor = 0,
+                                    cedula = usuario.cedula,
+                                    nombre = data.nombre,
+                                    telefono = data.telefono,
+                                    email = data.email
+                                )
+                                profesorRepository.buscarPorCedula(usuario.cedula)
+                                    .onSuccess { existingProfesor ->
+                                        profesorRepository.modificar(profesor.copy(idProfesor = existingProfesor.idProfesor))
+                                    }
+                                    .onFailure { profesorRepository.insertar(profesor) }
+                            }
+                        }
+                        "Alumno" -> {
+                            profesorRepository.buscarPorCedula(usuario.cedula)
+                                .onSuccess { profesor -> profesorRepository.eliminar(profesor.idProfesor) }
+                            alumnoData?.let { data ->
+                                val alumno = Alumno(
+                                    idAlumno = 0,
+                                    cedula = usuario.cedula,
+                                    nombre = data.nombre,
+                                    telefono = data.telefono,
+                                    email = data.email,
+                                    fechaNacimiento = data.fechaNacimiento,
+                                    pkCarrera = data.pkCarrera
+                                )
+                                alumnoRepository.buscarPorCedula(usuario.cedula)
+                                    .onSuccess { existingAlumno ->
+                                        alumnoRepository.modificar(alumno.copy(idAlumno = existingAlumno.idAlumno))
+                                    }
+                                    .onFailure { alumnoRepository.insertar(alumno) }
+                            }
+                        }
+                        else -> {
+                            profesorRepository.buscarPorCedula(usuario.cedula)
+                                .onSuccess { profesor -> profesorRepository.eliminar(profesor.idProfesor) }
+                            alumnoRepository.buscarPorCedula(usuario.cedula)
+                                .onSuccess { alumno -> alumnoRepository.eliminar(alumno.idAlumno) }
+                        }
+                    }
                     fetchUsuarios()
                     _actionState.value = SingleUiState.Success("Usuario actualizado exitosamente")
                 }
@@ -81,8 +188,7 @@ class UsuariosViewModel @Inject constructor(
             _actionState.value = SingleUiState.Loading
 
             if (id == idUsuarioActual) {
-                _actionState.value =
-                    SingleUiState.Error("No puedes eliminar tu propia cuenta mientras estás conectado.")
+                _actionState.value = SingleUiState.Error("No puedes eliminar tu propia cuenta mientras estás conectado.")
                 return@launch
             }
 
@@ -115,6 +221,22 @@ class UsuariosViewModel @Inject constructor(
                 .onFailure {
                     _usuariosState.value = ListUiState.Error(it.toUserMessage())
                 }
+        }
+    }
+
+    fun triggerDialog(usuario: Usuario? = null) {
+        _showDialogEvent.value = Event(usuario)
+    }
+}
+
+// Clase auxiliar para eventos de una sola ejecución (Event)
+data class Event<out T>(private val content: T) {
+    private var hasBeenHandled = false
+
+    fun getContentIfNotHandled(): T? {
+        return if (hasBeenHandled) null else {
+            hasBeenHandled = true
+            content
         }
     }
 }

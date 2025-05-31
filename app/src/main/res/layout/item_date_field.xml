@@ -1,22 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.textfield.TextInputLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/textInputLayoutDate"
+    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    android:orientation="vertical">
+    android:layout_marginBottom="12dp">
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/textInputLayoutDate"
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/editTextDate"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:cursorVisible="false"
+        android:enabled="true"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:padding="12dp"
+        android:textSize="16sp" />
 
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/editTextDate"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clickable="true"
-            android:focusable="true"
-            android:focusableInTouchMode="false"
-            android:inputType="none" />
-    </com.google.android.material.textfield.TextInputLayout>
-</LinearLayout>
+</com.google.android.material.textfield.TextInputLayout>
