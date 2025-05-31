@@ -1,33 +1,72 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
 
     <!-- Buscador -->
     <androidx.appcompat.widget.SearchView
         android:id="@+id/searchViewUsuarios"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:queryHint="Buscar usuarios" />
+        android:layout_height="48dp"
+        android:layout_marginBottom="8dp"
+        android:background="@drawable/bg_searchview_rounded"
+        android:elevation="2dp"
+        android:iconifiedByDefault="false"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:queryHint="@string/search_hint_codigo_nombre" />
 
-    <!-- Lista de usuarios -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewUsuarios"
+    <!-- Lista y ProgressBar -->
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="60dp"
-        android:contentDescription="Listado de usuarios" />
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-    <!-- Botón flotante para agregar usuario -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabUsuarios"
-        android:layout_width="wrap_content"
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewUsuarios"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:contentDescription="@string/desc_listado_usuarios"
+            android:nestedScrollingEnabled="true"
+            android:overScrollMode="never" />
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:contentDescription="@string/desc_cargando_usuarios"
+            android:visibility="gone" />
+    </FrameLayout>
+
+    <!-- Botón "Agregar" alineado a la derecha -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        app:srcCompat="@android:drawable/ic_input_add"
-        android:contentDescription="Agregar usuario" />
+        android:orientation="horizontal"
+        android:paddingTop="8dp">
 
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/fabUsuarios"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:elevation="0dp"
+            android:stateListAnimator="@null"
+            android:text="@string/btn_agregar"
+            android:textSize="14sp"
+            android:tint="@android:color/white"
+            app:backgroundTint="@color/colorPrimary"
+            app:cornerRadius="24dp"
+            app:icon="@drawable/ic_add"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp" />
+    </LinearLayout>
+</LinearLayout>

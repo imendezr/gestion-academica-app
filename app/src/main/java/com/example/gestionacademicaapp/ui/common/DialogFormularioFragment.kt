@@ -17,17 +17,31 @@ import com.example.gestionacademicaapp.databinding.FragmentDialogFormularioBindi
 import com.google.android.material.textfield.TextInputLayout
 import java.util.Locale
 
-class DialogFormularioFragment(
-    private val titulo: String,
-    private val campos: List<CampoFormulario>,
-    private val datosIniciales: Map<String, String> = emptyMap(),
-    private val onGuardar: (Map<String, String>) -> Unit,
-    private val onCancel: () -> Unit = {}
-) : DialogFragment() {
+class DialogFormularioFragment : DialogFragment() {
 
     private var _binding: FragmentDialogFormularioBinding? = null
     private val binding get() = _binding!!
     private val inputs: MutableMap<String, View> = mutableMapOf()
+
+    private lateinit var titulo: String
+    private lateinit var campos: List<CampoFormulario>
+    private var datosIniciales: Map<String, String> = emptyMap()
+    private lateinit var onGuardar: (Map<String, String>) -> Unit
+    private var onCancel: () -> Unit = {}
+
+    companion object {
+        fun newInstance(
+            titulo: String,
+            campos: List<CampoFormulario>,
+            datosIniciales: Map<String, String> = emptyMap()
+        ): DialogFormularioFragment {
+            return DialogFormularioFragment().apply {
+                this.titulo = titulo
+                this.campos = campos
+                this.datosIniciales = datosIniciales
+            }
+        }
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         _binding = FragmentDialogFormularioBinding.inflate(layoutInflater)
@@ -183,6 +197,14 @@ class DialogFormularioFragment(
                 }
                 dialog.window?.setBackgroundDrawableResource(R.drawable.bg_dialog_window)
             }
+    }
+
+    fun setOnGuardarListener(listener: (Map<String, String>) -> Unit) {
+        onGuardar = listener
+    }
+
+    fun setOnCancelListener(listener: () -> Unit) {
+        onCancel = listener
     }
 
     override fun onDestroyView() {

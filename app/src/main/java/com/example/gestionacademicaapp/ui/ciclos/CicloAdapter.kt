@@ -14,7 +14,6 @@ import com.example.gestionacademicaapp.utils.isVisible
 
 class CiclosAdapter(
     private val onEdit: (Ciclo) -> Unit,
-    private val onDelete: (Ciclo) -> Unit,
     private val onActivate: (Ciclo) -> Unit
 ) : ListAdapter<Ciclo, CiclosAdapter.CicloViewHolder>(DiffCallback) {
 
@@ -57,10 +56,6 @@ class CiclosAdapter(
 
     override fun onBindViewHolder(holder: CicloViewHolder, position: Int) {
         holder.bind(getItem(position))
-    }
-
-    fun onSwipeDelete(position: Int) {
-        onDelete(getItem(position))
     }
 
     fun getCicloAt(position: Int): Ciclo = getItem(position)

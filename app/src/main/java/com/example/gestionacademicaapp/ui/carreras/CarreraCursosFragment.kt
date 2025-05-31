@@ -155,11 +155,10 @@ class CarreraCursosFragment : DialogFragment() {
     }
 
     private fun mostrarDialogoReordenarCurso(carreraCurso: CarreraCursoUI) {
-        // Calcular el índice del elemento para manejar el bug visual
         val cursoIndex =
             carreraCursos.indexOfFirst { it.idCarreraCurso == carreraCurso.idCarreraCurso }
 
-        val dialog = DialogFormularioFragment(
+        val dialog = DialogFormularioFragment.newInstance(
             titulo = "Reordenar ${carreraCurso.curso.nombre}",
             campos = listOf(
                 CampoFormulario(
@@ -167,33 +166,38 @@ class CarreraCursosFragment : DialogFragment() {
                     label = "Nuevo Ciclo",
                     tipo = "spinner",
                     obligatorio = true,
-                    opciones = ciclosDisponibles.map { it.idCiclo.toString() to "${it.anio} - ${it.numero}" }
+                    opciones = ciclosDisponibles.map {
+                        it.idCiclo.toString() to "${it.anio} - ${it.numero}"
+                    }
                 )
             ),
-            datosIniciales = mapOf("idCiclo" to carreraCurso.cicloId.toString()),
-            onGuardar = { datosMap ->
-                val nuevoIdCiclo = datosMap["idCiclo"]?.toLongOrNull()
-                if (nuevoIdCiclo != null) {
-                    val nuevoCiclo = ciclosDisponibles.find { it.idCiclo == nuevoIdCiclo }
-                    if (nuevoCiclo != null) {
-                        val updatedCarreraCurso = CarreraCurso(
-                            idCarreraCurso = carreraCurso.idCarreraCurso,
-                            pkCarrera = carrera.idCarrera,
-                            pkCurso = carreraCurso.curso.idCurso,
-                            pkCiclo = nuevoCiclo.idCiclo
-                        )
-                        viewModel.updateCarreraCurso(updatedCarreraCurso)
-                    } else {
-                        Notificador.show(dialogView, "Ciclo no encontrado", R.color.colorError)
-                    }
-                }
-            },
-            onCancel = {
-                if (cursoIndex != -1) {
-                    adapter.notifyItemChanged(cursoIndex)
+            datosIniciales = mapOf("idCiclo" to carreraCurso.cicloId.toString())
+        )
+
+        dialog.setOnGuardarListener { datosMap ->
+            val nuevoIdCiclo = datosMap["idCiclo"]?.toLongOrNull()
+            if (nuevoIdCiclo != null) {
+                val nuevoCiclo = ciclosDisponibles.find { it.idCiclo == nuevoIdCiclo }
+                if (nuevoCiclo != null) {
+                    val updatedCarreraCurso = CarreraCurso(
+                        idCarreraCurso = carreraCurso.idCarreraCurso,
+                        pkCarrera = carrera.idCarrera,
+                        pkCurso = carreraCurso.curso.idCurso,
+                        pkCiclo = nuevoCiclo.idCiclo
+                    )
+                    viewModel.updateCarreraCurso(updatedCarreraCurso)
+                } else {
+                    Notificador.show(dialogView, "Ciclo no encontrado", R.color.colorError)
                 }
             }
-        )
+        }
+
+        dialog.setOnCancelListener {
+            if (cursoIndex != -1) {
+                adapter.notifyItemChanged(cursoIndex)
+            }
+        }
+
         dialog.show(parentFragmentManager, "DialogReordenarCurso")
     }
 
@@ -279,6 +283,7 @@ class CarreraCursosFragment : DialogFragment() {
         val cursosNoAsociados = cursosDisponibles.filter { curso ->
             !carreraCursos.any { it.curso.idCurso == curso.idCurso }
         }
+
         if (cursosNoAsociados.isEmpty()) {
             Notificador.show(
                 dialogView,
@@ -294,36 +299,42 @@ class CarreraCursosFragment : DialogFragment() {
                 label = "Curso",
                 tipo = "spinner",
                 obligatorio = true,
-                opciones = cursosNoAsociados.map { it.idCurso.toString() to it.nombre }
+                opciones = cursosNoAsociados.map {
+                    it.idCurso.toString() to it.nombre
+                }
             ),
             CampoFormulario(
                 key = "idCiclo",
                 label = "Ciclo",
                 tipo = "spinner",
                 obligatorio = true,
-                opciones = ciclosDisponibles.map { it.idCiclo.toString() to "${it.anio} - ${it.numero}" }
+                opciones = ciclosDisponibles.map {
+                    it.idCiclo.toString() to "${it.anio} - ${it.numero}"
+                }
             )
         )
 
-        val dialog = DialogFormularioFragment(
+        val dialog = DialogFormularioFragment.newInstance(
             titulo = "Agregar Curso a ${carrera.nombre}",
-            campos = campos,
-            onGuardar = { datosMap ->
-                val idCurso = datosMap["idCurso"]?.toLongOrNull()
-                val idCiclo = datosMap["idCiclo"]?.toLongOrNull()
-                if (idCurso != null && idCiclo != null) {
-                    val nuevoCarreraCurso = CarreraCurso(
-                        idCarreraCurso = 0,
-                        pkCarrera = carrera.idCarrera,
-                        pkCurso = idCurso,
-                        pkCiclo = idCiclo
-                    )
-                    viewModel.createCarreraCurso(nuevoCarreraCurso)
-                } else {
-                    Notificador.show(dialogView, "Datos inválidos", R.color.colorError)
-                }
-            }
+            campos = campos
         )
+
+        dialog.setOnGuardarListener { datosMap ->
+            val idCurso = datosMap["idCurso"]?.toLongOrNull()
+            val idCiclo = datosMap["idCiclo"]?.toLongOrNull()
+            if (idCurso != null && idCiclo != null) {
+                val nuevoCarreraCurso = CarreraCurso(
+                    idCarreraCurso = 0,
+                    pkCarrera = carrera.idCarrera,
+                    pkCurso = idCurso,
+                    pkCiclo = idCiclo
+                )
+                viewModel.createCarreraCurso(nuevoCarreraCurso)
+            } else {
+                Notificador.show(dialogView, "Datos inválidos", R.color.colorError)
+            }
+        }
+
         dialog.show(parentFragmentManager, "DialogAgregarCurso")
     }
 }

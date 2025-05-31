@@ -15,10 +15,15 @@ object SessionManager {
         }
     }
 
-    private fun getUsuario(context: Context): Usuario? {
+    fun getUsuario(context: Context): Usuario? {
         val prefs = context.getSharedPreferences(Constants.PREFS_NAME, Context.MODE_PRIVATE)
         val json = prefs.getString(Constants.USER_KEY, null)
         return if (json != null) Gson().fromJson(json, Usuario::class.java) else null
+    }
+
+    fun getUserId(context: Context): Long {
+        val usuario = getUsuario(context)
+        return usuario?.idUsuario ?: -1L
     }
 
     fun clear(context: Context) {

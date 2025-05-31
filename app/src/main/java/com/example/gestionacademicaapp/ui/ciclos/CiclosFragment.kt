@@ -49,7 +49,6 @@ class CiclosFragment : Fragment() {
 
         adapter = CiclosAdapter(
             onEdit = { mostrarDialogoCiclo(it) },
-            onDelete = { viewModel.deleteCiclo(it.idCiclo) },
             onActivate = { viewModel.activateCiclo(it.idCiclo) }
         )
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
@@ -157,9 +156,9 @@ class CiclosFragment : Fragment() {
     }
 
     private fun mostrarDialogoCiclo(ciclo: Ciclo?) {
-        // Obtener el índice del ciclo en la lista original
-        val cicloIndex =
-            if (ciclo != null) ciclosOriginal.indexOfFirst { it.idCiclo == ciclo.idCiclo } else -1
+        val cicloIndex = ciclo?.let {
+            ciclosOriginal.indexOfFirst { c -> c.idCiclo == it.idCiclo }
+        } ?: -1
 
         val campos = mutableListOf(
             CampoFormulario("anio", "Año", "number", true, editable = true) {
@@ -171,11 +170,7 @@ class CiclosFragment : Fragment() {
                 }
             },
             CampoFormulario(
-                "numero",
-                "Número",
-                "spinner",
-                true,
-                editable = true,
+                "numero", "Número", "spinner", true, editable = true,
                 opciones = listOf("1" to "1", "2" to "2")
             ),
             CampoFormulario("fechaInicio", "Fecha de Inicio", "date", true) {
@@ -190,56 +185,58 @@ class CiclosFragment : Fragment() {
             campos.add(CampoFormulario("estado", "Estado", "text", false, editable = false))
         }
 
-        val datosIniciales = mutableMapOf<String, String>().apply {
-            if (ciclo != null) {
-                put("anio", ciclo.anio.toString())
-                put("numero", ciclo.numero.toString())
-                put("fechaInicio", ciclo.fechaInicio)
-                put("fechaFin", ciclo.fechaFin)
-                put("estado", ciclo.estado)
-            }
-        }
+        val datosIniciales = ciclo?.let {
+            mapOf(
+                "anio" to it.anio.toString(),
+                "numero" to it.numero.toString(),
+                "fechaInicio" to it.fechaInicio,
+                "fechaFin" to it.fechaFin,
+                "estado" to it.estado
+            )
+        } ?: emptyMap()
 
-        val dialog = DialogFormularioFragment(
+        val dialog = DialogFormularioFragment.newInstance(
             titulo = if (ciclo == null) "Nuevo Ciclo" else "Editar Ciclo",
             campos = campos,
-            datosIniciales = datosIniciales,
-            onGuardar = { datosMap ->
-                val anio = datosMap["anio"]?.toLongOrNull() ?: 0
-                val numero = datosMap["numero"]?.toLongOrNull() ?: 0
-                val fechaInicio = datosMap["fechaInicio"] ?: ""
-                val fechaFin = datosMap["fechaFin"] ?: ""
-                val estado = ciclo?.estado ?: "Inactivo"
-
-                if (fechaInicio > fechaFin) {
-                    view?.let {
-                        Notificador.show(
-                            it,
-                            "La fecha de inicio debe ser anterior a la final",
-                            R.color.colorError
-                        )
-                    }
-                    return@DialogFormularioFragment
-                }
-
-                val nuevo = Ciclo(
-                    idCiclo = ciclo?.idCiclo ?: 0,
-                    anio = anio,
-                    numero = numero,
-                    fechaInicio = fechaInicio,
-                    fechaFin = fechaFin,
-                    estado = estado
-                )
-
-                if (ciclo == null) viewModel.createCiclo(nuevo) else viewModel.updateCiclo(nuevo)
-            },
-            onCancel = {
-                // Actualizar solo el elemento afectado si existe
-                if (cicloIndex != -1) {
-                    adapter.notifyItemChanged(cicloIndex)
-                }
-            }
+            datosIniciales = datosIniciales
         )
+
+        dialog.setOnGuardarListener { datosMap ->
+            val anio = datosMap["anio"]?.toLongOrNull() ?: 0
+            val numero = datosMap["numero"]?.toLongOrNull() ?: 0
+            val fechaInicio = datosMap["fechaInicio"] ?: ""
+            val fechaFin = datosMap["fechaFin"] ?: ""
+            val estado = ciclo?.estado ?: "Inactivo"
+
+            if (fechaInicio > fechaFin) {
+                view?.let {
+                    Notificador.show(
+                        it,
+                        "La fecha de inicio debe ser anterior a la final",
+                        R.color.colorError
+                    )
+                }
+                return@setOnGuardarListener
+            }
+
+            val nuevo = Ciclo(
+                idCiclo = ciclo?.idCiclo ?: 0,
+                anio = anio,
+                numero = numero,
+                fechaInicio = fechaInicio,
+                fechaFin = fechaFin,
+                estado = estado
+            )
+
+            if (ciclo == null) viewModel.createCiclo(nuevo)
+            else viewModel.updateCiclo(nuevo)
+        }
+
+        dialog.setOnCancelListener {
+            if (cicloIndex != -1) {
+                adapter.notifyItemChanged(cicloIndex)
+            }
+        }
 
         dialog.show(parentFragmentManager, "DialogFormularioCiclo")
     }

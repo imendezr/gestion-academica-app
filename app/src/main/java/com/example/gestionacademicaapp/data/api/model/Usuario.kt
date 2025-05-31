@@ -7,6 +7,6 @@ import kotlinx.parcelize.Parcelize
 data class Usuario(
     val idUsuario: Long,
     var cedula: String,
-    var clave: String,
+    val clave: String?,
     var tipo: String
 ) : Parcelable

@@ -3,13 +3,66 @@
     <!-- ====================== Aplicación ====================== -->
     <string name="app_name">Gestión Académica</string>
 
-    <!-- ====================== Navegación / Drawer ====================== -->
-    <string name="navigation_drawer_open">Abrir menú de navegación</string>
-    <string name="navigation_drawer_close">Cerrar menú de navegación</string>
-    <string name="nav_header_title">Gestión Académica</string>
-    <string name="nav_header_subtitle">Bienvenido al sistema</string>
-    <string name="nav_header_desc">Encabezado de navegación</string>
-    <string name="action_settings">Configuración</string>
+    <!-- ====================== Autenticación ====================== -->
+    <string name="cedula_actual">%1$s (Usted)</string>
+    <string name="ingrese_cedula">Ingrese su cédula</string>
+    <string name="ingrese_contrasena">Ingrese su contraseña</string>
+    <string name="login_button">Iniciar Sesión</string>
+    <string name="login_button_desc">Botón para iniciar sesión</string>
+    <string name="login_hint_cedula">Cédula</string>
+    <string name="login_hint_password">Contraseña</string>
+    <string name="login_loading_desc">Cargando inicio de sesión</string>
+    <string name="login_title">Iniciar Sesión</string>
+    <string name="login_title_desc">Título de pantalla de inicio de sesión</string>
+
+    <!-- ====================== Botones ====================== -->
+    <string name="accion_agregar">Agregar</string>
+    <string name="accion_cerrar">CERRAR</string>
+    <string name="accion_agregar_curso">Agregar Curso</string>
+    <string name="btn_agregar">Agregar</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="fab_agregar">Agregar elemento</string>
+    <string name="fab_agregar_curso">Agregar</string>
+    <string name="guardar">Guardar</string>
+
+    <!-- ====================== Búsqueda ====================== -->
+    <string name="search_hint_anio">Buscar por año</string>
+    <string name="search_hint_codigo_nombre">Buscar por código o nombre</string>
+    <string name="search_hint_curso">Buscar cursos</string>
+
+    <!-- ====================== Carreras ====================== -->
+    <string name="content_desc_descripcion_carrera">Descripción de la carrera</string>
+    <string name="content_desc_nombre_carrera">Nombre de la carrera</string>
+    <string name="content_desc_ver_cursos">Ver cursos de la carrera</string>
+    <string name="descripcion_carrera">Código: %1$s · Título: %2$s</string>
+    <string name="descripcion_listado_carreras">Listado de carreras</string>
+
+    <!-- ====================== Ciclos ====================== -->
+    <string name="content_desc_activar_ciclo">Activar ciclo</string>
+    <string name="content_desc_descripcion_ciclo">Descripción del ciclo</string>
+    <string name="content_desc_editar_ciclo">Editar ciclo</string>
+    <string name="content_desc_nombre_ciclo">Nombre del ciclo</string>
+    <string name="desc_activar_ciclo">Activar ciclo</string>
+    <string name="label_ciclo">Ciclo: %1$s</string>
+    <string name="label_ciclo_detalle">Inicio: %1$s · Fin: %2$s · Estado: %3$s</string>
+    <string name="label_ciclo_nombre">%1$d - %2$d</string>
+
+    <!-- ====================== Curso por Carrera ====================== -->
+    <string name="content_desc_ciclo_curso">Ciclo del curso</string>
+    <string name="content_desc_eliminar_curso">Eliminar curso</string>
+    <string name="content_desc_nombre_curso">Nombre del curso</string>
+    <string name="content_desc_reordenar_curso">Reordenar curso</string>
+
+    <!-- ====================== Cursos ====================== -->
+    <string name="content_desc_cargando_cursos">Cargando cursos</string>
+    <string name="label_curso_detalle">Código: %1$s · Créditos: %2$d · Horas: %3$d</string>
+    <string name="titulo_cursos">Cursos</string>
+    <string name="titulo_cursos_de">Cursos de %1$s</string>
+
+    <!-- ====================== Inicio ====================== -->
+    <string name="dashboard_según_rol">Dashboard según tu rol</string>
+    <string name="inicio_subtitulo_dashboard">Dashboard según tu rol</string>
+    <string name="inicio_titulo_bienvenida">Bienvenido</string>
 
     <!-- ====================== Menú principal ====================== -->
     <string name="menu_alumnos">Alumnos</string>
@@ -25,71 +78,24 @@
     <string name="menu_profesores">Profesores</string>
     <string name="menu_usuarios">Gestión de Usuarios</string>
 
-    <!-- ====================== Autenticación ====================== -->
-    <string name="login_button">Iniciar Sesión</string>
-    <string name="login_button_desc">Botón para iniciar sesión</string>
-    <string name="login_hint_cedula">Cédula</string>
-    <string name="login_hint_password">Contraseña</string>
-    <string name="login_loading_desc">Cargando inicio de sesión</string>
-    <string name="login_title">Iniciar Sesión</string>
-    <string name="login_title_desc">Título de pantalla de inicio de sesión</string>
-
-    <!-- ====================== Inicio ====================== -->
-    <string name="inicio_subtitulo_dashboard">Dashboard según tu rol</string>
-    <string name="inicio_titulo_bienvenida">Bienvenido</string>
-
-    <!-- ====================== Botones ====================== -->
-    <string name="accion_agregar">Agregar</string>
-    <string name="accion_agregar_curso">Agregar Curso</string>
-    <string name="accion_cerrar">CERRAR</string>
-    <string name="fab_agregar">Agregar elemento</string>
-    <string name="fab_agregar_curso">Agregar</string>
-
-    <!-- ====================== Cursos ====================== -->
-    <string name="titulo_cursos">Cursos</string>
-    <string name="titulo_cursos_de">Cursos de %1$s</string>
-    <string name="label_curso_detalle">Código: %1$s · Créditos: %2$d · Horas: %3$d</string>
-    <string name="content_desc_cargando_cursos">Cargando cursos</string>
-
-    <!-- ====================== Carreras ====================== -->
-    <string name="descripcion_carrera">Código: %1$s · Título: %2$s</string>
-    <string name="descripcion_listado_carreras">Listado de carreras</string>
-    <string name="content_desc_nombre_carrera">Nombre de la carrera</string>
-    <string name="content_desc_descripcion_carrera">Descripción de la carrera</string>
-    <string name="content_desc_ver_cursos">Ver cursos de la carrera</string>
-
-    <!-- ====================== Ciclos ====================== -->
-    <string name="desc_activar_ciclo">Activar ciclo</string>
-    <string name="label_ciclo">Ciclo: %1$s</string>
-    <string name="label_ciclo_detalle">Inicio: %1$s · Fin: %2$s · Estado: %3$s</string>
-    <string name="label_ciclo_nombre">%1$d - %2$d</string>
-    <string name="content_desc_nombre_ciclo">Nombre del ciclo</string>
-    <string name="content_desc_descripcion_ciclo">Descripción del ciclo</string>
-    <string name="content_desc_activar_ciclo">Activar ciclo</string>
-    <string name="content_desc_editar_ciclo">Editar ciclo</string>
-
-    <!-- ====================== Curso por Carrera ====================== -->
-    <string name="content_desc_nombre_curso">Nombre del curso</string>
-    <string name="content_desc_ciclo_curso">Ciclo del curso</string>
-    <string name="content_desc_eliminar_curso">Eliminar curso</string>
-    <string name="content_desc_reordenar_curso">Reordenar curso</string>
-
-    <!-- ====================== Búsqueda ====================== -->
-    <string name="search_hint_anio">Buscar por año</string>
-    <string name="search_hint_codigo_nombre">Buscar por código o nombre</string>
-    <string name="search_hint_curso">Buscar cursos</string>
+    <!-- ====================== Navegación / Drawer ====================== -->
+    <string name="action_settings">Configuración</string>
+    <string name="nav_header_desc">Encabezado de navegación</string>
+    <string name="nav_header_subtitle">Bienvenido al sistema</string>
+    <string name="nav_header_title">Gestión Académica</string>
+    <string name="navigation_drawer_close">Cerrar menú de navegación</string>
+    <string name="navigation_drawer_open">Abrir menú de navegación</string>
 
     <!-- ====================== UI / Formularios ====================== -->
-    <string name="error_mensaje">Error</string>
-    <string name="spinner_etiqueta">Etiqueta</string>
-    <string name="spinner_desplegar">Desplegar opciones</string>
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-
-    <string name="guardar">Guardar</string>
-    <string name="cancelar">Cancelar</string>
+    <string name="content_desc_cedula_usuario">Cédula del usuario</string>
+    <string name="content_desc_tipo_usuario">Tipo de usuario</string>
+    <string name="desc_cargando_usuarios">Cargando usuarios</string>
+    <string name="desc_listado_usuarios">Listado de usuarios</string>
     <string name="error_campos_obligatorios">Completa los campos obligatorios</string>
-    <string name="dashboard_según_rol">Dashboard según tu rol</string>
-    <string name="ingrese_cedula">Ingrese su cédula</string>
-    <string name="ingrese_contrasena">Ingrese su contraseña</string>
+    <string name="error_mensaje">Error</string>
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="rol_usuario">Rol: %1$s</string>
+    <string name="spinner_desplegar">Desplegar opciones</string>
+    <string name="spinner_etiqueta">Etiqueta</string>
 
 </resources>

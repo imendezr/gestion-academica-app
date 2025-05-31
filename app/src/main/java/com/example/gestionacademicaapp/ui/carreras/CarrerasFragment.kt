@@ -182,29 +182,38 @@ class CarrerasFragment : Fragment() {
         )
 
         val datosIniciales = carrera?.let {
-            mapOf("codigo" to it.codigo, "nombre" to it.nombre, "titulo" to it.titulo)
+            mapOf(
+                "codigo" to it.codigo,
+                "nombre" to it.nombre,
+                "titulo" to it.titulo
+            )
         } ?: emptyMap()
 
-        val dialog = DialogFormularioFragment(
+        val dialog = DialogFormularioFragment.newInstance(
             titulo = if (carrera == null) "Nueva Carrera" else "Editar Carrera",
             campos = campos,
-            datosIniciales = datosIniciales,
-            onGuardar = { datosMap ->
-                val nuevaCarrera = Carrera(
-                    idCarrera = carrera?.idCarrera ?: 0,
-                    codigo = datosMap["codigo"] ?: "",
-                    nombre = datosMap["nombre"] ?: "",
-                    titulo = datosMap["titulo"] ?: ""
-                )
-                if (carrera == null) viewModel.createCarrera(nuevaCarrera)
-                else viewModel.updateCarrera(nuevaCarrera)
-            },
-            onCancel = {
-                if (carreraIndex != -1) {
-                    adapter.notifyItemChanged(carreraIndex)
-                }
-            }
+            datosIniciales = datosIniciales
         )
+
+        dialog.setOnGuardarListener { datosMap ->
+            val nuevaCarrera = Carrera(
+                idCarrera = carrera?.idCarrera ?: 0,
+                codigo = datosMap["codigo"] ?: "",
+                nombre = datosMap["nombre"] ?: "",
+                titulo = datosMap["titulo"] ?: ""
+            )
+            if (carrera == null) {
+                viewModel.createCarrera(nuevaCarrera)
+            } else {
+                viewModel.updateCarrera(nuevaCarrera)
+            }
+        }
+
+        dialog.setOnCancelListener {
+            if (carreraIndex != -1) {
+                adapter.notifyItemChanged(carreraIndex)
+            }
+        }
 
         dialog.show(parentFragmentManager, "DialogFormularioCarrera")
     }

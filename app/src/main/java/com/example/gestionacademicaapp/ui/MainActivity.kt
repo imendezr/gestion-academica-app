@@ -9,7 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
-import androidx.navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.ui.AppBarConfiguration
 import androidx.navigation.ui.NavigationUI
 import androidx.navigation.ui.setupActionBarWithNavController
@@ -37,7 +37,9 @@ class MainActivity : AppCompatActivity() {
         // Toolbar
         setSupportActionBar(binding.appBarMain.toolbar)
 
-        navController = findNavController(R.id.nav_host_fragment_content_main)
+        navController = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
+            ?.findNavController()
+            ?: throw IllegalStateException("NavController not found")
 
         appBarConfiguration = AppBarConfiguration(
             setOf(

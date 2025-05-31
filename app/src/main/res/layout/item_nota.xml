@@ -1,33 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
-    card_view:cardCornerRadius="6dp"
-    android:elevation="4dp">
+    card_view:cardBackgroundColor="?attr/colorSurface"
+    card_view:cardCornerRadius="10dp"
+    card_view:cardElevation="4dp">
 
     <LinearLayout
-        android:orientation="vertical"
-        android:padding="16dp"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:minHeight="80dp"
+        android:orientation="vertical"
+        android:padding="16dp">
 
         <TextView
-            android:id="@+id/tvCurso"
-            android:text="Curso"
-            android:textStyle="bold"
+            android:id="@+id/tvTitulo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/colorTextPrimary"
             android:textSize="18sp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:textStyle="bold"
+            android:text="Título" />
 
         <TextView
-            android:id="@+id/tvNota"
-            android:text="Nota"
-            android:textSize="14sp"
-            android:layout_marginTop="4dp"
+            android:id="@+id/tvSubtitulo"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="15sp"
+            android:text="Descripción o información secundaria" />
     </LinearLayout>
 </androidx.cardview.widget.CardView>

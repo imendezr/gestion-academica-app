@@ -154,11 +154,11 @@ class CursosFragment : Fragment() {
             CampoFormulario(
                 "codigo",
                 "Código",
-                "texto",
+                "text",
                 obligatorio = true,
-                editable = curso == null
+                editable = curso == null // solo editable si es nuevo
             ),
-            CampoFormulario("nombre", "Nombre", "texto", obligatorio = true),
+            CampoFormulario("nombre", "Nombre", "text", obligatorio = true),
             CampoFormulario("creditos", "Créditos", "number", obligatorio = true),
             CampoFormulario("horasSemanales", "Horas Semanales", "number", obligatorio = true)
         )
@@ -172,31 +172,32 @@ class CursosFragment : Fragment() {
             )
         } ?: emptyMap()
 
-        val cursoIndex =
-            curso?.let { cursosOriginal.indexOfFirst { c -> c.idCurso == it.idCurso } } ?: -1
+        val cursoIndex = curso?.let {
+            cursosOriginal.indexOfFirst { c -> c.idCurso == it.idCurso }
+        } ?: -1
 
-        val dialog = DialogFormularioFragment(
+        val dialog = DialogFormularioFragment.newInstance(
             titulo = if (curso == null) "Nuevo Curso" else "Editar Curso",
             campos = campos,
-            datosIniciales = datosIniciales,
-            onGuardar = { datosMap ->
-                val nuevoCurso = Curso(
-                    idCurso = curso?.idCurso ?: 0,
-                    codigo = datosMap["codigo"] ?: "",
-                    nombre = datosMap["nombre"] ?: "",
-                    creditos = datosMap["creditos"]?.toLongOrNull() ?: 0,
-                    horasSemanales = datosMap["horasSemanales"]?.toLongOrNull() ?: 0
-                )
-
-                if (curso == null) viewModel.createCurso(nuevoCurso)
-                else viewModel.updateCurso(nuevoCurso)
-            },
-            onCancel = {
-                if (cursoIndex != -1) {
-                    adapter.notifyItemChanged(cursoIndex)
-                }
-            }
+            datosIniciales = datosIniciales
         )
+
+        dialog.setOnGuardarListener { datosMap ->
+            val nuevoCurso = Curso(
+                idCurso = curso?.idCurso ?: 0,
+                codigo = datosMap["codigo"] ?: "",
+                nombre = datosMap["nombre"] ?: "",
+                creditos = datosMap["creditos"]?.toLongOrNull() ?: 0,
+                horasSemanales = datosMap["horasSemanales"]?.toLongOrNull() ?: 0
+            )
+
+            if (curso == null) viewModel.createCurso(nuevoCurso)
+            else viewModel.updateCurso(nuevoCurso)
+        }
+
+        dialog.setOnCancelListener {
+            if (cursoIndex != -1) adapter.notifyItemChanged(cursoIndex)
+        }
 
         dialog.show(parentFragmentManager, "DialogFormularioCurso")
     }
