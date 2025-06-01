@@ -199,6 +199,10 @@ class CursosFragment : Fragment() {
             if (cursoIndex != -1) adapter.notifyItemChanged(cursoIndex)
         }
 
+        dialog.setOnDismissListener {
+            if (cursoIndex != -1) adapter.notifyItemChanged(cursoIndex)
+        }
+
         dialog.show(parentFragmentManager, "DialogFormularioCurso")
     }
 }
