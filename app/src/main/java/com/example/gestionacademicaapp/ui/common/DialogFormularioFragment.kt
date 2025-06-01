@@ -2,6 +2,7 @@ package com.example.gestionacademicaapp.ui.common
 
 import android.app.DatePickerDialog
 import android.app.Dialog
+import android.content.DialogInterface
 import android.os.Bundle
 import android.text.Editable
 import android.text.InputType
@@ -34,6 +35,7 @@ class DialogFormularioFragment : DialogFragment() {
     private var datosIniciales: Map<String, String> = emptyMap()
     private lateinit var onGuardar: (Map<String, String>) -> Unit
     private var onCancel: () -> Unit = {}
+    private var onDismiss: () -> Unit = {}
 
     companion object {
         fun newInstance(
@@ -263,6 +265,15 @@ class DialogFormularioFragment : DialogFragment() {
 
     fun setOnCancelListener(listener: () -> Unit) {
         onCancel = listener
+    }
+
+    fun setOnDismissListener(listener: () -> Unit) {
+        onDismiss = listener
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        onDismiss()
     }
 
     override fun onDestroyView() {
