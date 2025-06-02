@@ -122,10 +122,13 @@ interface ApiService {
     suspend fun getAllCiclos(): List<Ciclo>
 
     @GET("ciclos/buscarPorAnnio")
-    suspend fun getCicloByAnio(@Query("annio") anio: Int): Ciclo
+    suspend fun getCicloByAnio(@Query("annio") anio: Long): Ciclo
 
     @POST("ciclos/activarCiclo/{id}")
     suspend fun activateCiclo(@Path("id") id: Long): Response<Unit>
+
+    @GET("ciclos/buscarPorId/{id}")
+    suspend fun getCicloById(@Path("id") id: Long): Ciclo
 
 
     // CURSOS
@@ -156,6 +159,11 @@ interface ApiService {
         @Path("idCiclo") idCiclo: Long
     ): List<CursoDto>
 
+    @GET("cursos/buscarCursosPorCiclo/{idCiclo}")
+    suspend fun getCursosByCiclo(
+        @Path("idCiclo") idCiclo: Long
+    ): List<CursoDto>
+
 
     // GRUPOS
     @POST("grupos/insertar")
@@ -176,6 +184,13 @@ interface ApiService {
         @Path("idCurso") idCurso: Long
     ): List<GrupoDto>
 
+    @GET("grupos/buscarGruposPorCursoCicloCarrera/{idCurso}/{idCiclo}/{idCarrera}")
+    suspend fun getGruposByCursoCicloCarrera(
+        @Path("idCurso") idCurso: Long,
+        @Path("idCiclo") idCiclo: Long,
+        @Path("idCarrera") idCarrera: Long
+    ): List<GrupoDto>
+
 
     // MATRÍCULAS
     @POST("matricular/insertar")
@@ -187,8 +202,10 @@ interface ApiService {
     @DELETE("matricular/eliminar/{id}")
     suspend fun deleteMatricula(@Path("id") id: Long): Response<Unit>
 
-    @GET("matricular/listarMatriculasPorAlumno/{idAlumno}")
-    suspend fun getMatriculasPorAlumno(@Path("idAlumno") idAlumno: Long): List<MatriculaAlumnoDto>
+    @GET("matricular/listarMatriculasPorAlumno/{cedula}")
+    suspend fun getMatriculasPorCedula(
+        @Path("cedula") cedula: String
+    ): List<MatriculaAlumnoDto>
 
     @GET("matricular/listarMatriculasPorAlumnoYCiclo/{idAlumno}/{idCiclo}")
     suspend fun getMatriculasPorAlumnoYCiclo(

@@ -11,39 +11,45 @@ import com.example.gestionacademicaapp.ui.common.state.SingleUiState
 import com.example.gestionacademicaapp.utils.toUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 @HiltViewModel
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class CiclosViewModel @Inject constructor(
     private val cicloRepository: CicloRepository
 ) : ViewModel() {
 
-    private val _ciclosState = MutableLiveData<ListUiState<Ciclo>>()
-    val ciclosState: LiveData<ListUiState<Ciclo>> get() = _ciclosState
-
     private val _actionState = MutableLiveData<SingleUiState<String>>()
     val actionState: LiveData<SingleUiState<String>> get() = _actionState
 
-    init {
-        fetchCiclos()
-    }
+    private val reloadTrigger = MutableStateFlow(0)
 
-    fun fetchCiclos() {
-        viewModelScope.launch {
-            _ciclosState.value = ListUiState.Loading
+    fun fetchItems() = reloadTrigger.flatMapLatest {
+        flow {
+            emit(ListUiState.Loading)
             cicloRepository.listar()
-                .onSuccess { _ciclosState.value = ListUiState.Success(it) }
-                .onFailure { _ciclosState.value = ListUiState.Error(it.toUserMessage()) }
-        }
+                .onSuccess { emit(ListUiState.Success(it)) }
+                .onFailure { emit(ListUiState.Error(it.toUserMessage())) }
+        }.catch { emit(ListUiState.Error(it.message ?: "Error desconocido")) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), ListUiState.Loading)
+
+    private fun triggerReload() {
+        reloadTrigger.value += 1
     }
 
-    fun createCiclo(ciclo: Ciclo) {
+    fun createItem(ciclo: Ciclo) {
         viewModelScope.launch {
             _actionState.value = SingleUiState.Loading
             cicloRepository.insertar(ciclo)
                 .onSuccess {
-                    fetchCiclos()
                     _actionState.value = SingleUiState.Success("Ciclo creado exitosamente")
+                    triggerReload()
                 }
                 .onFailure {
                     _actionState.value = SingleUiState.Error(it.toUserMessage())
@@ -51,13 +57,13 @@ class CiclosViewModel @Inject constructor(
         }
     }
 
-    fun updateCiclo(ciclo: Ciclo) {
+    fun updateItem(ciclo: Ciclo) {
         viewModelScope.launch {
             _actionState.value = SingleUiState.Loading
             cicloRepository.modificar(ciclo)
                 .onSuccess {
-                    fetchCiclos()
                     _actionState.value = SingleUiState.Success("Ciclo actualizado exitosamente")
+                    triggerReload()
                 }
                 .onFailure {
                     _actionState.value = SingleUiState.Error(it.toUserMessage())
@@ -65,26 +71,30 @@ class CiclosViewModel @Inject constructor(
         }
     }
 
-    fun deleteCiclo(id: Long) {
+    fun deleteItem(id: Long) {
         viewModelScope.launch {
             _actionState.value = SingleUiState.Loading
+            val result = cicloRepository.obtenerPorId(id)
+            if (result.isFailure) {
+                _actionState.value = SingleUiState.Error("Error al obtener el ciclo: ${result.exceptionOrNull()?.toUserMessage()}")
+                return@launch
+            }
 
-            // Buscar el ciclo a eliminar desde la lista actual
-            val cicloActivo = _ciclosState.value
-                .takeIf { it is ListUiState.Success }
-                ?.let { (it as ListUiState.Success).data.firstOrNull { ciclo -> ciclo.idCiclo == id } }
+            val ciclo = result.getOrNull()
+            if (ciclo == null) {
+                _actionState.value = SingleUiState.Error("El ciclo no existe.")
+                return@launch
+            }
 
-            // Validar si es activo
-            if (cicloActivo?.estado?.equals("ACTIVO", ignoreCase = true) == true) {
-                _actionState.value =
-                    SingleUiState.Error("No se puede eliminar un ciclo activo.")
+            if (ciclo.estado.equals("ACTIVO", ignoreCase = true)) {
+                _actionState.value = SingleUiState.Error("No se puede eliminar un ciclo activo.")
                 return@launch
             }
 
             cicloRepository.eliminar(id)
                 .onSuccess {
-                    fetchCiclos()
                     _actionState.value = SingleUiState.Success("Ciclo eliminado exitosamente")
+                    triggerReload()
                 }
                 .onFailure {
                     _actionState.value = SingleUiState.Error(it.toUserMessage())
@@ -92,15 +102,15 @@ class CiclosViewModel @Inject constructor(
         }
     }
 
-    fun searchCicloByAnio(anio: Int) {
+    fun searchCicloByAnio(anio: Long) {
         viewModelScope.launch {
-            _ciclosState.value = ListUiState.Loading
+            _actionState.value = SingleUiState.Loading
             cicloRepository.buscarPorAnio(anio)
                 .onSuccess { ciclo ->
-                    _ciclosState.value = ListUiState.Success(listOf(ciclo))
+                    _actionState.value = SingleUiState.Success("Ciclo encontrado: ${ciclo.anio}-${ciclo.numero}")
                 }
                 .onFailure {
-                    _ciclosState.value = ListUiState.Error(it.toUserMessage())
+                    _actionState.value = SingleUiState.Error(it.toUserMessage())
                 }
         }
     }
@@ -108,10 +118,28 @@ class CiclosViewModel @Inject constructor(
     fun activateCiclo(id: Long) {
         viewModelScope.launch {
             _actionState.value = SingleUiState.Loading
+            // Validar que el ciclo exista antes de activarlo
+            val result = cicloRepository.obtenerPorId(id)
+            if (result.isFailure) {
+                _actionState.value = SingleUiState.Error("Error al obtener el ciclo: ${result.exceptionOrNull()?.toUserMessage()}")
+                return@launch
+            }
+
+            val ciclo = result.getOrNull()
+            if (ciclo == null) {
+                _actionState.value = SingleUiState.Error("El ciclo no existe.")
+                return@launch
+            }
+
+            if (ciclo.estado.equals("ACTIVO", ignoreCase = true)) {
+                _actionState.value = SingleUiState.Error("El ciclo ya está activo.")
+                return@launch
+            }
+
             cicloRepository.activar(id)
                 .onSuccess {
-                    fetchCiclos()
                     _actionState.value = SingleUiState.Success("Ciclo activado exitosamente")
+                    triggerReload()
                 }
                 .onFailure {
                     _actionState.value = SingleUiState.Error(it.toUserMessage())

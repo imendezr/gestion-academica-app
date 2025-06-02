@@ -8,6 +8,7 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.asLiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
@@ -19,6 +20,7 @@ import com.example.gestionacademicaapp.ui.common.state.ListUiState
 import com.example.gestionacademicaapp.ui.common.state.SingleUiState
 import com.example.gestionacademicaapp.utils.Notificador
 import com.example.gestionacademicaapp.utils.enableSwipeActions
+import com.example.gestionacademicaapp.utils.setupSearchView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -31,7 +33,9 @@ class CiclosFragment : Fragment() {
     private lateinit var adapter: CiclosAdapter
     private lateinit var fab: ExtendedFloatingActionButton
     private lateinit var progressBar: View
-    private var ciclosOriginal: List<Ciclo> = emptyList()
+
+    private var originalItems: List<Ciclo> = emptyList()
+    private var currentEditIndex: Int? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -43,24 +47,21 @@ class CiclosFragment : Fragment() {
         fab = view.findViewById(R.id.fabCiclos)
         progressBar = view.findViewById(R.id.progressBar)
 
-        searchView.isIconified = false
-        searchView.clearFocus()
-        searchView.queryHint = getString(R.string.search_hint_anio)
+        setupSearchView(searchView, getString(R.string.search_hint_anio)) { query ->
+            filterList(query)
+        }
 
         adapter = CiclosAdapter(
-            onEdit = { mostrarDialogoCiclo(it) },
-            onActivate = { viewModel.activateCiclo(it.idCiclo) }
+            onEdit = { ciclo -> mostrarDialogoCiclo(ciclo) },
+            onDelete = { ciclo ->
+                viewModel.deleteItem(ciclo.idCiclo)
+            },
+            onActivateCiclo = { ciclo ->
+                viewModel.activateCiclo(ciclo.idCiclo)
+            }
         )
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
-
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?) = false
-            override fun onQueryTextChange(newText: String?): Boolean {
-                filtrarLista(newText)
-                return true
-            }
-        })
 
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
@@ -69,25 +70,27 @@ class CiclosFragment : Fragment() {
             }
         })
 
-        fab.setOnClickListener {
-            searchView.setQuery("", false)
-            searchView.clearFocus()
-            mostrarDialogoCiclo(null)
-        }
-
         recyclerView.enableSwipeActions(
             onSwipeLeft = { pos ->
-                val ciclo = adapter.getCicloAt(pos)
-                viewModel.deleteCiclo(ciclo.idCiclo)
-                adapter.notifyItemChanged(pos) // Restaurar inmediatamente
+                val ciclo = adapter.getItemAt(pos)
+                viewModel.deleteItem(ciclo.idCiclo)
+                adapter.notifyItemChanged(pos)
             },
             onSwipeRight = { pos ->
-                adapter.notifyItemChanged(pos) // Restaurar inmediatamente
-                mostrarDialogoCiclo(adapter.getCicloAt(pos))
+                currentEditIndex = pos
+                adapter.notifyItemChanged(pos)
+                mostrarDialogoCiclo(adapter.getItemAt(pos))
             }
         )
 
-        viewModel.ciclosState.observe(viewLifecycleOwner) { state ->
+        fab.setOnClickListener {
+            searchView.setQuery("", false)
+            searchView.clearFocus()
+            currentEditIndex = null
+            mostrarDialogoCiclo(null)
+        }
+
+        viewModel.fetchItems().asLiveData().observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ListUiState.Loading -> {
                     progressBar.isVisible = true
@@ -96,8 +99,8 @@ class CiclosFragment : Fragment() {
                 is ListUiState.Success -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = true
-                    ciclosOriginal = state.data
-                    adapter.submitList(ciclosOriginal)
+                    originalItems = state.data
+                    filterList(searchView.query.toString())
                 }
                 is ListUiState.Error -> {
                     progressBar.isVisible = false
@@ -124,12 +127,13 @@ class CiclosFragment : Fragment() {
                         else -> R.color.colorPrimary
                     }
                     Notificador.show(view, state.data, color, anchorView = fab)
-                    viewModel.fetchCiclos()
+                    filterList(searchView.query.toString())
+                    currentEditIndex = null
                 }
                 is SingleUiState.Error -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
-                    Notificador.show(view, state.message, R.color.colorError)
+                    Notificador.show(view, state.message, R.color.colorError, anchorView = fab) // Asegurar que el mensaje de error sea visible
                 }
             }
         }
@@ -137,16 +141,16 @@ class CiclosFragment : Fragment() {
         return view
     }
 
-    private fun filtrarLista(query: String?) {
-        val texto = query?.lowercase()?.trim() ?: ""
-        if (texto.isEmpty()) {
-            adapter.submitList(ciclosOriginal)
+    private fun filterList(query: String?) {
+        val texto = query?.trim() ?: ""
+        val filtered = if (texto.isEmpty()) {
+            originalItems
         } else {
-            val filtrados = ciclosOriginal.filter {
+            originalItems.filter {
                 it.anio.toString().contains(texto)
             }
-            adapter.submitList(filtrados)
         }
+        adapter.submitList(filtered)
     }
 
     private fun mostrarDialogoCiclo(ciclo: Ciclo?) {
@@ -234,7 +238,7 @@ class CiclosFragment : Fragment() {
             val fechaFin = datosMap["fechaFin"] ?: ""
             val estado = ciclo?.estado ?: "Inactivo"
 
-            val nuevo = Ciclo(
+            val nuevoCiclo = Ciclo(
                 idCiclo = ciclo?.idCiclo ?: 0,
                 anio = anio,
                 numero = numero,
@@ -242,8 +246,12 @@ class CiclosFragment : Fragment() {
                 fechaFin = fechaFin,
                 estado = estado
             )
-            if (ciclo == null) viewModel.createCiclo(nuevo)
-            else viewModel.updateCiclo(nuevo)
+            if (ciclo == null) viewModel.createItem(nuevoCiclo)
+            else viewModel.updateItem(nuevoCiclo)
+        }
+
+        dialog.setOnCancelListener { index ->
+            if (index != null && index >= 0) adapter.notifyItemChanged(index)
         }
 
         dialog.show(parentFragmentManager, "DialogFormularioCiclo")

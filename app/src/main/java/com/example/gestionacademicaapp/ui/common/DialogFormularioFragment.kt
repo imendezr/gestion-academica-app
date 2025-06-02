@@ -37,7 +37,7 @@ class DialogFormularioFragment : DialogFragment() {
     private lateinit var campos: MutableList<CampoFormulario>
     private var datosIniciales: Map<String, String> = emptyMap()
     private lateinit var onGuardar: (Map<String, String>) -> Unit
-    private var onCancel: () -> Unit = {}
+    private var onCancel: (Int?) -> Unit = { _ -> } // Ajustado para aceptar un índice nullable
     private var onDismiss: () -> Unit = {}
 
     companion object {
@@ -69,7 +69,7 @@ class DialogFormularioFragment : DialogFragment() {
             .setTitle(titulo)
             .setView(binding.root)
             .setPositiveButton(getString(R.string.guardar), null)
-            .setNegativeButton(getString(R.string.cancelar), null) // Sin lógica directa
+            .setNegativeButton(getString(R.string.cancelar), null)
             .create().also { dialog ->
                 dialog.setOnShowListener {
                     // Botón Guardar
@@ -86,7 +86,7 @@ class DialogFormularioFragment : DialogFragment() {
                     }
                     // Botón Cancelar
                     dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
-                        onCancel()
+                        onCancel(null) // No hay índice en este caso
                         dialog.dismiss()
                     }
                 }
@@ -96,8 +96,8 @@ class DialogFormularioFragment : DialogFragment() {
 
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)
-        onCancel()
-        dismiss() // Asegura que el diálogo se cierre y dispare onDismiss
+        onCancel(null) // No hay índice en este caso
+        dismiss()
     }
 
     private fun validateAndGetValues(): ValidationResult {
@@ -310,12 +310,8 @@ class DialogFormularioFragment : DialogFragment() {
         onGuardar = listener
     }
 
-    fun setOnCancelListener(listener: () -> Unit) {
+    fun setOnCancelListener(listener: (Int?) -> Unit) { // Ajustado para aceptar un índice nullable
         onCancel = listener
-    }
-
-    fun setOnDismissListener(listener: () -> Unit) {
-        onDismiss = listener
     }
 
     override fun onDismiss(dialog: DialogInterface) {

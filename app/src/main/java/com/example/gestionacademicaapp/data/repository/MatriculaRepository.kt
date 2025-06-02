@@ -25,8 +25,8 @@ class MatriculaRepository @Inject constructor(
         if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun listarPorAlumno(idAlumno: Long): Result<List<MatriculaAlumnoDto>> = safeApiCall {
-        apiService.getMatriculasPorAlumno(idAlumno)
+    suspend fun listarPorCedula(cedula: String): Result<List<MatriculaAlumnoDto>> = safeApiCall {
+        apiService.getMatriculasPorCedula(cedula)
     }
 
     suspend fun listarPorAlumnoYCiclo(

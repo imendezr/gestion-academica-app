@@ -7,15 +7,17 @@ import android.widget.ImageButton
 import android.widget.TextView
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Ciclo
+import com.example.gestionacademicaapp.ui.common.adapter.BaseAdapter
+import com.example.gestionacademicaapp.utils.Notificador
 
 class CiclosAdapter(
-    private val onEdit: (Ciclo) -> Unit,
-    private val onActivate: (Ciclo) -> Unit
-) : ListAdapter<Ciclo, CiclosAdapter.CicloViewHolder>(DiffCallback) {
+    onEdit: (Ciclo) -> Unit,
+    onDelete: (Ciclo) -> Unit,
+    private val onActivateCiclo: (Ciclo) -> Unit
+) : BaseAdapter<Ciclo, CiclosAdapter.CicloViewHolder>(DiffCallback, onEdit, onDelete) {
 
     inner class CicloViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
@@ -40,11 +42,20 @@ class CiclosAdapter(
             btnActivate.contentDescription = itemView.context.getString(R.string.desc_activar_ciclo)
 
             btnActivate.setOnClickListener(null)
-            if (!ciclo.estado.equals("ACTIVO", ignoreCase = true)) {
-                btnActivate.setOnClickListener { onActivate(ciclo) }
+            if (ciclo.estado.equals("ACTIVO", ignoreCase = true)) {
+                btnActivate.setOnClickListener {
+                    Notificador.show(
+                        itemView,
+                        "El ciclo ya está activo.",
+                        R.color.colorPrimary,
+                        anchorView = btnActivate
+                    )
+                }
+            } else {
+                btnActivate.setOnClickListener { onActivateCiclo(ciclo) }
             }
 
-            itemView.setOnClickListener { onEdit(ciclo) }
+            setupDefaultClickListener(itemView, ciclo)
         }
     }
 
@@ -57,8 +68,6 @@ class CiclosAdapter(
     override fun onBindViewHolder(holder: CicloViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
-
-    fun getCicloAt(position: Int): Ciclo = getItem(position)
 
     companion object {
         private val DiffCallback = object : DiffUtil.ItemCallback<Ciclo>() {

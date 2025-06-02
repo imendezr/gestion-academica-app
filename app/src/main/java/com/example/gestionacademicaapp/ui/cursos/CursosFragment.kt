@@ -8,6 +8,7 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.asLiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
@@ -19,6 +20,7 @@ import com.example.gestionacademicaapp.ui.common.state.ListUiState
 import com.example.gestionacademicaapp.ui.common.state.SingleUiState
 import com.example.gestionacademicaapp.utils.Notificador
 import com.example.gestionacademicaapp.utils.enableSwipeActions
+import com.example.gestionacademicaapp.utils.setupSearchView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -32,8 +34,8 @@ class CursosFragment : Fragment() {
     private lateinit var fab: ExtendedFloatingActionButton
     private lateinit var progressBar: View
 
-    private var currentSearchQuery: String? = null
-    private var cursosOriginal: List<Curso> = emptyList()
+    private var originalItems: List<Curso> = emptyList()
+    private var currentEditIndex: Int? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
@@ -45,24 +47,18 @@ class CursosFragment : Fragment() {
         fab = view.findViewById(R.id.fabCursos)
         progressBar = view.findViewById(R.id.progressBar)
 
-        searchView.isIconified = false
-        searchView.clearFocus()
-        searchView.queryHint = getString(R.string.search_hint_codigo_nombre)
+        setupSearchView(searchView, getString(R.string.search_hint_codigo_nombre)) { query ->
+            filterList(query)
+        }
 
         adapter = CursosAdapter(
-            onEdit = { curso -> mostrarDialogoCurso(curso) }
+            onEdit = { curso -> mostrarDialogoCurso(curso) },
+            onDelete = { curso ->
+                viewModel.deleteItem(curso.idCurso)
+            }
         )
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
-
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?) = false
-            override fun onQueryTextChange(newText: String?): Boolean {
-                currentSearchQuery = newText
-                filtrarLista(newText)
-                return true
-            }
-        })
 
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
@@ -71,25 +67,27 @@ class CursosFragment : Fragment() {
             }
         })
 
-        fab.setOnClickListener {
-            searchView.setQuery("", false)
-            searchView.clearFocus()
-            mostrarDialogoCurso(null)
-        }
-
         recyclerView.enableSwipeActions(
             onSwipeLeft = { pos ->
-                val curso = adapter.getCursoAt(pos)
-                viewModel.deleteCurso(curso.idCurso)
-                adapter.notifyItemChanged(pos) // Restaurar inmediatamente
+                val curso = adapter.getItemAt(pos)
+                viewModel.deleteItem(curso.idCurso)
+                adapter.notifyItemChanged(pos)
             },
             onSwipeRight = { pos ->
-                adapter.notifyItemChanged(pos) // Restaurar inmediatamente
-                mostrarDialogoCurso(adapter.getCursoAt(pos))
+                currentEditIndex = pos
+                adapter.notifyItemChanged(pos)
+                mostrarDialogoCurso(adapter.getItemAt(pos))
             }
         )
 
-        viewModel.cursosState.observe(viewLifecycleOwner) { state ->
+        fab.setOnClickListener {
+            searchView.setQuery("", false)
+            searchView.clearFocus()
+            currentEditIndex = null
+            mostrarDialogoCurso(null)
+        }
+
+        viewModel.fetchItems().asLiveData().observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ListUiState.Loading -> {
                     progressBar.isVisible = true
@@ -98,8 +96,8 @@ class CursosFragment : Fragment() {
                 is ListUiState.Success -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = true
-                    cursosOriginal = state.data
-                    filtrarLista(currentSearchQuery)
+                    originalItems = state.data
+                    filterList(searchView.query.toString())
                 }
                 is ListUiState.Error -> {
                     progressBar.isVisible = false
@@ -119,13 +117,13 @@ class CursosFragment : Fragment() {
                     progressBar.isVisible = false
                     fab.isEnabled = true
                     val color = when {
-                        state.data.contains("creado", true) ||
-                                state.data.contains("actualizado", true) -> R.color.colorAccent
+                        state.data.contains("creado", true) || state.data.contains("actualizado", true) -> R.color.colorAccent
                         state.data.contains("eliminado", true) -> R.color.colorError
                         else -> R.color.colorPrimary
                     }
                     Notificador.show(requireView(), state.data, color, anchorView = fab)
-                    viewModel.fetchCursos()
+                    filterList(searchView.query.toString()) // Solo filtra, la recarga ya ocurre
+                    currentEditIndex = null
                 }
                 is SingleUiState.Error -> {
                     progressBar.isVisible = false
@@ -138,17 +136,17 @@ class CursosFragment : Fragment() {
         return view
     }
 
-    private fun filtrarLista(query: String?) {
+    private fun filterList(query: String?) {
         val texto = query?.lowercase()?.trim() ?: ""
-        if (texto.isEmpty()) {
-            adapter.submitList(cursosOriginal)
+        val filtered = if (texto.isEmpty()) {
+            originalItems
         } else {
-            val filtrados = cursosOriginal.filter {
+            originalItems.filter {
                 it.nombre.lowercase().contains(texto) ||
                         it.codigo.lowercase().contains(texto)
             }
-            adapter.submitList(filtrados)
         }
+        adapter.submitList(filtered)
     }
 
     private fun mostrarDialogoCurso(curso: Curso?) {
@@ -233,8 +231,12 @@ class CursosFragment : Fragment() {
                 creditos = datosMap["creditos"]?.toLongOrNull() ?: 0,
                 horasSemanales = datosMap["horasSemanales"]?.toLongOrNull() ?: 0
             )
-            if (curso == null) viewModel.createCurso(nuevoCurso)
-            else viewModel.updateCurso(nuevoCurso)
+            if (curso == null) viewModel.createItem(nuevoCurso)
+            else viewModel.updateItem(nuevoCurso)
+        }
+
+        dialog.setOnCancelListener { index ->
+            if (index != null && index >= 0) adapter.notifyItemChanged(index)
         }
 
         dialog.show(parentFragmentManager, "DialogFormularioCurso")

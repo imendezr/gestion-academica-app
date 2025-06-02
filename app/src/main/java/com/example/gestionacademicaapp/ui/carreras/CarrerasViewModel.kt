@@ -13,76 +13,77 @@ import com.example.gestionacademicaapp.ui.common.state.SingleUiState
 import com.example.gestionacademicaapp.utils.toUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 
 @HiltViewModel
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class) // Anotación para flatMapLatest
 class CarrerasViewModel @Inject constructor(
     private val carreraRepository: CarreraRepository,
     private val carreraCursoRepository: CarreraCursoRepository
 ) : ViewModel() {
 
-    private val _carrerasState = MutableLiveData<ListUiState<Carrera>>()
-    val carrerasState: LiveData<ListUiState<Carrera>> get() = _carrerasState
-
     private val _actionState = MutableLiveData<SingleUiState<String>>()
     val actionState: LiveData<SingleUiState<String>> get() = _actionState
 
-    init {
-        fetchCarreras()
-    }
+    private val reloadTrigger = MutableStateFlow(0)
 
-    fun fetchCarreras() {
-        viewModelScope.launch {
-            _carrerasState.value = ListUiState.Loading
+    fun fetchItems() = reloadTrigger.flatMapLatest {
+        flow {
+            emit(ListUiState.Loading)
             carreraRepository.listar()
-                .onSuccess { _carrerasState.value = ListUiState.Success(it) }
-                .onFailure { _carrerasState.value = ListUiState.Error(it.toUserMessage()) }
-        }
+                .onSuccess { emit(ListUiState.Success(it)) }
+                .onFailure { emit(ListUiState.Error(it.toUserMessage())) }
+        }.catch { emit(ListUiState.Error(it.message ?: "Error desconocido")) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), ListUiState.Loading)
+
+    private fun triggerReload() {
+        reloadTrigger.value += 1
     }
 
-    fun createCarrera(carrera: Carrera) {
+    fun createItem(carrera: Carrera) {
         viewModelScope.launch {
             _actionState.value = SingleUiState.Loading
             carreraRepository.insertar(carrera)
                 .onSuccess {
-                    fetchCarreras()
                     _actionState.value = SingleUiState.Success("Carrera creada exitosamente")
+                    triggerReload()
                 }
                 .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
         }
     }
 
-    fun updateCarrera(carrera: Carrera) {
+    fun updateItem(carrera: Carrera) {
         viewModelScope.launch {
             _actionState.value = SingleUiState.Loading
             carreraRepository.modificar(carrera)
                 .onSuccess {
-                    fetchCarreras()
                     _actionState.value = SingleUiState.Success("Carrera actualizada exitosamente")
+                    triggerReload()
                 }
                 .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
         }
     }
 
-    fun deleteCarrera(id: Long) {
+    fun deleteItem(id: Long) {
         viewModelScope.launch {
             _actionState.value = SingleUiState.Loading
-
-            // Validación antes de eliminar
             val tieneCursos = carreraCursoRepository.listar().getOrNull()
                 ?.any { it.pkCarrera == id } == true
-
             if (tieneCursos) {
-                _actionState.value =
-                    SingleUiState.Error("No se puede eliminar una carrera con cursos asignados.")
+                _actionState.value = SingleUiState.Error("No se puede eliminar una carrera con cursos asignados.")
                 return@launch
             }
-
             carreraRepository.eliminar(id)
                 .onSuccess {
-                    fetchCarreras()
                     _actionState.value = SingleUiState.Success("Carrera eliminada exitosamente")
+                    triggerReload()
                 }
                 .onFailure {
                     _actionState.value = SingleUiState.Error(it.toUserMessage())
@@ -96,6 +97,7 @@ class CarrerasViewModel @Inject constructor(
             carreraCursoRepository.insertar(carreraCurso)
                 .onSuccess {
                     _actionState.value = SingleUiState.Success("Curso agregado a la carrera")
+                    triggerReload()
                 }
                 .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
         }
@@ -107,6 +109,7 @@ class CarrerasViewModel @Inject constructor(
             carreraCursoRepository.modificar(carreraCurso)
                 .onSuccess {
                     _actionState.value = SingleUiState.Success("Orden del curso actualizado")
+                    triggerReload()
                 }
                 .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
         }
@@ -118,6 +121,7 @@ class CarrerasViewModel @Inject constructor(
             carreraCursoRepository.eliminar(idCarrera, idCurso)
                 .onSuccess {
                     _actionState.value = SingleUiState.Success("Curso eliminado de la carrera")
+                    triggerReload()
                 }
                 .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
         }

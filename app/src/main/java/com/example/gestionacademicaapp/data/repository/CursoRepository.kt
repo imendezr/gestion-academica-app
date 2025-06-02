@@ -48,4 +48,17 @@ class CursoRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun buscarPorCarreraYCiclo(
+        idCarrera: Long,
+        idCiclo: Long
+    ): Result<List<CursoDto>> = safeApiCall {
+        apiService.getCursosByCarreraYCiclo(idCarrera, idCiclo)
+    }
+
+    suspend fun buscarPorCiclo(
+        idCiclo: Long
+    ): Result<List<CursoDto>> = safeApiCall {
+        apiService.getCursosByCiclo(idCiclo)
+    }
 }

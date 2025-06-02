@@ -8,6 +8,7 @@ import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.asLiveData
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
@@ -19,6 +20,7 @@ import com.example.gestionacademicaapp.ui.common.state.ListUiState
 import com.example.gestionacademicaapp.ui.common.state.SingleUiState
 import com.example.gestionacademicaapp.utils.Notificador
 import com.example.gestionacademicaapp.utils.enableSwipeActions
+import com.example.gestionacademicaapp.utils.setupSearchView
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -31,7 +33,9 @@ class CarrerasFragment : Fragment() {
     private lateinit var adapter: CarrerasAdapter
     private lateinit var fab: ExtendedFloatingActionButton
     private lateinit var progressBar: View
-    private var allCarreras: List<Carrera> = emptyList()
+
+    private var originalItems: List<Carrera> = emptyList()
+    private var currentEditIndex: Int? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -45,13 +49,16 @@ class CarrerasFragment : Fragment() {
         fab = view.findViewById(R.id.fabCarreras)
         progressBar = view.findViewById(R.id.progressBar)
 
-        searchView.isIconified = false
-        searchView.clearFocus()
-        searchView.queryHint = getString(R.string.search_hint_codigo_nombre)
+        setupSearchView(searchView, getString(R.string.search_hint_codigo_nombre)) { query ->
+            filterList(query)
+        }
 
         adapter = CarrerasAdapter(
             onEdit = { carrera -> mostrarDialogoCarrera(carrera) },
-            onViewCursos = { carrera ->
+            onDelete = { carrera ->
+                viewModel.deleteItem(carrera.idCarrera)
+            },
+            onViewCursosCarrera = { carrera ->
                 CarreraCursosFragment().apply {
                     arguments = Bundle().apply {
                         putParcelable("carrera", carrera)
@@ -62,19 +69,6 @@ class CarrerasFragment : Fragment() {
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?) = false
-            override fun onQueryTextChange(newText: String?): Boolean {
-                val query = newText.orEmpty().trim().lowercase()
-                val resultados = allCarreras.filter {
-                    it.nombre.lowercase().contains(query) ||
-                            it.codigo.lowercase().contains(query)
-                }
-                adapter.submitList(resultados)
-                return true
-            }
-        })
-
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
                 if (dy > 10 && fab.isExtended) fab.shrink()
@@ -82,25 +76,27 @@ class CarrerasFragment : Fragment() {
             }
         })
 
-        fab.setOnClickListener {
-            searchView.setQuery("", false)
-            searchView.clearFocus()
-            mostrarDialogoCarrera(null)
-        }
-
         recyclerView.enableSwipeActions(
             onSwipeLeft = { pos ->
-                val carrera = adapter.getCarreraAt(pos)
-                viewModel.deleteCarrera(carrera.idCarrera)
+                val carrera = adapter.getItemAt(pos)
+                viewModel.deleteItem(carrera.idCarrera)
                 adapter.notifyItemChanged(pos)
             },
             onSwipeRight = { pos ->
+                currentEditIndex = pos
                 adapter.notifyItemChanged(pos)
-                mostrarDialogoCarrera(adapter.getCarreraAt(pos))
+                mostrarDialogoCarrera(adapter.getItemAt(pos))
             }
         )
 
-        viewModel.carrerasState.observe(viewLifecycleOwner) { state ->
+        fab.setOnClickListener {
+            searchView.setQuery("", false)
+            searchView.clearFocus()
+            currentEditIndex = null
+            mostrarDialogoCarrera(null)
+        }
+
+        viewModel.fetchItems().asLiveData().observe(viewLifecycleOwner) { state ->
             when (state) {
                 is ListUiState.Loading -> {
                     progressBar.isVisible = true
@@ -109,8 +105,8 @@ class CarrerasFragment : Fragment() {
                 is ListUiState.Success -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = true
-                    allCarreras = state.data
-                    adapter.submitList(allCarreras)
+                    originalItems = state.data
+                    filterList(searchView.query.toString())
                 }
                 is ListUiState.Error -> {
                     progressBar.isVisible = false
@@ -136,7 +132,8 @@ class CarrerasFragment : Fragment() {
                         else -> R.color.colorPrimary
                     }
                     Notificador.show(requireView(), state.data, color, anchorView = fab)
-                    viewModel.fetchCarreras()
+                    filterList(searchView.query.toString()) // Solo filtra, la recarga ya ocurre
+                    currentEditIndex = null
                 }
                 is SingleUiState.Error -> {
                     progressBar.isVisible = false
@@ -147,6 +144,19 @@ class CarrerasFragment : Fragment() {
         }
 
         return view
+    }
+
+    private fun filterList(query: String?) {
+        val texto = query?.lowercase()?.trim() ?: ""
+        val filtered = if (texto.isEmpty()) {
+            originalItems
+        } else {
+            originalItems.filter {
+                it.nombre.lowercase().contains(texto) ||
+                        it.codigo.lowercase().contains(texto)
+            }
+        }
+        adapter.submitList(filtered)
     }
 
     private fun mostrarDialogoCarrera(carrera: Carrera?) {
@@ -211,8 +221,12 @@ class CarrerasFragment : Fragment() {
                 nombre = datosMap["nombre"] ?: "",
                 titulo = datosMap["titulo"] ?: ""
             )
-            if (carrera == null) viewModel.createCarrera(nuevaCarrera)
-            else viewModel.updateCarrera(nuevaCarrera)
+            if (carrera == null) viewModel.createItem(nuevaCarrera)
+            else viewModel.updateItem(nuevaCarrera)
+        }
+
+        dialog.setOnCancelListener { index ->
+            if (index != null && index >= 0) adapter.notifyItemChanged(index)
         }
 
         dialog.show(parentFragmentManager, "DialogFormularioCarrera")

@@ -5,14 +5,15 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Curso
+import com.example.gestionacademicaapp.ui.common.adapter.BaseAdapter
 
 class CursosAdapter(
-    private val onEdit: (Curso) -> Unit
-) : ListAdapter<Curso, CursosAdapter.CursoViewHolder>(DiffCallback) {
+    onEdit: (Curso) -> Unit,
+    onDelete: (Curso) -> Unit
+) : BaseAdapter<Curso, CursosAdapter.CursoViewHolder>(DiffCallback, onEdit, onDelete) {
 
     inner class CursoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
@@ -26,8 +27,7 @@ class CursosAdapter(
                 curso.creditos,
                 curso.horasSemanales
             )
-
-            itemView.setOnClickListener { onEdit(curso) }
+            setupDefaultClickListener(itemView, curso)
         }
     }
 
@@ -40,8 +40,6 @@ class CursosAdapter(
     override fun onBindViewHolder(holder: CursoViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
-
-    fun getCursoAt(position: Int): Curso = getItem(position)
 
     companion object {
         private val DiffCallback = object : DiffUtil.ItemCallback<Curso>() {

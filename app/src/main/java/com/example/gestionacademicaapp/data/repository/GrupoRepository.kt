@@ -30,17 +30,25 @@ class GrupoRepository @Inject constructor(
         if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun cursosPorCarreraYCiclo(
+    /*suspend fun cursosPorCarreraYCiclo(
         idCarrera: Long,
         idCiclo: Long
     ): Result<List<CursoDto>> = safeApiCall {
         apiService.getCursosByCarreraAndCiclo(idCarrera, idCiclo)
-    }
+    }*/
 
     suspend fun gruposPorCarreraCurso(idCarrera: Long, idCurso: Long): Result<List<GrupoDto>> =
         safeApiCall {
             apiService.getGruposByCarreraCurso(idCarrera, idCurso)
         }
+
+    suspend fun gruposPorCursoCicloCarrera(
+        idCurso: Long,
+        idCiclo: Long,
+        idCarrera: Long
+    ): Result<List<GrupoDto>> = safeApiCall {
+        apiService.getGruposByCursoCicloCarrera(idCurso, idCiclo, idCarrera)
+    }
 
     private inline fun <T> safeApiCall(block: () -> T): Result<T> {
         return try {

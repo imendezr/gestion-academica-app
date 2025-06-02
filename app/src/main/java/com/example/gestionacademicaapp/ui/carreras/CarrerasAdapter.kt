@@ -6,15 +6,16 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Carrera
+import com.example.gestionacademicaapp.ui.common.adapter.BaseAdapter
 
 class CarrerasAdapter(
-    private val onEdit: (Carrera) -> Unit,
-    private val onViewCursos: (Carrera) -> Unit
-) : ListAdapter<Carrera, CarrerasAdapter.CarreraViewHolder>(DiffCallback) {
+    onEdit: (Carrera) -> Unit,
+    onDelete: (Carrera) -> Unit,
+    private val onViewCursosCarrera: (Carrera) -> Unit
+) : BaseAdapter<Carrera, CarrerasAdapter.CarreraViewHolder>(DiffCallback, onEdit, onDelete) {
 
     inner class CarreraViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
@@ -30,8 +31,8 @@ class CarrerasAdapter(
             )
             tvDescripcion.text = descripcion
 
-            itemView.setOnClickListener { onEdit(carrera) }
-            btnViewCursos.setOnClickListener { onViewCursos(carrera) }
+            setupDefaultClickListener(itemView, carrera)
+            btnViewCursos.setOnClickListener { onViewCursosCarrera(carrera) }
         }
     }
 
@@ -45,17 +46,13 @@ class CarrerasAdapter(
         holder.bind(getItem(position))
     }
 
-    fun getCarreraAt(position: Int): Carrera = getItem(position)
-
     companion object {
         private val DiffCallback = object : DiffUtil.ItemCallback<Carrera>() {
-            override fun areItemsTheSame(oldItem: Carrera, newItem: Carrera): Boolean {
-                return oldItem.idCarrera == newItem.idCarrera
-            }
+            override fun areItemsTheSame(oldItem: Carrera, newItem: Carrera): Boolean =
+                oldItem.idCarrera == newItem.idCarrera
 
-            override fun areContentsTheSame(oldItem: Carrera, newItem: Carrera): Boolean {
-                return oldItem == newItem
-            }
+            override fun areContentsTheSame(oldItem: Carrera, newItem: Carrera): Boolean =
+                oldItem == newItem
         }
     }
 }

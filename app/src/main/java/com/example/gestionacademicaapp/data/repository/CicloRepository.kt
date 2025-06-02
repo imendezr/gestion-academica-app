@@ -28,13 +28,17 @@ class CicloRepository @Inject constructor(
         if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun buscarPorAnio(anio: Int): Result<Ciclo> = safeApiCall {
+    suspend fun buscarPorAnio(anio: Long): Result<Ciclo> = safeApiCall {
         apiService.getCicloByAnio(anio)
     }
 
     suspend fun activar(id: Long): Result<Unit> = safeApiCall {
         val response = apiService.activateCiclo(id)
         if (response.isSuccessful) Unit else throw HttpException(response)
+    }
+
+    suspend fun obtenerPorId(id: Long): Result<Ciclo> = safeApiCall {
+        apiService.getCicloById(id)
     }
 
     private inline fun <T> safeApiCall(block: () -> T): Result<T> {
