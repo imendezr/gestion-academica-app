@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
@@ -20,13 +21,13 @@ import com.example.gestionacademicaapp.data.repository.CarreraCursoRepository
 import com.example.gestionacademicaapp.ui.carreras.model.CarreraCursoUI
 import com.example.gestionacademicaapp.ui.ciclos.CiclosViewModel
 import com.example.gestionacademicaapp.ui.common.CampoFormulario
+import com.example.gestionacademicaapp.ui.common.CampoTipo
 import com.example.gestionacademicaapp.ui.common.DialogFormularioFragment
 import com.example.gestionacademicaapp.ui.common.state.ListUiState
 import com.example.gestionacademicaapp.ui.common.state.SingleUiState
 import com.example.gestionacademicaapp.ui.cursos.CursosViewModel
 import com.example.gestionacademicaapp.utils.Notificador
 import com.example.gestionacademicaapp.utils.enableSwipeActions
-import com.example.gestionacademicaapp.utils.isVisible
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
@@ -71,38 +72,23 @@ class CarreraCursosFragment : DialogFragment() {
         tvTitle.text = getString(R.string.titulo_cursos_de, carrera.nombre)
 
         adapter = CarreraCursosAdapter(
+            onEdit = { carreraCurso -> mostrarDialogoEditarCurso(carreraCurso) },
             onDelete = { carreraCurso ->
-                lifecycleScope.launch {
-                    try {
-                        viewModel.deleteCarreraCurso(carrera.idCarrera, carreraCurso.curso.idCurso)
-                    } catch (e: Exception) {
-                        Notificador.show(
-                            view = dialogView,
-                            mensaje = "Error al eliminar: ${e.message}",
-                            colorResId = R.color.colorError
-                        )
-                    }
-                }
+                viewModel.deleteCarreraCurso(carrera.idCarrera, carreraCurso.curso.idCurso)
             },
             onReorderRequest = { carreraCurso -> mostrarDialogoReordenarCurso(carreraCurso) }
         )
-
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
 
-        // Habilitar acciones de swipe
         recyclerView.enableSwipeActions(
-            onSwipeLeft = { position ->
-                adapter.onSwipeDelete(position)
-                // Restaurar visualmente el ítem si la eliminación falla
-                recyclerView.postDelayed({
-                    if (!recyclerView.isComputingLayout) {
-                        adapter.notifyItemChanged(position)
-                    }
-                }, 300)
+            onSwipeLeft = { pos ->
+                adapter.onSwipeDelete(pos)
+                adapter.notifyItemChanged(pos)
             },
-            onSwipeRight = { position ->
-                adapter.onSwipeReorder(position)
+            onSwipeRight = { pos ->
+                adapter.notifyItemChanged(pos)
+                adapter.onSwipeReorder(pos)
             }
         )
 
@@ -118,7 +104,6 @@ class CarreraCursosFragment : DialogFragment() {
                     progressBar.isVisible = true
                     fab.isEnabled = false
                 }
-
                 is SingleUiState.Success -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
@@ -130,7 +115,6 @@ class CarreraCursosFragment : DialogFragment() {
                     )
                     cargarCarreraCursos()
                 }
-
                 is SingleUiState.Error -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
@@ -147,27 +131,96 @@ class CarreraCursosFragment : DialogFragment() {
             .setView(dialogView)
             .create().also { dialog ->
                 dialog.window?.setBackgroundDrawableResource(R.drawable.bg_dialog_window)
-
                 dialogView.findViewById<TextView>(R.id.btnCerrar).setOnClickListener {
                     dialog.dismiss()
                 }
             }
     }
 
-    private fun mostrarDialogoReordenarCurso(carreraCurso: CarreraCursoUI) {
-        val cursoIndex =
-            carreraCursos.indexOfFirst { it.idCarreraCurso == carreraCurso.idCarreraCurso }
+    private fun mostrarDialogoEditarCurso(carreraCurso: CarreraCursoUI) {
+        val campos = listOf(
+            CampoFormulario(
+                key = "idCurso",
+                label = "Curso",
+                tipo = CampoTipo.SPINNER,
+                obligatorio = true,
+                obligatorioError = "El curso es requerido",
+                opciones = cursosDisponibles.map {
+                    it.idCurso.toString() to it.nombre
+                },
+                rules = { value, _ ->
+                    if (value.isEmpty()) null
+                    else if (cursosDisponibles.none { it.idCurso.toString() == value }) {
+                        "Curso no válido"
+                    } else null
+                }
+            ),
+            CampoFormulario(
+                key = "idCiclo",
+                label = "Ciclo",
+                tipo = CampoTipo.SPINNER,
+                obligatorio = true,
+                obligatorioError = "El ciclo es requerido",
+                opciones = ciclosDisponibles.map {
+                    it.idCiclo.toString() to "${it.anio} - ${it.numero}"
+                },
+                rules = { value, _ ->
+                    if (value.isEmpty()) null
+                    else if (ciclosDisponibles.none { it.idCiclo.toString() == value }) {
+                        "Ciclo no válido"
+                    } else null
+                }
+            )
+        )
 
+        val datosIniciales = mapOf(
+            "idCurso" to carreraCurso.curso.idCurso.toString(),
+            "idCiclo" to carreraCurso.cicloId.toString()
+        )
+
+        val dialog = DialogFormularioFragment.newInstance(
+            titulo = "Editar Curso en ${carrera.nombre}",
+            campos = campos,
+            datosIniciales = datosIniciales
+        )
+
+        dialog.setOnGuardarListener { datosMap ->
+            val idCurso = datosMap["idCurso"]?.toLongOrNull()
+            val idCiclo = datosMap["idCiclo"]?.toLongOrNull()
+            if (idCurso != null && idCiclo != null) {
+                val updatedCarreraCurso = CarreraCurso(
+                    idCarreraCurso = carreraCurso.idCarreraCurso,
+                    pkCarrera = carrera.idCarrera,
+                    pkCurso = idCurso,
+                    pkCiclo = idCiclo
+                )
+                viewModel.updateCarreraCurso(updatedCarreraCurso)
+            } else {
+                Notificador.show(dialogView, "Datos inválidos", R.color.colorError)
+            }
+        }
+
+        dialog.show(parentFragmentManager, "DialogEditarCurso")
+    }
+
+    private fun mostrarDialogoReordenarCurso(carreraCurso: CarreraCursoUI) {
         val dialog = DialogFormularioFragment.newInstance(
             titulo = "Reordenar ${carreraCurso.curso.nombre}",
             campos = listOf(
                 CampoFormulario(
                     key = "idCiclo",
                     label = "Nuevo Ciclo",
-                    tipo = "spinner",
+                    tipo = CampoTipo.SPINNER,
                     obligatorio = true,
+                    obligatorioError = "El ciclo es requerido",
                     opciones = ciclosDisponibles.map {
                         it.idCiclo.toString() to "${it.anio} - ${it.numero}"
+                    },
+                    rules = { value, _ ->
+                        if (value.isEmpty()) null
+                        else if (ciclosDisponibles.none { it.idCiclo.toString() == value }) {
+                            "Ciclo no válido"
+                        } else null
                     }
                 )
             ),
@@ -192,12 +245,6 @@ class CarreraCursosFragment : DialogFragment() {
             }
         }
 
-        dialog.setOnCancelListener {
-            if (cursoIndex != -1) {
-                adapter.notifyItemChanged(cursoIndex)
-            }
-        }
-
         dialog.show(parentFragmentManager, "DialogReordenarCurso")
     }
 
@@ -209,11 +256,9 @@ class CarreraCursosFragment : DialogFragment() {
                     cursosDisponibles.addAll(state.data)
                     cargarCarreraCursos()
                 }
-
                 is ListUiState.Error -> {
                     Notificador.show(dialogView, state.message, R.color.colorError)
                 }
-
                 else -> {}
             }
         }
@@ -226,11 +271,9 @@ class CarreraCursosFragment : DialogFragment() {
                     ciclosDisponibles.addAll(state.data)
                     cargarCarreraCursos()
                 }
-
                 is ListUiState.Error -> {
                     Notificador.show(dialogView, state.message, R.color.colorError)
                 }
-
                 else -> {}
             }
         }
@@ -268,12 +311,11 @@ class CarreraCursosFragment : DialogFragment() {
                         )
                     }
                 }
-
-            val cursosAsociadosUnicos = cursosAsociados.distinctBy { it.curso.idCurso }
+                .distinctBy { it.curso.idCurso }
 
             carreraCursos.clear()
-            carreraCursos.addAll(cursosAsociadosUnicos)
-            adapter.submitList(cursosAsociadosUnicos)
+            carreraCursos.addAll(cursosAsociados)
+            adapter.submitList(cursosAsociados)
 
             progressBar.isVisible = false
         }
@@ -297,19 +339,33 @@ class CarreraCursosFragment : DialogFragment() {
             CampoFormulario(
                 key = "idCurso",
                 label = "Curso",
-                tipo = "spinner",
+                tipo = CampoTipo.SPINNER,
                 obligatorio = true,
+                obligatorioError = "El curso es requerido",
                 opciones = cursosNoAsociados.map {
                     it.idCurso.toString() to it.nombre
+                },
+                rules = { value, _ ->
+                    if (value.isEmpty()) null
+                    else if (cursosNoAsociados.none { it.idCurso.toString() == value }) {
+                        "Curso no válido"
+                    } else null
                 }
             ),
             CampoFormulario(
                 key = "idCiclo",
                 label = "Ciclo",
-                tipo = "spinner",
+                tipo = CampoTipo.SPINNER,
                 obligatorio = true,
+                obligatorioError = "El ciclo es requerido",
                 opciones = ciclosDisponibles.map {
                     it.idCiclo.toString() to "${it.anio} - ${it.numero}"
+                },
+                rules = { value, _ ->
+                    if (value.isEmpty()) null
+                    else if (ciclosDisponibles.none { it.idCiclo.toString() == value }) {
+                        "Ciclo no válido"
+                    } else null
                 }
             )
         )

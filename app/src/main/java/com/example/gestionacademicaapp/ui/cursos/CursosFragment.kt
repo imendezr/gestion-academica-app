@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -12,12 +13,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Curso
 import com.example.gestionacademicaapp.ui.common.CampoFormulario
+import com.example.gestionacademicaapp.ui.common.CampoTipo
 import com.example.gestionacademicaapp.ui.common.DialogFormularioFragment
 import com.example.gestionacademicaapp.ui.common.state.ListUiState
 import com.example.gestionacademicaapp.ui.common.state.SingleUiState
 import com.example.gestionacademicaapp.utils.Notificador
 import com.example.gestionacademicaapp.utils.enableSwipeActions
-import com.example.gestionacademicaapp.utils.isVisible
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -44,14 +45,12 @@ class CursosFragment : Fragment() {
         fab = view.findViewById(R.id.fabCursos)
         progressBar = view.findViewById(R.id.progressBar)
 
-        // SearchView
         searchView.isIconified = false
         searchView.clearFocus()
         searchView.queryHint = getString(R.string.search_hint_codigo_nombre)
 
         adapter = CursosAdapter(
-            onEdit = { curso -> mostrarDialogoCurso(curso) },
-            onDelete = { curso -> viewModel.deleteCurso(curso.idCurso) }
+            onEdit = { curso -> mostrarDialogoCurso(curso) }
         )
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
@@ -79,8 +78,15 @@ class CursosFragment : Fragment() {
         }
 
         recyclerView.enableSwipeActions(
-            onSwipeLeft = { pos -> adapter.onSwipeDelete(pos) },
-            onSwipeRight = { pos -> mostrarDialogoCurso(adapter.getCursoAt(pos)) }
+            onSwipeLeft = { pos ->
+                val curso = adapter.getCursoAt(pos)
+                viewModel.deleteCurso(curso.idCurso)
+                adapter.notifyItemChanged(pos) // Restaurar inmediatamente
+            },
+            onSwipeRight = { pos ->
+                adapter.notifyItemChanged(pos) // Restaurar inmediatamente
+                mostrarDialogoCurso(adapter.getCursoAt(pos))
+            }
         )
 
         viewModel.cursosState.observe(viewLifecycleOwner) { state ->
@@ -89,14 +95,12 @@ class CursosFragment : Fragment() {
                     progressBar.isVisible = true
                     recyclerView.isVisible = false
                 }
-
                 is ListUiState.Success -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = true
                     cursosOriginal = state.data
                     filtrarLista(currentSearchQuery)
                 }
-
                 is ListUiState.Error -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = false
@@ -111,20 +115,18 @@ class CursosFragment : Fragment() {
                     progressBar.isVisible = true
                     fab.isEnabled = false
                 }
-
                 is SingleUiState.Success -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
                     val color = when {
                         state.data.contains("creado", true) ||
                                 state.data.contains("actualizado", true) -> R.color.colorAccent
-
                         state.data.contains("eliminado", true) -> R.color.colorError
                         else -> R.color.colorPrimary
                     }
                     Notificador.show(requireView(), state.data, color, anchorView = fab)
+                    viewModel.fetchCursos()
                 }
-
                 is SingleUiState.Error -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
@@ -152,15 +154,60 @@ class CursosFragment : Fragment() {
     private fun mostrarDialogoCurso(curso: Curso?) {
         val campos = listOf(
             CampoFormulario(
-                "codigo",
-                "Código",
-                "text",
+                key = "codigo",
+                label = "Código",
+                tipo = CampoTipo.TEXT,
                 obligatorio = true,
-                editable = curso == null // solo editable si es nuevo
+                obligatorioError = "El código es requerido",
+                editable = curso == null,
+                rules = { value, _ ->
+                    if (value.isEmpty()) null
+                    else if (value.length !in 3..10) "Debe tener entre 3 y 10 caracteres"
+                    else null
+                }
             ),
-            CampoFormulario("nombre", "Nombre", "text", obligatorio = true),
-            CampoFormulario("creditos", "Créditos", "number", obligatorio = true),
-            CampoFormulario("horasSemanales", "Horas Semanales", "number", obligatorio = true)
+            CampoFormulario(
+                key = "nombre",
+                label = "Nombre",
+                tipo = CampoTipo.TEXT,
+                obligatorio = true,
+                obligatorioError = "El nombre es requerido",
+                rules = { value, _ ->
+                    if (value.isEmpty()) null
+                    else if (value.length < 5) "Debe tener al menos 5 caracteres"
+                    else null
+                }
+            ),
+            CampoFormulario(
+                key = "creditos",
+                label = "Créditos",
+                tipo = CampoTipo.NUMBER,
+                obligatorio = true,
+                obligatorioError = "Los créditos son requeridos",
+                rules = { value, _ ->
+                    if (value.isEmpty()) null
+                    else {
+                        val creditos = value.toLongOrNull()
+                        if (creditos == null || creditos !in 1..10) "Debe estar entre 1 y 10"
+                        else null
+                    }
+                }
+            ),
+            CampoFormulario(
+                key = "horasSemanales",
+                label = "Horas Semanales",
+                tipo = CampoTipo.NUMBER,
+                obligatorio = true,
+                obligatorioError = "Las horas semanales son requeridas",
+                rules = { value, _ ->
+                    if (value.isEmpty()) null
+                    else {
+                        val horas = value.toLongOrNull()
+                        if (horas == null || horas !in 1..40) "Debe estar entre 1 y 40"
+                        else null
+                    }
+                }
+            )
         )
 
         val datosIniciales = curso?.let {
@@ -171,10 +218,6 @@ class CursosFragment : Fragment() {
                 "horasSemanales" to it.horasSemanales.toString()
             )
         } ?: emptyMap()
-
-        val cursoIndex = curso?.let {
-            cursosOriginal.indexOfFirst { c -> c.idCurso == it.idCurso }
-        } ?: -1
 
         val dialog = DialogFormularioFragment.newInstance(
             titulo = if (curso == null) "Nuevo Curso" else "Editar Curso",
@@ -190,17 +233,8 @@ class CursosFragment : Fragment() {
                 creditos = datosMap["creditos"]?.toLongOrNull() ?: 0,
                 horasSemanales = datosMap["horasSemanales"]?.toLongOrNull() ?: 0
             )
-
             if (curso == null) viewModel.createCurso(nuevoCurso)
             else viewModel.updateCurso(nuevoCurso)
-        }
-
-        dialog.setOnCancelListener {
-            if (cursoIndex != -1) adapter.notifyItemChanged(cursoIndex)
-        }
-
-        dialog.setOnDismissListener {
-            if (cursoIndex != -1) adapter.notifyItemChanged(cursoIndex)
         }
 
         dialog.show(parentFragmentManager, "DialogFormularioCurso")

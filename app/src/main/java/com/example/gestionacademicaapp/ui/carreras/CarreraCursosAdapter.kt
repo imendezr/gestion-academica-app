@@ -11,6 +11,7 @@ import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.ui.carreras.model.CarreraCursoUI
 
 class CarreraCursosAdapter(
+    private val onEdit: (CarreraCursoUI) -> Unit,
     private val onDelete: (CarreraCursoUI) -> Unit,
     private val onReorderRequest: (CarreraCursoUI) -> Unit
 ) : ListAdapter<CarreraCursoUI, CarreraCursosAdapter.CarreraCursoViewHolder>(DiffCallback) {
@@ -24,6 +25,11 @@ class CarreraCursosAdapter(
             val cicloText = carreraCurso.ciclo?.let { "${it.anio} - ${it.numero}" }
                 ?: "Ciclo: ${carreraCurso.cicloId}"
             tvDescripcion.text = itemView.context.getString(R.string.label_ciclo, cicloText)
+
+            // Configurar clic para abrir el diálogo de edición
+            itemView.setOnClickListener {
+                onEdit(carreraCurso)
+            }
         }
     }
 

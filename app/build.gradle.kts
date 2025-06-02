@@ -43,6 +43,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.threetenbp)
     implementation(libs.retrofit)
     implementation(libs.okhttp.logging)
     implementation(libs.converter.gson)

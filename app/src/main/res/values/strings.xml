@@ -98,5 +98,6 @@
     <string name="rol_usuario">Rol: %1$s</string>
     <string name="spinner_desplegar">Desplegar opciones</string>
     <string name="spinner_etiqueta">Etiqueta</string>
+    <string name="error_formulario_desc">Mensaje de error del formulario</string>
 
 </resources>

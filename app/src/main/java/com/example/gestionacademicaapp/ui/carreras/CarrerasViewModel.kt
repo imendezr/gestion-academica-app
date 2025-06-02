@@ -32,7 +32,7 @@ class CarrerasViewModel @Inject constructor(
         fetchCarreras()
     }
 
-    private fun fetchCarreras() {
+    fun fetchCarreras() {
         viewModelScope.launch {
             _carrerasState.value = ListUiState.Loading
             carreraRepository.listar()

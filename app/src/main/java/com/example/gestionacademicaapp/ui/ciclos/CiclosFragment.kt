@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.widget.SearchView
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -12,12 +13,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Ciclo
 import com.example.gestionacademicaapp.ui.common.CampoFormulario
+import com.example.gestionacademicaapp.ui.common.CampoTipo
 import com.example.gestionacademicaapp.ui.common.DialogFormularioFragment
 import com.example.gestionacademicaapp.ui.common.state.ListUiState
 import com.example.gestionacademicaapp.ui.common.state.SingleUiState
 import com.example.gestionacademicaapp.utils.Notificador
 import com.example.gestionacademicaapp.utils.enableSwipeActions
-import com.example.gestionacademicaapp.utils.isVisible
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -42,7 +43,6 @@ class CiclosFragment : Fragment() {
         fab = view.findViewById(R.id.fabCiclos)
         progressBar = view.findViewById(R.id.progressBar)
 
-        // SearchView configuración
         searchView.isIconified = false
         searchView.clearFocus()
         searchView.queryHint = getString(R.string.search_hint_anio)
@@ -79,14 +79,12 @@ class CiclosFragment : Fragment() {
             onSwipeLeft = { pos ->
                 val ciclo = adapter.getCicloAt(pos)
                 viewModel.deleteCiclo(ciclo.idCiclo)
-
-                recyclerView.postDelayed({
-                    if (!recyclerView.isComputingLayout) {
-                        adapter.notifyItemChanged(pos)
-                    }
-                }, 300)
+                adapter.notifyItemChanged(pos) // Restaurar inmediatamente
             },
-            onSwipeRight = { pos -> mostrarDialogoCiclo(adapter.getCicloAt(pos)) }
+            onSwipeRight = { pos ->
+                adapter.notifyItemChanged(pos) // Restaurar inmediatamente
+                mostrarDialogoCiclo(adapter.getCicloAt(pos))
+            }
         )
 
         viewModel.ciclosState.observe(viewLifecycleOwner) { state ->
@@ -95,14 +93,12 @@ class CiclosFragment : Fragment() {
                     progressBar.isVisible = true
                     recyclerView.isVisible = false
                 }
-
                 is ListUiState.Success -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = true
                     ciclosOriginal = state.data
                     adapter.submitList(ciclosOriginal)
                 }
-
                 is ListUiState.Error -> {
                     progressBar.isVisible = false
                     recyclerView.isVisible = false
@@ -117,7 +113,6 @@ class CiclosFragment : Fragment() {
                     progressBar.isVisible = true
                     fab.isEnabled = false
                 }
-
                 is SingleUiState.Success -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
@@ -125,13 +120,12 @@ class CiclosFragment : Fragment() {
                         state.data.contains("creado", true) ||
                                 state.data.contains("actualizado", true) ||
                                 state.data.contains("activado", true) -> R.color.colorAccent
-
                         state.data.contains("eliminado", true) -> R.color.colorError
                         else -> R.color.colorPrimary
                     }
                     Notificador.show(view, state.data, color, anchorView = fab)
+                    viewModel.fetchCiclos()
                 }
-
                 is SingleUiState.Error -> {
                     progressBar.isVisible = false
                     fab.isEnabled = true
@@ -156,33 +150,65 @@ class CiclosFragment : Fragment() {
     }
 
     private fun mostrarDialogoCiclo(ciclo: Ciclo?) {
-        val cicloIndex = ciclo?.let {
-            ciclosOriginal.indexOfFirst { c -> c.idCiclo == it.idCiclo }
-        } ?: -1
-
         val campos = mutableListOf(
-            CampoFormulario("anio", "Año", "number", true, editable = true) {
-                if (it.isEmpty()) "El año es requerido"
-                else {
-                    val year = it.toLongOrNull()
-                    if (year == null || year !in 1900..2100) "Debe estar entre 1900 y 2100"
-                    else null
-                }
-            },
             CampoFormulario(
-                "numero", "Número", "spinner", true, editable = true,
+                key = "anio",
+                label = "Año",
+                tipo = CampoTipo.NUMBER,
+                obligatorio = true,
+                obligatorioError = "El año es requerido",
+                rules = { value, _ ->
+                    if (value.isEmpty()) null
+                    else {
+                        val year = value.toLongOrNull()
+                        if (year == null || year !in 1900..2100) "Debe estar entre 1900 y 2100"
+                        else null
+                    }
+                }
+            ),
+            CampoFormulario(
+                key = "numero",
+                label = "Número",
+                tipo = CampoTipo.SPINNER,
+                obligatorio = true,
+                obligatorioError = "El número es requerido",
                 opciones = listOf("1" to "1", "2" to "2")
             ),
-            CampoFormulario("fechaInicio", "Fecha de Inicio", "date", true) {
-                if (it.isEmpty()) "La fecha de inicio es requerida" else null
-            },
-            CampoFormulario("fechaFin", "Fecha de Fin", "date", true) {
-                if (it.isEmpty()) "La fecha de fin es requerida" else null
-            }
+            CampoFormulario(
+                key = "fechaInicio",
+                label = "Fecha de Inicio",
+                tipo = CampoTipo.DATE,
+                obligatorio = true,
+                obligatorioError = "La fecha de inicio es requerida",
+                rules = { value, values ->
+                    if (value.isEmpty()) null
+                    else {
+                        val fechaFin = values["fechaFin"] ?: ""
+                        if (fechaFin.isNotEmpty() && value > fechaFin) {
+                            "La fecha de inicio debe ser anterior a la final"
+                        } else null
+                    }
+                }
+            ),
+            CampoFormulario(
+                key = "fechaFin",
+                label = "Fecha de Fin",
+                tipo = CampoTipo.DATE,
+                obligatorio = true,
+                obligatorioError = "La fecha de fin es requerida"
+            )
         )
 
         if (ciclo != null) {
-            campos.add(CampoFormulario("estado", "Estado", "text", false, editable = false))
+            campos.add(
+                CampoFormulario(
+                    key = "estado",
+                    label = "Estado",
+                    tipo = CampoTipo.TEXT,
+                    obligatorio = false,
+                    editable = false
+                )
+            )
         }
 
         val datosIniciales = ciclo?.let {
@@ -202,22 +228,11 @@ class CiclosFragment : Fragment() {
         )
 
         dialog.setOnGuardarListener { datosMap ->
-            val anio = datosMap["anio"]?.toLongOrNull() ?: 0
-            val numero = datosMap["numero"]?.toLongOrNull() ?: 0
+            val anio = datosMap["anio"]?.toLongOrNull() ?: 0L
+            val numero = datosMap["numero"]?.toLongOrNull() ?: 0L
             val fechaInicio = datosMap["fechaInicio"] ?: ""
             val fechaFin = datosMap["fechaFin"] ?: ""
             val estado = ciclo?.estado ?: "Inactivo"
-
-            if (fechaInicio > fechaFin) {
-                view?.let {
-                    Notificador.show(
-                        it,
-                        "La fecha de inicio debe ser anterior a la final",
-                        R.color.colorError
-                    )
-                }
-                return@setOnGuardarListener
-            }
 
             val nuevo = Ciclo(
                 idCiclo = ciclo?.idCiclo ?: 0,
@@ -227,15 +242,8 @@ class CiclosFragment : Fragment() {
                 fechaFin = fechaFin,
                 estado = estado
             )
-
             if (ciclo == null) viewModel.createCiclo(nuevo)
             else viewModel.updateCiclo(nuevo)
-        }
-
-        dialog.setOnCancelListener {
-            if (cicloIndex != -1) {
-                adapter.notifyItemChanged(cicloIndex)
-            }
         }
 
         dialog.show(parentFragmentManager, "DialogFormularioCiclo")

@@ -15,7 +15,8 @@
         android:text="@string/error_mensaje"
         android:textColor="@color/colorError"
         android:textSize="14sp"
-        android:visibility="gone" />
+        android:visibility="gone"
+        android:contentDescription="@string/error_formulario_desc" />
 
     <!-- Contenedor para los campos dinámicos -->
     <ScrollView

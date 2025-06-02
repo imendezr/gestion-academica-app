@@ -11,8 +11,7 @@ import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Curso
 
 class CursosAdapter(
-    private val onEdit: (Curso) -> Unit,
-    private val onDelete: (Curso) -> Unit
+    private val onEdit: (Curso) -> Unit
 ) : ListAdapter<Curso, CursosAdapter.CursoViewHolder>(DiffCallback) {
 
     inner class CursoViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -40,10 +39,6 @@ class CursosAdapter(
 
     override fun onBindViewHolder(holder: CursoViewHolder, position: Int) {
         holder.bind(getItem(position))
-    }
-
-    fun onSwipeDelete(position: Int) {
-        onDelete(getItem(position))
     }
 
     fun getCursoAt(position: Int): Curso = getItem(position)
