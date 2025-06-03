@@ -4,57 +4,43 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.widget.SearchView
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.asLiveData
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Carrera
+import com.example.gestionacademicaapp.databinding.FragmentCarrerasBinding
 import com.example.gestionacademicaapp.ui.common.CampoFormulario
 import com.example.gestionacademicaapp.ui.common.CampoTipo
 import com.example.gestionacademicaapp.ui.common.DialogFormularioFragment
-import com.example.gestionacademicaapp.ui.common.state.ListUiState
-import com.example.gestionacademicaapp.ui.common.state.SingleUiState
+import com.example.gestionacademicaapp.ui.common.state.ErrorType
+import com.example.gestionacademicaapp.ui.common.state.UiState
 import com.example.gestionacademicaapp.utils.Notificador
+import com.example.gestionacademicaapp.utils.clearSwipe
 import com.example.gestionacademicaapp.utils.enableSwipeActions
 import com.example.gestionacademicaapp.utils.setupSearchView
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class CarrerasFragment : Fragment() {
 
     private val viewModel: CarrerasViewModel by viewModels()
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var searchView: SearchView
-    private lateinit var adapter: CarrerasAdapter
-    private lateinit var fab: ExtendedFloatingActionButton
-    private lateinit var progressBar: View
-
-    private var originalItems: List<Carrera> = emptyList()
-    private var currentEditIndex: Int? = null
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        val view = inflater.inflate(R.layout.fragment_carreras, container, false)
-
-        recyclerView = view.findViewById(R.id.recyclerViewCarreras)
-        searchView = view.findViewById(R.id.searchViewCarreras)
-        fab = view.findViewById(R.id.fabCarreras)
-        progressBar = view.findViewById(R.id.progressBar)
-
-        setupSearchView(searchView, getString(R.string.search_hint_codigo_nombre)) { query ->
-            filterList(query)
-        }
-
-        adapter = CarrerasAdapter(
-            onEdit = { carrera -> mostrarDialogoCarrera(carrera) },
+    private var _binding: FragmentCarrerasBinding? = null
+    private val binding get() = _binding!!
+    private val adapter: CarrerasAdapter by lazy {
+        CarrerasAdapter(
+            onEdit = { carrera ->
+                editingPosition = allItems.indexOf(carrera)
+                showCarreraDialog(carrera)
+            },
             onDelete = { carrera ->
                 viewModel.deleteItem(carrera.idCarrera)
             },
@@ -66,137 +52,163 @@ class CarrerasFragment : Fragment() {
                 }.show(parentFragmentManager, "CarreraCursosFragment")
             }
         )
-        recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        recyclerView.adapter = adapter
+    }
+    private var allItems: List<Carrera> = emptyList()
+    private var editingPosition: Int? = null
+    private var swipedPosition: Int? = null // Track swiped item for error handling
+    private var itemTouchHelper: ItemTouchHelper? = null // Store ItemTouchHelper for clearing swipe state
 
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
-                if (dy > 10 && fab.isExtended) fab.shrink()
-                else if (dy < -10 && !fab.isExtended) fab.extend()
-            }
-        })
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        _binding = FragmentCarrerasBinding.inflate(inflater, container, false)
 
-        recyclerView.enableSwipeActions(
-            onSwipeLeft = { pos ->
-                val carrera = adapter.getItemAt(pos)
-                viewModel.deleteItem(carrera.idCarrera)
-                adapter.notifyItemChanged(pos)
-            },
-            onSwipeRight = { pos ->
-                currentEditIndex = pos
-                adapter.notifyItemChanged(pos)
-                mostrarDialogoCarrera(adapter.getItemAt(pos))
-            }
-        )
-
-        fab.setOnClickListener {
-            searchView.setQuery("", false)
-            searchView.clearFocus()
-            currentEditIndex = null
-            mostrarDialogoCarrera(null)
+        setupSearchView(binding.searchViewCarreras, getString(R.string.search_hint_codigo_nombre)) { query ->
+            filterList(query)
         }
 
-        viewModel.fetchItems().asLiveData().observe(viewLifecycleOwner) { state ->
-            when (state) {
-                is ListUiState.Loading -> {
-                    progressBar.isVisible = true
-                    recyclerView.isVisible = false
+        // Capture the adapter in a local val to ensure immutability
+        val localAdapter = adapter
+
+        binding.recyclerViewCarreras.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = localAdapter
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(rv: RecyclerView, dx: Int, dy: Int) {
+                    with(binding.fabCarreras) {
+                        if (dy > 10 && isExtended) shrink()
+                        else if (dy < -10 && !isExtended) extend()
+                    }
                 }
-                is ListUiState.Success -> {
-                    progressBar.isVisible = false
-                    recyclerView.isVisible = true
-                    originalItems = state.data
-                    filterList(searchView.query.toString())
+            })
+            // Store the ItemTouchHelper instance
+            itemTouchHelper = enableSwipeActions(
+                onSwipeLeft = { pos ->
+                    swipedPosition = pos // Store position before deletion
+                    localAdapter.getItemAt(pos).let { viewModel.deleteItem(it.idCarrera) }
+                },
+                onSwipeRight = { pos ->
+                    editingPosition = pos
+                    showCarreraDialog(localAdapter.getItemAt(pos))
                 }
-                is ListUiState.Error -> {
-                    progressBar.isVisible = false
-                    recyclerView.isVisible = false
-                    Notificador.show(requireView(), state.message, R.color.colorError)
-                }
-            }
+            )
         }
 
-        viewModel.actionState.observe(viewLifecycleOwner) { state ->
-            when (state) {
-                is SingleUiState.Loading -> {
-                    progressBar.isVisible = true
-                    fab.isEnabled = false
+        binding.fabCarreras.setOnClickListener {
+            binding.searchViewCarreras.clearFocus()
+            editingPosition = null
+            showCarreraDialog(null)
+        }
+
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        viewLifecycleOwner.lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { viewModel.fetchItems().collectLatest { updateUiState(it, isFetch = true) } }
+                launch { viewModel.actionState.collectLatest { updateUiState(it, isFetch = false) } }
+            }
+        }
+    }
+
+    private fun updateUiState(state: UiState<*>, isFetch: Boolean) {
+        binding.progressBar.isVisible = state is UiState.Loading
+        binding.fabCarreras.isEnabled = state !is UiState.Loading
+        binding.recyclerViewCarreras.isVisible = !isFetch || allItems.isNotEmpty()
+
+        when (state) {
+            is UiState.Success -> {
+                if (isFetch && state.data is List<*>) {
+                    @Suppress("UNCHECKED_CAST")
+                    allItems = (state.data as? List<Carrera>) ?: emptyList() // Safe cast, fetchItems returns List<Carrera>
+                    filterList()
                 }
-                is SingleUiState.Success -> {
-                    progressBar.isVisible = false
-                    fab.isEnabled = true
+                state.message?.let { message ->
                     val color = when {
-                        state.data.contains("eliminada", true) -> R.color.colorError
-                        state.data.contains("creada", true) ||
-                                state.data.contains("actualizada", true) -> R.color.colorAccent
+                        message.contains("creada", true) || message.contains("actualizada", true) -> R.color.colorAccent
+                        message.contains("eliminada", true) -> R.color.colorError
                         else -> R.color.colorPrimary
                     }
-                    Notificador.show(requireView(), state.data, color, anchorView = fab)
-                    filterList(searchView.query.toString()) // Solo filtra, la recarga ya ocurre
-                    currentEditIndex = null
+                    showNotification(message, color)
                 }
-                is SingleUiState.Error -> {
-                    progressBar.isVisible = false
-                    fab.isEnabled = true
-                    Notificador.show(requireView(), state.message, R.color.colorError)
+                if (!isFetch) {
+                    binding.recyclerViewCarreras.isVisible = allItems.isNotEmpty()
+                    filterList()
+                    editingPosition = null
+                    swipedPosition = null // Clear swiped position on success
                 }
             }
-        }
-
-        return view
-    }
-
-    private fun filterList(query: String?) {
-        val texto = query?.lowercase()?.trim() ?: ""
-        val filtered = if (texto.isEmpty()) {
-            originalItems
-        } else {
-            originalItems.filter {
-                it.nombre.lowercase().contains(texto) ||
-                        it.codigo.lowercase().contains(texto)
+            is UiState.Error -> {
+                showNotification(getErrorMessage(state), R.color.colorError)
+                if (!isFetch) {
+                    filterList()
+                    editingPosition?.let { pos -> adapter.notifyItemChanged(pos) }
+                    swipedPosition?.let { pos ->
+                        adapter.notifyItemChanged(pos) // Refresh item to update visuals
+                        // Reset swipe state using stored ItemTouchHelper
+                        binding.recyclerViewCarreras.clearSwipe(pos, itemTouchHelper)
+                        swipedPosition = null // Clear after handling
+                    }
+                }
             }
+            else -> {}
         }
-        adapter.submitList(filtered)
     }
 
-    private fun mostrarDialogoCarrera(carrera: Carrera?) {
+    private fun getErrorMessage(state: UiState.Error): String = when (state.type) {
+        ErrorType.DEPENDENCY -> when {
+            state.message.contains("cursos asociados") -> getString(R.string.error_carrera_cursos_asignadas)
+            state.message.contains("alumnos inscritos") -> getString(R.string.error_carrera_alumnos_inscritos)
+            else -> state.message
+        }
+        ErrorType.VALIDATION -> when {
+            state.message.contains("duplicado") -> getString(R.string.error_carrera_codigo_duplicado)
+            state.message.contains("no existe") -> getString(R.string.error_carrera_no_existe)
+            else -> getString(R.string.error_formulario_desc, state.message)
+        }
+        ErrorType.GENERAL -> state.message
+    }
+
+    private fun filterList(query: String? = binding.searchViewCarreras.query?.toString()) {
+        val filteredItems = query?.trim()?.lowercase()?.let { text ->
+            if (text.isEmpty()) allItems else allItems.filter {
+                it.nombre.lowercase().contains(text) || it.codigo.lowercase().contains(text)
+            }
+        } ?: allItems
+        adapter.submitList(filteredItems)
+        binding.recyclerViewCarreras.isVisible = filteredItems.isNotEmpty()
+    }
+
+    private fun showCarreraDialog(carrera: Carrera?) {
+        val validator = CarreraValidator()
         val campos = listOf(
             CampoFormulario(
                 key = "codigo",
-                label = "Código",
+                label = getString(R.string.label_codigo),
                 tipo = CampoTipo.TEXT,
                 obligatorio = true,
-                obligatorioError = "El código es requerido",
-                editable = carrera == null,
-                rules = { value, _ ->
-                    if (value.isEmpty()) null
-                    else if (value.length !in 3..10) "Debe tener entre 3 y 10 caracteres"
-                    else null
-                }
+                obligatorioError = validator.codigoRequiredError,
+                rules = { value, _ -> validator.validateCodigo(value) }
             ),
             CampoFormulario(
                 key = "nombre",
-                label = "Nombre",
+                label = getString(R.string.label_nombre),
                 tipo = CampoTipo.TEXT,
                 obligatorio = true,
-                obligatorioError = "El nombre es requerido",
-                rules = { value, _ ->
-                    if (value.isEmpty()) null
-                    else if (value.length < 5) "Debe tener al menos 5 caracteres"
-                    else null
-                }
+                obligatorioError = validator.nombreRequiredError,
+                rules = { value, _ -> validator.validateNombre(value) }
             ),
             CampoFormulario(
                 key = "titulo",
-                label = "Título",
+                label = getString(R.string.label_titulo),
                 tipo = CampoTipo.TEXT,
                 obligatorio = true,
-                obligatorioError = "El título es requerido",
-                rules = { value, _ ->
-                    if (value.isEmpty()) null
-                    else if (value.length < 5) "Debe tener al menos 5 caracteres"
-                    else null
-                }
+                obligatorioError = validator.tituloRequiredError,
+                rules = { value, _ -> validator.validateTitulo(value) }
             )
         )
 
@@ -208,27 +220,31 @@ class CarrerasFragment : Fragment() {
             )
         } ?: emptyMap()
 
-        val dialog = DialogFormularioFragment.newInstance(
-            titulo = if (carrera == null) "Nueva Carrera" else "Editar Carrera",
+        DialogFormularioFragment.newInstance(
+            titulo = getString(if (carrera == null) R.string.titulo_nueva_carrera else R.string.titulo_editar_carrera),
             campos = campos,
             datosIniciales = datosIniciales
-        )
+        ).apply {
+            setOnGuardarListener { data ->
+                val newItem = Carrera(
+                    idCarrera = carrera?.idCarrera ?: 0,
+                    codigo = data["codigo"] ?: "",
+                    nombre = data["nombre"] ?: "",
+                    titulo = data["titulo"] ?: ""
+                )
+                if (carrera == null) viewModel.createItem(newItem) else viewModel.updateItem(newItem)
+            }
+            setOnCancelListener { editingPosition?.let { adapter.notifyItemChanged(it) } }
+        }.show(parentFragmentManager, "DialogFormularioCarrera")
+    }
 
-        dialog.setOnGuardarListener { datosMap ->
-            val nuevaCarrera = Carrera(
-                idCarrera = carrera?.idCarrera ?: 0,
-                codigo = datosMap["codigo"] ?: "",
-                nombre = datosMap["nombre"] ?: "",
-                titulo = datosMap["titulo"] ?: ""
-            )
-            if (carrera == null) viewModel.createItem(nuevaCarrera)
-            else viewModel.updateItem(nuevaCarrera)
-        }
+    private fun showNotification(message: String, color: Int) {
+        Notificador.show(requireView(), message, color, anchorView = binding.fabCarreras)
+    }
 
-        dialog.setOnCancelListener { index ->
-            if (index != null && index >= 0) adapter.notifyItemChanged(index)
-        }
-
-        dialog.show(parentFragmentManager, "DialogFormularioCarrera")
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
+        itemTouchHelper = null // Clear to prevent memory leaks
     }
 }

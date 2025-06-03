@@ -25,34 +25,34 @@ class CiclosAdapter(
         private val btnActivate: ImageButton = itemView.findViewById(R.id.btnActivate)
 
         fun bind(ciclo: Ciclo) {
-            tvNombre.text =
-                itemView.context.getString(R.string.label_ciclo_nombre, ciclo.anio, ciclo.numero)
+            tvNombre.text = itemView.context.getString(R.string.label_ciclo_nombre, ciclo.anio, ciclo.numero)
             tvDescripcion.text = itemView.context.getString(
                 R.string.label_ciclo_detalle,
                 ciclo.fechaInicio,
                 ciclo.fechaFin,
                 ciclo.estado
             )
+            tvNombre.contentDescription = itemView.context.getString(R.string.content_desc_nombre_ciclo, ciclo.anio, ciclo.numero)
+            tvDescripcion.contentDescription = itemView.context.getString(R.string.content_desc_descripcion_ciclo, ciclo.estado)
 
             btnActivate.isVisible = true
             btnActivate.setImageResource(
                 if (ciclo.estado.equals("ACTIVO", ignoreCase = true)) R.drawable.ic_active
                 else R.drawable.ic_activate
             )
-            btnActivate.contentDescription = itemView.context.getString(R.string.desc_activar_ciclo)
+            btnActivate.contentDescription = itemView.context.getString(R.string.content_desc_activar_ciclo)
 
-            btnActivate.setOnClickListener(null)
-            if (ciclo.estado.equals("ACTIVO", ignoreCase = true)) {
-                btnActivate.setOnClickListener {
+            btnActivate.setOnClickListener {
+                if (ciclo.estado.equals("ACTIVO", ignoreCase = true)) {
                     Notificador.show(
                         itemView,
                         "El ciclo ya está activo.",
                         R.color.colorPrimary,
                         anchorView = btnActivate
                     )
+                } else {
+                    onActivateCiclo(ciclo)
                 }
-            } else {
-                btnActivate.setOnClickListener { onActivateCiclo(ciclo) }
             }
 
             setupDefaultClickListener(itemView, ciclo)

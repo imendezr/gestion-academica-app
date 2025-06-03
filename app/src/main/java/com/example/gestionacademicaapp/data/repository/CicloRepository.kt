@@ -1,5 +1,6 @@
 package com.example.gestionacademicaapp.data.repository
 
+import android.util.Log
 import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Ciclo
 import jakarta.inject.Inject
@@ -10,7 +11,10 @@ class CicloRepository @Inject constructor(
 ) {
 
     suspend fun listar(): Result<List<Ciclo>> = safeApiCall {
-        apiService.getAllCiclos()
+        Log.d("CicloRepository", "Listando ciclos")
+        val response = apiService.getAllCiclos()
+        Log.d("CicloRepository", "Respuesta de listar: $response")
+        response
     }
 
     suspend fun insertar(ciclo: Ciclo): Result<Unit> = safeApiCall {
@@ -45,6 +49,7 @@ class CicloRepository @Inject constructor(
         return try {
             Result.success(block())
         } catch (e: Exception) {
+            Log.e("CicloRepository", "Error en safeApiCall: ${e.message}", e)
             Result.failure(e)
         }
     }

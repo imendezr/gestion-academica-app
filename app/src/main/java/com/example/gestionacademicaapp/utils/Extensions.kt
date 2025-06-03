@@ -30,7 +30,7 @@ fun RecyclerView.enableSwipeActions(
     @DrawableRes rightIcon: Int = R.drawable.ic_reorder,
     @ColorRes leftBackgroundColor: Int = R.color.colorError,
     @ColorRes rightBackgroundColor: Int = android.R.color.holo_orange_light
-) {
+): ItemTouchHelper {
     val paint = Paint().apply { isAntiAlias = true }
     val path = Path()
     val outerCornerRadius = TypedValue.applyDimension(
@@ -141,4 +141,28 @@ fun RecyclerView.enableSwipeActions(
         }
     })
     itemTouchHelper.attachToRecyclerView(this)
+    return itemTouchHelper
+}
+
+/**
+ * Clears the swipe state for a specific item in the RecyclerView.
+ *
+ * @param position The adapter position of the item to clear.
+ * @param itemTouchHelper The ItemTouchHelper instance attached to the RecyclerView.
+ */
+fun RecyclerView.clearSwipe(position: Int, itemTouchHelper: ItemTouchHelper?) {
+    findViewHolderForAdapterPosition(position)?.let { viewHolder ->
+        itemTouchHelper?.let { helper ->
+            // Use reflection to access the internal clearView method or trigger a reset
+            try {
+                val callbackField = ItemTouchHelper::class.java.getDeclaredField("mCallback")
+                callbackField.isAccessible = true
+                val callback = callbackField.get(helper) as ItemTouchHelper.Callback
+                callback.clearView(this, viewHolder)
+            } catch (e: Exception) {
+                // Fallback: Notify adapter to force redraw
+                adapter?.notifyItemChanged(position)
+            }
+        }
+    }
 }

@@ -1,20 +1,20 @@
 package com.example.gestionacademicaapp.ui.carreras
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionacademicaapp.data.api.model.Carrera
-import com.example.gestionacademicaapp.data.api.model.CarreraCurso
 import com.example.gestionacademicaapp.data.repository.CarreraCursoRepository
 import com.example.gestionacademicaapp.data.repository.CarreraRepository
-import com.example.gestionacademicaapp.ui.common.state.ListUiState
-import com.example.gestionacademicaapp.ui.common.state.SingleUiState
+import com.example.gestionacademicaapp.ui.common.state.ErrorType
+import com.example.gestionacademicaapp.ui.common.state.UiState
 import com.example.gestionacademicaapp.utils.toUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -23,107 +23,100 @@ import kotlinx.coroutines.launch
 
 
 @HiltViewModel
-@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class) // Anotación para flatMapLatest
+@OptIn(ExperimentalCoroutinesApi::class)
 class CarrerasViewModel @Inject constructor(
     private val carreraRepository: CarreraRepository,
     private val carreraCursoRepository: CarreraCursoRepository
 ) : ViewModel() {
 
-    private val _actionState = MutableLiveData<SingleUiState<String>>()
-    val actionState: LiveData<SingleUiState<String>> get() = _actionState
-
-    private val reloadTrigger = MutableStateFlow(0)
+    private val reloadTrigger = MutableSharedFlow<Unit>(replay = 1).apply { tryEmit(Unit) }
+    private val _actionState = MutableStateFlow<UiState<Unit>>(UiState.Success())
+    val actionState: StateFlow<UiState<Unit>> get() = _actionState
 
     fun fetchItems() = reloadTrigger.flatMapLatest {
         flow {
-            emit(ListUiState.Loading)
+            emit(UiState.Loading)
             carreraRepository.listar()
-                .onSuccess { emit(ListUiState.Success(it)) }
-                .onFailure { emit(ListUiState.Error(it.toUserMessage())) }
-        }.catch { emit(ListUiState.Error(it.message ?: "Error desconocido")) }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(), ListUiState.Loading)
+                .onSuccess { emit(UiState.Success(it)) }
+                .onFailure { throw it }
+        }.catch { emit(UiState.Error(it.toUserMessage(), mapErrorType(it))) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UiState.Loading)
 
     private fun triggerReload() {
-        reloadTrigger.value += 1
+        viewModelScope.launch { reloadTrigger.emit(Unit) }
     }
 
     fun createItem(carrera: Carrera) {
         viewModelScope.launch {
-            _actionState.value = SingleUiState.Loading
-            carreraRepository.insertar(carrera)
-                .onSuccess {
-                    _actionState.value = SingleUiState.Success("Carrera creada exitosamente")
-                    triggerReload()
-                }
-                .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
+            performAction {
+                validateCarrera(carrera)
+                carreraRepository.insertar(carrera)
+                    .onSuccess {
+                        _actionState.value = UiState.Success(message = "Carrera creada exitosamente")
+                        triggerReload()
+                    }
+                    .onFailure { throw it }
+            }
         }
     }
 
     fun updateItem(carrera: Carrera) {
         viewModelScope.launch {
-            _actionState.value = SingleUiState.Loading
-            carreraRepository.modificar(carrera)
-                .onSuccess {
-                    _actionState.value = SingleUiState.Success("Carrera actualizada exitosamente")
-                    triggerReload()
-                }
-                .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
+            performAction {
+                validateCarrera(carrera)
+                carreraRepository.modificar(carrera)
+                    .onSuccess {
+                        _actionState.value = UiState.Success(message = "Carrera actualizada exitosamente")
+                        triggerReload()
+                    }
+                    .onFailure { throw it }
+            }
         }
     }
 
     fun deleteItem(id: Long) {
         viewModelScope.launch {
-            _actionState.value = SingleUiState.Loading
-            val tieneCursos = carreraCursoRepository.listar().getOrNull()
-                ?.any { it.pkCarrera == id } == true
-            if (tieneCursos) {
-                _actionState.value = SingleUiState.Error("No se puede eliminar una carrera con cursos asignados.")
-                return@launch
+            performAction {
+                val tieneCursos = carreraCursoRepository.listar().getOrNull()
+                    ?.any { it.pkCarrera == id } == true
+                if (tieneCursos) {
+                    throw IllegalStateException("No se puede eliminar: la carrera tiene cursos asignados")
+                }
+                carreraRepository.eliminar(id)
+                    .onSuccess {
+                        _actionState.value = UiState.Success(message = "Carrera eliminada exitosamente")
+                        triggerReload()
+                    }
+                    .onFailure { throw it }
             }
-            carreraRepository.eliminar(id)
-                .onSuccess {
-                    _actionState.value = SingleUiState.Success("Carrera eliminada exitosamente")
-                    triggerReload()
-                }
-                .onFailure {
-                    _actionState.value = SingleUiState.Error(it.toUserMessage())
-                }
         }
     }
 
-    fun createCarreraCurso(carreraCurso: CarreraCurso) {
-        viewModelScope.launch {
-            _actionState.value = SingleUiState.Loading
-            carreraCursoRepository.insertar(carreraCurso)
-                .onSuccess {
-                    _actionState.value = SingleUiState.Success("Curso agregado a la carrera")
-                    triggerReload()
-                }
-                .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
+    private fun validateCarrera(carrera: Carrera) {
+        if (carrera.codigo.isBlank()) throw IllegalArgumentException("El código es requerido")
+        if (carrera.nombre.isBlank()) throw IllegalArgumentException("El nombre es requerido")
+        if (carrera.titulo.isBlank()) throw IllegalArgumentException("El título es requerido")
+        if (carrera.codigo.length !in 3..10) throw IllegalArgumentException("El código debe tener entre 3 y 10 caracteres")
+        if (carrera.nombre.length < 5) throw IllegalArgumentException("El nombre debe tener al menos 5 caracteres")
+        if (carrera.titulo.length < 5) throw IllegalArgumentException("El título debe tener al menos 5 caracteres")
+    }
+
+    private suspend fun performAction(action: suspend () -> Unit) {
+        _actionState.value = UiState.Loading
+        try {
+            action()
+        } catch (e: Exception) {
+            _actionState.value = UiState.Error(e.toUserMessage(), mapErrorType(e))
         }
     }
 
-    fun updateCarreraCurso(carreraCurso: CarreraCurso) {
-        viewModelScope.launch {
-            _actionState.value = SingleUiState.Loading
-            carreraCursoRepository.modificar(carreraCurso)
-                .onSuccess {
-                    _actionState.value = SingleUiState.Success("Orden del curso actualizado")
-                    triggerReload()
-                }
-                .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
-        }
-    }
-
-    fun deleteCarreraCurso(idCarrera: Long, idCurso: Long) {
-        viewModelScope.launch {
-            _actionState.value = SingleUiState.Loading
-            carreraCursoRepository.eliminar(idCarrera, idCurso)
-                .onSuccess {
-                    _actionState.value = SingleUiState.Success("Curso eliminado de la carrera")
-                    triggerReload()
-                }
-                .onFailure { _actionState.value = SingleUiState.Error(it.toUserMessage()) }
+    private fun mapErrorType(throwable: Throwable): ErrorType {
+        val message = throwable.toUserMessage().lowercase()
+        return when {
+            message.contains("cursos asociados") || message.contains("alumnos inscritos") -> ErrorType.DEPENDENCY
+            message.contains("requerido") || message.contains("caracteres") ||
+                    message.contains("duplicado") || message.contains("no existe") -> ErrorType.VALIDATION
+            else -> ErrorType.GENERAL
         }
     }
 }

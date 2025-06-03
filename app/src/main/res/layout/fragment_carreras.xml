@@ -59,7 +59,7 @@
             android:layout_height="wrap_content"
             android:elevation="0dp"
             android:stateListAnimator="@null"
-            android:text="@string/accion_agregar"
+            android:text="@string/accion_agregar_carrera"
             android:textSize="14sp"
             android:tint="@android:color/white"
             app:backgroundTint="@color/colorPrimary"

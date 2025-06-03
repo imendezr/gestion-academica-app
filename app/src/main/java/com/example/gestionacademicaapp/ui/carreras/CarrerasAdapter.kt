@@ -24,12 +24,11 @@ class CarrerasAdapter(
 
         fun bind(carrera: Carrera) {
             tvNombre.text = carrera.nombre
-            val descripcion = itemView.context.getString(
-                R.string.descripcion_carrera,
-                carrera.codigo,
-                carrera.titulo
-            )
+            val descripcion = itemView.context.getString(R.string.descripcion_carrera, carrera.codigo, carrera.titulo)
             tvDescripcion.text = descripcion
+            tvNombre.contentDescription = itemView.context.getString(R.string.content_desc_nombre_carrera, carrera.nombre)
+            tvDescripcion.contentDescription = itemView.context.getString(R.string.content_desc_descripcion_carrera, descripcion)
+            btnViewCursos.contentDescription = itemView.context.getString(R.string.content_desc_ver_cursos, carrera.nombre)
 
             setupDefaultClickListener(itemView, carrera)
             btnViewCursos.setOnClickListener { onViewCursosCarrera(carrera) }
