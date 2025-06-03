@@ -3,24 +3,50 @@ package com.example.gestionacademicaapp.ui.ciclos
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.TextView
-import android.widget.Filter
-import android.widget.Filterable
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Ciclo
+import com.example.gestionacademicaapp.utils.isVisible
 
-class CicloAdapter(
-    private val ciclos: MutableList<Ciclo>
-) : RecyclerView.Adapter<CicloAdapter.CicloViewHolder>(), Filterable {
-
-    private var ciclosFiltrados: MutableList<Ciclo> = ciclos.toMutableList()
+class CiclosAdapter(
+    private val onEdit: (Ciclo) -> Unit,
+    private val onDelete: (Ciclo) -> Unit,
+    private val onActivate: (Ciclo) -> Unit
+) : ListAdapter<Ciclo, CiclosAdapter.CicloViewHolder>(DiffCallback) {
 
     inner class CicloViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
-        val tvDescripcion: TextView = itemView.findViewById(R.id.tvDescripcion)
-        val tvFechaInicio: TextView = itemView.findViewById(R.id.tvFechaInicio)
-        val tvFechaFin: TextView = itemView.findViewById(R.id.tvFechaFin)
+        private val tvNombre: TextView = itemView.findViewById(R.id.tvNombre)
+        private val tvDescripcion: TextView = itemView.findViewById(R.id.tvDescripcion)
+        private val btnActivate: ImageButton = itemView.findViewById(R.id.btnActivate)
+
+        fun bind(ciclo: Ciclo) {
+            tvNombre.text =
+                itemView.context.getString(R.string.label_ciclo_nombre, ciclo.anio, ciclo.numero)
+            tvDescripcion.text = itemView.context.getString(
+                R.string.label_ciclo_detalle,
+                ciclo.fechaInicio,
+                ciclo.fechaFin,
+                ciclo.estado
+            )
+
+            btnActivate.isVisible = true
+            btnActivate.setImageResource(
+                if (ciclo.estado.equals("ACTIVO", ignoreCase = true)) R.drawable.ic_active
+                else R.drawable.ic_activate
+            )
+            btnActivate.contentDescription = itemView.context.getString(R.string.desc_activar_ciclo)
+
+            btnActivate.setOnClickListener(null)
+            if (!ciclo.estado.equals("ACTIVO", ignoreCase = true)) {
+                btnActivate.setOnClickListener { onActivate(ciclo) }
+            }
+
+            itemView.setOnClickListener { onEdit(ciclo) }
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CicloViewHolder {
@@ -30,49 +56,22 @@ class CicloAdapter(
     }
 
     override fun onBindViewHolder(holder: CicloViewHolder, position: Int) {
-        val ciclo = ciclosFiltrados[position]
-        holder.tvNombre.text = "Año ${ciclo.anio}, Ciclo ${ciclo.numero}"
-        holder.tvDescripcion.text = "Estado: ${ciclo.estado}"
-        holder.tvFechaInicio.text = "Inicio: ${ciclo.fechaInicio}"
-        holder.tvFechaFin.text = "Fin: ${ciclo.fechaFin}"
+        holder.bind(getItem(position))
     }
 
-    override fun getItemCount(): Int = ciclosFiltrados.size
-
-    fun agregarItem(ciclo: Ciclo) {
-        ciclos.add(ciclo)
-        ciclosFiltrados.add(ciclo)
-        notifyItemInserted(ciclosFiltrados.size - 1)
+    fun onSwipeDelete(position: Int) {
+        onDelete(getItem(position))
     }
 
-    fun eliminarItem(position: Int) {
-        val ciclo = ciclosFiltrados[position]
-        ciclos.remove(ciclo)
-        ciclosFiltrados.removeAt(position)
-        notifyItemRemoved(position)
-    }
+    fun getCicloAt(position: Int): Ciclo = getItem(position)
 
-    override fun getFilter(): Filter {
-        return object : Filter() {
-            override fun performFiltering(constraint: CharSequence?): FilterResults {
-                val filtro = constraint?.toString()?.lowercase() ?: ""
-                val resultados = if (filtro.isEmpty()) {
-                    ciclos.toList()
-                } else {
-                    ciclos.filter {
-                        "${it.anio}${it.numero}".contains(filtro)
-                    }
-                }
+    companion object {
+        private val DiffCallback = object : DiffUtil.ItemCallback<Ciclo>() {
+            override fun areItemsTheSame(oldItem: Ciclo, newItem: Ciclo): Boolean =
+                oldItem.idCiclo == newItem.idCiclo
 
-                val filterResults = FilterResults()
-                filterResults.values = resultados
-                return filterResults
-            }
-
-            override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
-                ciclosFiltrados = (results?.values as? List<Ciclo>)?.toMutableList() ?: mutableListOf()
-                notifyDataSetChanged()
-            }
+            override fun areContentsTheSame(oldItem: Ciclo, newItem: Ciclo): Boolean =
+                oldItem == newItem
         }
     }
 }

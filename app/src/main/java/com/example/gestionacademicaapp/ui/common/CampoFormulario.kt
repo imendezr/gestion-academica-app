@@ -5,5 +5,7 @@ data class CampoFormulario(
     val label: String,
     val tipo: String = "text", // "text", "number", "select" (futuro)
     val obligatorio: Boolean = false,
-    val editable: Boolean = true
+    val editable: Boolean = true,
+    val opciones: List<Pair<String, String>> = emptyList(),
+    val rules: ((String) -> String?)? = null
 )

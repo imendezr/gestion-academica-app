@@ -15,11 +15,11 @@
             android:id="@+id/tvErrorFormulario"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/error_mensaje"
             android:textColor="@color/colorError"
-            android:visibility="gone"
-            android:text="Error"
             android:textSize="14sp"
-            android:layout_marginBottom="8dp" />
+            android:visibility="gone" />
 
         <!-- Los campos se agregarán dinámicamente aquí -->
 

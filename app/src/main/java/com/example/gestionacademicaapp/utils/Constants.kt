@@ -5,10 +5,6 @@ object Constants {
      - 10.0.2.2 para emulador de Android Studio (equivalente a localhost).
      - Cambiar esta dirección cuando el backend esté desplegado en un servidor real. */
     const val BASE_URL = "http://10.0.2.2:8080/api/"
-
-    const val REQUEST_CODE_INTERNET = 1001
     const val PREFS_NAME = "GestionAcademicaPreferencias"
     const val USER_KEY = "usuario_actual"
-    const val MAX_RETRIES = 3
-    const val RETRY_DELAY_MS = 1000L
 }
