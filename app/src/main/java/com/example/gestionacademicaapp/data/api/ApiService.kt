@@ -111,6 +111,12 @@ interface ApiService {
     @GET("carrera-curso/listar")
     suspend fun getAllCarreraCurso(): List<CarreraCurso>
 
+    @GET("carrera-curso/tiene-grupos")
+    suspend fun tieneGruposAsociados(
+        @Query("idCarrera") idCarrera: Long,
+        @Query("idCurso") idCurso: Long
+    ): Boolean
+
 
     // CICLOS
     @POST("ciclos/insertar")

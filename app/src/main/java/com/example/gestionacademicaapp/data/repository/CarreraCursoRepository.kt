@@ -35,6 +35,10 @@ class CarreraCursoRepository @Inject constructor(
         apiService.getCursosByCarreraYCiclo(idCarrera, idCiclo)
     }
 
+    suspend fun tieneGruposAsociados(idCarrera: Long, idCurso: Long): Result<Boolean> = safeApiCall {
+        apiService.tieneGruposAsociados(idCarrera, idCurso)
+    }
+
     private inline fun <T> safeApiCall(block: () -> T): Result<T> {
         return try {
             Result.success(block())
