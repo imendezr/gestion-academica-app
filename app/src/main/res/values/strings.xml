@@ -100,5 +100,8 @@
     <string name="spinner_etiqueta">Etiqueta</string>
     <string name="error_formulario_desc">Mensaje de error del formulario</string>
     <string name="desc_reordenar_curso">Reordenar curso</string>
+    <string name="search_hint_usuario">Buscar por cédula</string>
+    <string name="content_desc_cargando_usuarios">Cargando lista de usuarios</string>
+    <string name="agregar_usuario">Agregar usuario</string>
 
 </resources>

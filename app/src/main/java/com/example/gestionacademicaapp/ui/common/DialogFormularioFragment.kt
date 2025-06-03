@@ -34,10 +34,10 @@ class DialogFormularioFragment : DialogFragment() {
     private val currentValues: MutableMap<String, String> = mutableMapOf()
 
     private lateinit var titulo: String
-    private lateinit var campos: MutableList<CampoFormulario>
+    private var campos: MutableList<CampoFormulario> = mutableListOf()
     private var datosIniciales: Map<String, String> = emptyMap()
     private lateinit var onGuardar: (Map<String, String>) -> Unit
-    private var onCancel: (Int?) -> Unit = { _ -> } // Ajustado para aceptar un índice nullable
+    private var onCancel: (Int?) -> Unit = { _ -> }
     private var onDismiss: () -> Unit = {}
 
     companion object {
@@ -72,7 +72,6 @@ class DialogFormularioFragment : DialogFragment() {
             .setNegativeButton(getString(R.string.cancelar), null)
             .create().also { dialog ->
                 dialog.setOnShowListener {
-                    // Botón Guardar
                     dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                         val resultado = validateAndGetValues()
                         if (resultado.isValid) {
@@ -84,9 +83,8 @@ class DialogFormularioFragment : DialogFragment() {
                             tvError.visibility = View.VISIBLE
                         }
                     }
-                    // Botón Cancelar
                     dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setOnClickListener {
-                        onCancel(null) // No hay índice en este caso
+                        onCancel(null)
                         dialog.dismiss()
                     }
                 }
@@ -96,7 +94,7 @@ class DialogFormularioFragment : DialogFragment() {
 
     override fun onCancel(dialog: DialogInterface) {
         super.onCancel(dialog)
-        onCancel(null) // No hay índice en este caso
+        onCancel(null)
         dismiss()
     }
 
@@ -107,7 +105,6 @@ class DialogFormularioFragment : DialogFragment() {
 
         campos.forEach { campo ->
             val (view, parentLayout, label) = inputs[campo.key] ?: return@forEach
-            // Limpiar errores previos
             when {
                 parentLayout is TextInputLayout -> parentLayout.error = null
                 view is Spinner && label != null -> label.setTextColor(
@@ -122,7 +119,6 @@ class DialogFormularioFragment : DialogFragment() {
             }
 
             if (campo.editable) {
-                // Validar campo obligatorio primero
                 if (campo.obligatorio && valor.isEmpty()) {
                     esValido = false
                     val errorMsg = campo.obligatorioError ?: getString(R.string.error_campo_obligatorio)
@@ -136,7 +132,6 @@ class DialogFormularioFragment : DialogFragment() {
                     return@forEach
                 }
 
-                // Validar reglas personalizadas si el campo no está vacío
                 if (valor.isNotEmpty()) {
                     val ruleError = campo.rules?.invoke(valor, currentValues)
                     if (!ruleError.isNullOrEmpty()) {
@@ -154,7 +149,6 @@ class DialogFormularioFragment : DialogFragment() {
             resultado[campo.key] = valor
         }
 
-        // Construir mensaje de error general
         val errorMessage = if (erroresPorCampo.isNotEmpty()) {
             erroresPorCampo.values.joinToString(", ")
         } else {
@@ -291,26 +285,29 @@ class DialogFormularioFragment : DialogFragment() {
         }
     }
 
-    fun updateDynamicFields(newCampos: List<CampoFormulario>) {
-        campos.forEach { campo ->
-            val (view, _, _) = inputs[campo.key] ?: return@forEach
-            val valor = when (view) {
-                is EditText -> view.text.toString().trim()
-                is Spinner -> campo.opciones.getOrNull(view.selectedItemPosition)?.first ?: ""
-                else -> currentValues[campo.key] ?: ""
-            }
-            currentValues[campo.key] = valor
-        }
+    fun getCurrentValues(): Map<String, String> {
+        return currentValues.toMap()
+    }
 
-        this.campos = newCampos.toMutableList()
+    fun setCurrentValues(values: Map<String, String>) {
+        currentValues.clear()
+        currentValues.putAll(values)
         renderCampos(binding.linearFormulario)
+    }
+
+    fun updateDynamicFields(newCampos: List<CampoFormulario>) {
+        val currentValues = getCurrentValues() // Preserve user input
+        campos.clear()
+        campos.addAll(newCampos)
+        renderCampos(binding.linearFormulario)
+        setCurrentValues(currentValues) // Restore user input
     }
 
     fun setOnGuardarListener(listener: (Map<String, String>) -> Unit) {
         onGuardar = listener
     }
 
-    fun setOnCancelListener(listener: (Int?) -> Unit) { // Ajustado para aceptar un índice nullable
+    fun setOnCancelListener(listener: (Int?) -> Unit) {
         onCancel = listener
     }
 

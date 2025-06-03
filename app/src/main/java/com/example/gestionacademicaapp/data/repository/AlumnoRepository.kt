@@ -29,6 +29,11 @@ class AlumnoRepository @Inject constructor(
         if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
+    suspend fun eliminarPorCedula(cedula: String): Result<Unit> = safeApiCall {
+        val response = apiService.deleteAlumnoByCedula(cedula)
+        if (response.isSuccessful) Unit else throw HttpException(response)
+    }
+
     suspend fun buscarPorCedula(cedula: String): Result<Alumno> = safeApiCall {
         apiService.getAlumnoByCedula(cedula)
     }

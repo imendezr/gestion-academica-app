@@ -11,6 +11,7 @@ import com.example.gestionacademicaapp.data.api.model.Profesor
 import com.example.gestionacademicaapp.data.api.model.Usuario
 import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
 import com.example.gestionacademicaapp.data.api.model.dto.GrupoDto
+import com.example.gestionacademicaapp.data.api.model.dto.GrupoProfesorDto
 import com.example.gestionacademicaapp.data.api.model.dto.MatriculaAlumnoDto
 import retrofit2.Response
 import retrofit2.http.Body
@@ -32,6 +33,9 @@ interface ApiService {
 
     @DELETE("alumnos/eliminar/{id}")
     suspend fun deleteAlumno(@Path("id") id: Long): Response<Unit>
+
+    @DELETE("alumnos/eliminarPorCedula")
+    suspend fun deleteAlumnoByCedula(@Query("cedula") cedula: String): Response<Unit>
 
     @GET("alumnos/listar")
     suspend fun getAllAlumnos(): List<Alumno>
@@ -191,6 +195,11 @@ interface ApiService {
         @Path("idCarrera") idCarrera: Long
     ): List<GrupoDto>
 
+    @GET("grupos/buscarGruposPorProfesor")
+    suspend fun getGruposByProfesor(@Query("cedula") cedula: String): List<GrupoDto>
+
+    @GET("grupos/buscarGruposPorProfesorEnCicloActivo/{cedula}")
+    suspend fun getGruposByProfesorCicloActivo(@Path("cedula") cedula: String): List<GrupoProfesorDto>
 
     // MATRÍCULAS
     @POST("matricular/insertar")
@@ -223,6 +232,9 @@ interface ApiService {
 
     @DELETE("profesores/eliminar/{id}")
     suspend fun deleteProfesor(@Path("id") id: Long): Response<Unit>
+
+    @DELETE("profesores/eliminarPorCedula")
+    suspend fun deleteProfesorByCedula(@Query("cedula") cedula: String): Response<Unit>
 
     @GET("profesores/listar")
     suspend fun getAllProfesores(): List<Profesor>

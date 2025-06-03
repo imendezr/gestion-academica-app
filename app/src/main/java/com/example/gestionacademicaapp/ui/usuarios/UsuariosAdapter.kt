@@ -5,33 +5,24 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Usuario
+import com.example.gestionacademicaapp.ui.common.adapter.BaseAdapter
 
 class UsuariosAdapter(
-    private val idUsuarioActual: Long,
-    private val onEdit: (Usuario) -> Unit
-) : ListAdapter<Usuario, UsuariosAdapter.UsuarioViewHolder>(DiffCallback) {
+    onEdit: (Usuario) -> Unit,
+    onDelete: (Usuario) -> Unit
+) : BaseAdapter<Usuario, UsuariosAdapter.UsuarioViewHolder>(DiffCallback, onEdit, onDelete) {
 
     inner class UsuarioViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvCedula: TextView = itemView.findViewById(R.id.tvCedula)
         private val tvTipo: TextView = itemView.findViewById(R.id.tvTipo)
 
         fun bind(usuario: Usuario) {
-            val context = itemView.context
-            val cedulaTexto = if (usuario.idUsuario == idUsuarioActual) {
-                context.getString(R.string.cedula_actual, usuario.cedula)
-            } else {
-                usuario.cedula
-            }
-            val rolTexto = context.getString(R.string.rol_usuario, usuario.tipo)
-
-            tvCedula.text = cedulaTexto
-            tvTipo.text = rolTexto
-
-            itemView.setOnClickListener { onEdit(usuario) }
+            tvCedula.text = usuario.cedula
+            tvTipo.text = usuario.tipo
+            setupDefaultClickListener(itemView, usuario)
         }
     }
 
@@ -44,8 +35,6 @@ class UsuariosAdapter(
     override fun onBindViewHolder(holder: UsuarioViewHolder, position: Int) {
         holder.bind(getItem(position))
     }
-
-    fun getUsuarioAt(position: Int): Usuario = getItem(position)
 
     companion object {
         private val DiffCallback = object : DiffUtil.ItemCallback<Usuario>() {

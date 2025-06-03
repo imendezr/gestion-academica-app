@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -12,13 +13,16 @@
         android:layout_height="48dp"
         android:layout_marginBottom="8dp"
         android:background="@drawable/bg_searchview_rounded"
+        android:clickable="true"
         android:elevation="2dp"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
         android:iconifiedByDefault="false"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
-        android:queryHint="@string/search_hint_codigo_nombre" />
+        android:queryHint="@string/search_hint_usuario" />
 
-    <!-- Lista y ProgressBar -->
+    <!-- Lista y progress -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -29,7 +33,6 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
-            android:contentDescription="@string/desc_listado_usuarios"
             android:nestedScrollingEnabled="true"
             android:overScrollMode="never" />
 
@@ -38,7 +41,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:contentDescription="@string/desc_cargando_usuarios"
+            android:contentDescription="@string/content_desc_cargando_usuarios"
             android:visibility="gone" />
     </FrameLayout>
 
@@ -55,14 +58,14 @@
             android:layout_weight="1" />
 
         <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-            android:id="@+id/fabUsuarios"
+            android:id="@+id/fabAddUsuario"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:elevation="0dp"
+            android:elevation="8dp"
             android:stateListAnimator="@null"
-            android:text="@string/btn_agregar"
+            android:text="@string/agregar_usuario"
             android:textSize="14sp"
-            android:tint="@android:color/white"
+            android:textColor="@android:color/white"
             app:backgroundTint="@color/colorPrimary"
             app:cornerRadius="24dp"
             app:icon="@drawable/ic_add"

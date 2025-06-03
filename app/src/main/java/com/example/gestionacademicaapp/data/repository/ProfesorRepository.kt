@@ -28,6 +28,11 @@ class ProfesorRepository @Inject constructor(
         if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
+    suspend fun eliminarPorCedula(cedula: String): Result<Unit> = safeApiCall {
+        val response = apiService.deleteProfesorByCedula(cedula)
+        if (response.isSuccessful) Unit else throw HttpException(response)
+    }
+
     suspend fun buscarPorCedula(cedula: String): Result<Profesor> = safeApiCall {
         apiService.getProfesorByCedula(cedula)
     }

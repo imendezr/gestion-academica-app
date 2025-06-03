@@ -4,6 +4,7 @@ import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Grupo
 import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
 import com.example.gestionacademicaapp.data.api.model.dto.GrupoDto
+import com.example.gestionacademicaapp.data.api.model.dto.GrupoProfesorDto
 import jakarta.inject.Inject
 import retrofit2.HttpException
 
@@ -30,12 +31,12 @@ class GrupoRepository @Inject constructor(
         if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    /*suspend fun cursosPorCarreraYCiclo(
+    suspend fun cursosPorCarreraYCiclo(
         idCarrera: Long,
         idCiclo: Long
     ): Result<List<CursoDto>> = safeApiCall {
         apiService.getCursosByCarreraAndCiclo(idCarrera, idCiclo)
-    }*/
+    }
 
     suspend fun gruposPorCarreraCurso(idCarrera: Long, idCurso: Long): Result<List<GrupoDto>> =
         safeApiCall {
@@ -48,6 +49,14 @@ class GrupoRepository @Inject constructor(
         idCarrera: Long
     ): Result<List<GrupoDto>> = safeApiCall {
         apiService.getGruposByCursoCicloCarrera(idCurso, idCiclo, idCarrera)
+    }
+
+    suspend fun gruposPorProfesor(cedula: String): Result<List<GrupoDto>> = safeApiCall {
+        apiService.getGruposByProfesor(cedula)
+    }
+
+    suspend fun gruposPorProfesorCicloActivo(cedula: String): Result<List<GrupoProfesorDto>> = safeApiCall {
+        apiService.getGruposByProfesorCicloActivo(cedula)
     }
 
     private inline fun <T> safeApiCall(block: () -> T): Result<T> {
