@@ -21,7 +21,9 @@ class UsuariosAdapter(
 
         fun bind(usuario: Usuario) {
             tvCedula.text = usuario.cedula
-            tvTipo.text = usuario.tipo
+            tvCedula.contentDescription = itemView.context.getString(R.string.content_desc_usuario_cedula, usuario.cedula)
+            tvTipo.text = itemView.context.getString(R.string.label_usuario_detalle, usuario.tipo)
+            tvTipo.contentDescription = itemView.context.getString(R.string.content_desc_usuario_tipo, usuario.tipo)
             setupDefaultClickListener(itemView, usuario)
         }
     }
