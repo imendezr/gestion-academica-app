@@ -1,6 +1,5 @@
 package com.example.gestionacademicaapp.ui.carreras
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionacademicaapp.data.api.model.CarreraCurso
@@ -16,12 +15,15 @@ import com.example.gestionacademicaapp.utils.toUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
@@ -35,181 +37,114 @@ class CarreraCursosViewModel @Inject constructor(
     private val cicloRepository: CicloRepository
 ) : ViewModel() {
 
-    init {
-        Log.d("CarreraCursosViewModel", "ViewModel inicializado")
-    }
-
-    private val reloadTrigger = MutableSharedFlow<Unit>(replay = 1).also { emit ->
-        Log.d("CarreraCursosViewModel", "Emitiendo reloadTrigger inicial")
-        emit.tryEmit(Unit)
-    }
+    private val reloadTrigger = MutableSharedFlow<Unit>(replay = 1).apply { tryEmit(Unit) }
 
     private val cursosFlow = flow {
-        Log.d("CarreraCursosViewModel", "Iniciando carga de cursos...")
-        val result = cursoRepository.listar()
-        Log.d("CarreraCursosViewModel", "Resultado de cursoRepository.listar: $result")
-        result
-            .onSuccess { emit(it) }
-            .onFailure { throw IllegalStateException("Error al cargar cursos: ${it.message}") }
-    }.catch {
-        Log.e("CarreraCursosViewModel", "Error en cursosFlow: ${it.message}", it)
-        throw it
+        cursoRepository.listar().fold(
+            onSuccess = { emit(it) },
+            onFailure = { throw IllegalStateException(it.message) }
+        )
     }
 
     private val ciclosFlow = flow {
-        Log.d("CarreraCursosViewModel", "Iniciando carga de ciclos...")
-        val result = cicloRepository.listar()
-        Log.d("CarreraCursosViewModel", "Resultado de cicloRepository.listar: $result")
-        result
-            .onSuccess { emit(it) }
-            .onFailure { throw IllegalStateException("Error al cargar ciclos: ${it.message}") }
-    }.catch {
-        Log.e("CarreraCursosViewModel", "Error en ciclosFlow: ${it.message}", it)
-        throw it
+        cicloRepository.listar().fold(
+            onSuccess = { emit(it) },
+            onFailure = { throw IllegalStateException(it.message) }
+        )
     }
 
     private val carreraCursosFlow = flow {
-        Log.d("CarreraCursosViewModel", "Iniciando carga de relaciones carrera-curso...")
-        val result = carreraCursoRepository.listar()
-        Log.d("CarreraCursosViewModel", "Resultado de carreraCursoRepository.listar: $result")
-        result
-            .onSuccess { emit(it) }
-            .onFailure { throw IllegalStateException("Error al cargar relaciones carrera-curso: ${it.message}") }
-    }.catch {
-        Log.e("CarreraCursosViewModel", "Error en carreraCursosFlow: ${it.message}", it)
-        throw it
+        carreraCursoRepository.listar().fold(
+            onSuccess = { emit(it) },
+            onFailure = { throw IllegalStateException(it.message) }
+        )
     }
 
-    fun fetchItems(carreraId: Long) = reloadTrigger.flatMapLatest {
-        Log.d("CarreraCursosViewModel", "flatMapLatest ejecutado para carreraId=$carreraId")
-        combine(cursosFlow, ciclosFlow, carreraCursosFlow) { cursos, ciclos, carreraCursosResponse ->
-            Log.d("CarreraCursosViewModel", "Datos recibidos: cursos=${cursos.size}, ciclos=${ciclos.size}, carreraCursos=${carreraCursosResponse.size}")
-            val cursosAsociados = carreraCursosResponse
+    @OptIn(FlowPreview::class)
+    fun fetchItems(carreraId: Long) = reloadTrigger.debounce(300).flatMapLatest {
+        combine(cursosFlow, ciclosFlow, carreraCursosFlow) { cursos, ciclos, carreraCursos ->
+            val cursosAsociados = carreraCursos
                 .filter { it.pkCarrera == carreraId }
                 .mapNotNull { carreraCurso ->
-                    val curso = cursos.find { it.idCurso == carreraCurso.pkCurso }
-                    val ciclo = ciclos.find { it.idCiclo == carreraCurso.pkCiclo }
-                    if (curso == null) {
-                        Log.w("CarreraCursosViewModel", "Curso no encontrado: idCurso=${carreraCurso.pkCurso}")
-                        null
-                    } else {
+                    cursos.find { it.idCurso == carreraCurso.pkCurso }?.let { curso ->
                         CarreraCursoUI(
                             idCarreraCurso = carreraCurso.idCarreraCurso,
                             carreraId = carreraId,
                             curso = curso,
                             cicloId = carreraCurso.pkCiclo,
-                            ciclo = ciclo
+                            ciclo = ciclos.find { it.idCiclo == carreraCurso.pkCiclo }
                         )
                     }
                 }
-                .distinctBy { it.curso.idCurso }
-            Log.d("CarreraCursosViewModel", "Cursos asociados para carreraId=$carreraId: ${cursosAsociados.size}")
-            if (cursosAsociados.isEmpty()) {
-                if (carreraCursosResponse.any { it.pkCarrera == carreraId }) {
-                    UiState.Error("No se encontraron cursos válidos para la carrera", ErrorType.GENERAL)
-                } else {
-                    UiState.Success(emptyList())
-                }
-            } else {
-                UiState.Success(cursosAsociados)
-            }
-        }.catch {
-            Log.e("CarreraCursosViewModel", "Error en combine: ${it.message}", it)
-            emit(UiState.Error(it.toUserMessage(), ErrorType.GENERAL))
-        }
-    }.stateIn(viewModelScope, SharingStarted.Lazily, UiState.Loading)
+            UiState.Success(cursosAsociados)
+        }.catch { emit(UiState.Success(emptyList(), message = it.toUserMessage())) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UiState.Loading)
 
     private val _actionState = MutableStateFlow<UiState<Unit>>(UiState.Success())
-    val actionState: StateFlow<UiState<Unit>> get() = _actionState
+    val actionState: StateFlow<UiState<Unit>> = _actionState.asStateFlow()
 
     val cursosAndCiclos: StateFlow<Pair<List<Curso>, List<Ciclo>>> = combine(cursosFlow, ciclosFlow) { cursos, ciclos ->
-        Log.d("CarreraCursosViewModel", "Cursos y ciclos combinados: cursos=${cursos.size}, ciclos=${ciclos.size}")
-        Pair(cursos, ciclos)
-    }.catch {
-        Log.e("CarreraCursosViewModel", "Error en cursosAndCiclos: ${it.message}", it)
-        emit(Pair(emptyList(), emptyList()))
-    }.stateIn(viewModelScope, SharingStarted.Lazily, Pair(emptyList(), emptyList()))
+        cursos to ciclos
+    }.catch { emit(emptyList<Curso>() to emptyList()) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList<Curso>() to emptyList())
 
     fun triggerReload() {
         viewModelScope.launch {
-            Log.d("CarreraCursosViewModel", "Forzando recarga de datos")
             reloadTrigger.emit(Unit)
         }
     }
 
     fun createItem(carreraCurso: CarreraCurso) {
         viewModelScope.launch {
-            performAction {
+            performAction("Curso agregado a la carrera") {
                 validateCarreraCurso(carreraCurso)
-                Log.d("CarreraCursosViewModel", "Insertando carreraCurso: $carreraCurso")
-                carreraCursoRepository.insertar(carreraCurso)
-                    .onSuccess {
-                        _actionState.value = UiState.Success(message = "Curso agregado a la carrera")
-                        triggerReload()
-                    }
-                    .onFailure { throw it }
+                carreraCursoRepository.insertar(carreraCurso).getOrThrow()
             }
         }
     }
 
     fun updateItem(carreraCurso: CarreraCurso) {
         viewModelScope.launch {
-            performAction {
+            performAction("Orden del curso actualizado") {
                 validateCarreraCurso(carreraCurso)
-                Log.d("CarreraCursosViewModel", "Actualizando carreraCurso: $carreraCurso")
-                carreraCursoRepository.modificar(carreraCurso)
-                    .onSuccess {
-                        _actionState.value = UiState.Success(message = "Orden del curso actualizado")
-                        triggerReload()
-                    }
-                    .onFailure { throw it }
+                carreraCursoRepository.modificar(carreraCurso).getOrThrow()
             }
         }
     }
 
     fun deleteItem(idCarrera: Long, idCurso: Long) {
         viewModelScope.launch {
-            performAction {
-                Log.d("CarreraCursosViewModel", "Verificando grupos asociados para idCarrera=$idCarrera, idCurso=$idCurso")
-                val tieneGrupos = carreraCursoRepository.tieneGruposAsociados(idCarrera, idCurso).getOrNull() ?: false
-                if (tieneGrupos) {
-                    throw IllegalStateException("No se puede eliminar: la relación carrera-curso tiene grupos asociados")
+            performAction("Curso eliminado de la carrera") {
+                if (carreraCursoRepository.tieneGruposAsociados(idCarrera, idCurso).getOrDefault(false)) {
+                    throw IllegalStateException("No se puede eliminar: tiene grupos asociados")
                 }
-                Log.d("CarreraCursosViewModel", "Eliminando carreraCurso: idCarrera=$idCarrera, idCurso=$idCurso")
-                carreraCursoRepository.eliminar(idCarrera, idCurso)
-                    .onSuccess {
-                        _actionState.value = UiState.Success(message = "Curso eliminado de la carrera")
-                        triggerReload()
-                    }
-                    .onFailure { throw it }
+                carreraCursoRepository.eliminar(idCarrera, idCurso).getOrThrow()
             }
         }
     }
 
     private fun validateCarreraCurso(carreraCurso: CarreraCurso) {
-        Log.d("CarreraCursosViewModel", "Validando carreraCurso: $carreraCurso")
-        if (carreraCurso.pkCarrera <= 0) throw IllegalArgumentException("La carrera es inválida")
-        if (carreraCurso.pkCurso <= 0) throw IllegalArgumentException("El curso es inválido")
-        if (carreraCurso.pkCiclo <= 0) throw IllegalArgumentException("El ciclo es inválido")
+        if (carreraCurso.pkCarrera <= 0) throw IllegalArgumentException("Carrera inválida")
+        if (carreraCurso.pkCurso <= 0) throw IllegalArgumentException("Curso inválido")
+        if (carreraCurso.pkCiclo <= 0) throw IllegalArgumentException("Ciclo inválido")
     }
 
-    private suspend fun performAction(action: suspend () -> Unit) {
+    private suspend fun performAction(successMessage: String, action: suspend () -> Unit) {
         _actionState.value = UiState.Loading
         try {
             action()
+            _actionState.value = UiState.Success(message = successMessage)
+            triggerReload()
         } catch (e: Exception) {
-            Log.e("CarreraCursosViewModel", "Error en performAction: ${e.message}", e)
             _actionState.value = UiState.Error(e.toUserMessage(), mapErrorType(e))
         }
     }
 
-    private fun mapErrorType(throwable: Throwable): ErrorType {
-        val message = throwable.toUserMessage().lowercase()
-        return when {
-            message.contains("grupos asociados") -> ErrorType.DEPENDENCY
-            message.contains("ya existe") || message.contains("no se realizó") ||
-                    message.contains("no existe") -> ErrorType.VALIDATION
-            else -> ErrorType.GENERAL
-        }
+    private fun mapErrorType(throwable: Throwable): ErrorType = when {
+        throwable.message?.lowercase()?.contains("grupos asociados") == true -> ErrorType.DEPENDENCY
+        throwable.message?.lowercase()?.contains("ya existe") == true ||
+                throwable.message?.lowercase()?.contains("no se realizó") == true ||
+                throwable.message?.lowercase()?.contains("no existe") == true -> ErrorType.VALIDATION
+        else -> ErrorType.GENERAL
     }
 }

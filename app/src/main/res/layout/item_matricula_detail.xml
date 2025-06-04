@@ -11,8 +11,10 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="80dp"
+        android:layout_height="wrap_content"
+        android:baselineAligned="false"
         android:orientation="horizontal"
+        android:minHeight="80dp"
         android:padding="16dp">
 
         <LinearLayout
@@ -22,32 +24,28 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/txtNombreAlumno"
+                android:id="@+id/txtCurso"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="18sp"
-                android:fontFamily="sans-serif-medium"
                 android:textStyle="bold"
                 android:textColor="@color/colorTextPrimary" />
 
             <TextView
-                android:id="@+id/txtCedula"
+                android:id="@+id/txtGrupo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="15sp"
-                android:fontFamily="sans-serif"
+                android:textColor="@color/colorTextSecondary" />
+
+            <TextView
+                android:id="@+id/txtNota"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="15sp"
                 android:textColor="@color/colorTextSecondary" />
 
         </LinearLayout>
-
-        <ImageButton
-            android:id="@+id/btnMatricular"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_add"
-            android:tint="@color/colorTextPrimary"
-            android:contentDescription="@string/matricular_curso" />
 
     </LinearLayout>
 

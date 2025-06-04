@@ -22,32 +22,34 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/txtNombreAlumno"
+                android:id="@+id/txtNumeroGrupo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="18sp"
                 android:fontFamily="sans-serif-medium"
                 android:textStyle="bold"
-                android:textColor="@color/colorTextPrimary" />
+                android:textColor="@color/colorTextPrimary"
+                android:contentDescription="@string/numero_grupo" />
 
             <TextView
-                android:id="@+id/txtCedula"
+                android:id="@+id/txtProfesor"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="15sp"
                 android:fontFamily="sans-serif"
-                android:textColor="@color/colorTextSecondary" />
+                android:textColor="@color/colorTextSecondary"
+                android:contentDescription="@string/nombre_profe" />
 
         </LinearLayout>
 
         <ImageButton
-            android:id="@+id/btnMatricular"
+            android:id="@+id/btnSelectGrupo"
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@drawable/ic_add"
-            android:tint="@color/colorTextPrimary"
-            android:contentDescription="@string/matricular_curso" />
+            android:src="@drawable/ic_active"
+            android:contentDescription="@string/seleccionar_grupo"
+            app:tint="@color/colorTextPrimary" />
 
     </LinearLayout>
 

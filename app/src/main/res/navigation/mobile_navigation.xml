@@ -3,66 +3,130 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mobile_navigation"
-    app:startDestination="@+id/nav_inicio">
+    app:startDestination="@id/nav_inicio">
 
     <fragment
         android:id="@+id/nav_inicio"
         android:name="com.example.gestionacademicaapp.ui.inicio.InicioFragment"
-        android:label="@string/menu_inicio"
+        android:label="Inicio"
         tools:layout="@layout/fragment_inicio" />
+
     <fragment
         android:id="@+id/nav_cursos"
         android:name="com.example.gestionacademicaapp.ui.cursos.CursosFragment"
         android:label="Cursos"
         tools:layout="@layout/fragment_cursos" />
+
     <fragment
         android:id="@+id/nav_carreras"
         android:name="com.example.gestionacademicaapp.ui.carreras.CarrerasFragment"
         android:label="Carreras"
         tools:layout="@layout/fragment_carreras" />
+
     <fragment
         android:id="@+id/nav_profesores"
         android:name="com.example.gestionacademicaapp.ui.profesores.ProfesoresFragment"
         android:label="Profesores"
         tools:layout="@layout/fragment_profesores" />
+
     <fragment
         android:id="@+id/nav_alumnos"
         android:name="com.example.gestionacademicaapp.ui.alumnos.AlumnosFragment"
         android:label="Alumnos"
         tools:layout="@layout/fragment_alumnos" />
+
     <fragment
         android:id="@+id/nav_ciclos"
         android:name="com.example.gestionacademicaapp.ui.ciclos.CiclosFragment"
         android:label="Ciclos"
         tools:layout="@layout/fragment_ciclos" />
+
     <fragment
         android:id="@+id/nav_ofertaAcademica"
         android:name="com.example.gestionacademicaapp.ui.oferta_academica.OfertaAcademicaFragment"
         android:label="Oferta Académica"
         tools:layout="@layout/fragment_oferta_academica" />
+
     <fragment
         android:id="@+id/nav_usuarios"
         android:name="com.example.gestionacademicaapp.ui.usuarios.UsuariosFragment"
         android:label="Usuarios"
         tools:layout="@layout/fragment_usuarios" />
+
     <fragment
         android:id="@+id/nav_matricula"
         android:name="com.example.gestionacademicaapp.ui.matricula.MatriculaFragment"
         android:label="Matrícula"
-        tools:layout="@layout/fragment_matricula" />
+        tools:layout="@layout/fragment_matricula">
+        <action
+            android:id="@+id/actionMatriculaFragmentToMatriculaCursoGrupoFragment"
+            app:destination="@id/matriculaCursoGrupoFragment"
+            app:popUpTo="@id/nav_matricula"
+            app:popUpToInclusive="false" />
+        <action
+            android:id="@+id/actionMatriculaFragmentToMatriculaDetailsFragment"
+            app:destination="@id/matriculaDetailsFragment"
+            app:popUpTo="@id/nav_matricula"
+            app:popUpToInclusive="false" />
+    </fragment>
+
     <fragment
         android:id="@+id/nav_notas"
         android:name="com.example.gestionacademicaapp.ui.notas.NotasFragment"
         android:label="Notas"
         tools:layout="@layout/fragment_notas" />
+
     <fragment
         android:id="@+id/nav_historial"
         android:name="com.example.gestionacademicaapp.ui.historial_academico.HistorialAcademicoFragment"
         android:label="Historial"
         tools:layout="@layout/fragment_historial_academico" />
+
     <fragment
         android:id="@+id/nav_perfil"
         android:name="com.example.gestionacademicaapp.ui.perfil.PerfilFragment"
-        android:label="Editar Perfil"
+        android:label="Perfil"
         tools:layout="@layout/fragment_perfil" />
+
+    <fragment
+        android:id="@+id/matriculaDetailsFragment"
+        android:name="com.example.gestionacademicaapp.ui.matricula.MatriculaDetailsFragment"
+        android:label="Detalles de Matrícula"
+        tools:layout="@layout/fragment_matricula_details">
+        <argument
+            android:name="idAlumno"
+            app:argType="long" />
+        <argument
+            android:name="idCiclo"
+            app:argType="long" />
+        <argument
+            android:name="idCarrera"
+            app:argType="long" />
+        <action
+            android:id="@+id/actionMatriculaDetailsFragmentToMatriculaCursoGrupoFragment"
+            app:destination="@id/matriculaCursoGrupoFragment"
+            app:popUpTo="@id/matriculaDetailsFragment"
+            app:popUpToInclusive="false" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/matriculaCursoGrupoFragment"
+        android:name="com.example.gestionacademicaapp.ui.matricula.MatriculaCursoGrupoFragment"
+        android:label="Seleccionar Curso y Grupo"
+        tools:layout="@layout/fragment_matricula_curso_grupo">
+        <argument
+            android:name="idAlumno"
+            app:argType="long" />
+        <argument
+            android:name="idCiclo"
+            app:argType="long" />
+        <argument
+            android:name="idCarrera"
+            app:argType="long" />
+        <argument
+            android:name="idGrupo"
+            app:argType="long"
+            android:defaultValue="0L" />
+    </fragment>
+
 </navigation>

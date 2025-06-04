@@ -7,8 +7,8 @@ import androidx.recyclerview.widget.RecyclerView
 
 abstract class BaseAdapter<T : Any, VH : RecyclerView.ViewHolder>(
     diffCallback: DiffUtil.ItemCallback<T>,
-    private val onEdit: (T) -> Unit,
-    private val onDelete: (T) -> Unit
+    val onEdit: (T) -> Unit,
+    val onDelete: (T) -> Unit
 ) : ListAdapter<T, VH>(diffCallback) {
 
     fun getItemAt(position: Int): T = getItem(position)
