@@ -46,6 +46,10 @@ class AlumnoRepository @Inject constructor(
         apiService.getAlumnosByCarrera(idCarrera.toLong())
     }
 
+    suspend fun alumnosConOfertaEnCiclo(idCiclo: Long): Result<List<Alumno>> = safeApiCall {
+        apiService.getAlumnosConOfertaEnCiclo(idCiclo)
+    }
+
     private inline fun <T> safeApiCall(block: () -> T): Result<T> {
         return try {
             Result.success(block())

@@ -49,6 +49,9 @@ interface ApiService {
     @GET("alumnos/buscarPorCarrera")
     suspend fun getAlumnosByCarrera(@Query("carrera") idCarrera: Long): List<Alumno>
 
+    @GET("alumnos/alumnosConOfertaEnCiclo")
+    suspend fun getAlumnosConOfertaEnCiclo(@Query("idCiclo") idCiclo: Long): List<Alumno>
+
 
     // CARRERAS
     @POST("carreras/insertar")
