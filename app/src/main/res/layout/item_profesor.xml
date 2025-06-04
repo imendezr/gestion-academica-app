@@ -9,6 +9,10 @@
     card_view:cardElevation="4dp">
 
     <LinearLayout
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:baselineAligned="false"
+        android:minHeight="80dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="80dp"
@@ -22,11 +26,16 @@
             android:fontFamily="sans-serif-medium"
             android:textColor="@color/colorTextPrimary"
             android:textSize="18sp"
-            android:textStyle="bold"
-            android:text="Título" />
+            android:textColor="@color/colorTextPrimary"
+            android:fontFamily="sans-serif-medium"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
 
         <TextView
-            android:id="@+id/tvSubtitulo"
+            android:id="@+id/tvCedula"
+            android:text="Cedula del profesor"
+            android:textSize="14sp"
+            android:layout_marginTop="4dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
