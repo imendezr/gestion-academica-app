@@ -9,7 +9,14 @@
         android:id="@+id/nav_inicio"
         android:name="com.example.gestionacademicaapp.ui.inicio.InicioFragment"
         android:label="Inicio"
-        tools:layout="@layout/fragment_inicio" />
+        tools:layout="@layout/fragment_inicio">
+        <action
+            android:id="@+id/action_nav_inicio_to_nav_matricula"
+            app:destination="@id/nav_matricula" />
+        <action
+            android:id="@+id/action_nav_inicio_to_nav_ofertaAcademica"
+            app:destination="@id/nav_ofertaAcademica" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_cursos"
@@ -45,7 +52,26 @@
         android:id="@+id/nav_ofertaAcademica"
         android:name="com.example.gestionacademicaapp.ui.oferta.OfertaAcademicaFragment"
         android:label="Oferta Académica"
-        tools:layout="@layout/fragment_oferta_academica" />
+        tools:layout="@layout/fragment_oferta_academica">
+        <action
+            android:id="@+id/action_ofertaAcademicaFragment_to_gruposOfertaFragment"
+            app:destination="@id/gruposOfertaFragment"
+            app:popUpTo="@id/nav_ofertaAcademica"
+            app:popUpToInclusive="false" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/gruposOfertaFragment"
+        android:name="com.example.gestionacademicaapp.ui.oferta.GruposOfertaFragment"
+        android:label="@string/grupos_de_curso"
+        tools:layout="@layout/fragment_grupos_oferta">
+        <argument
+            android:name="cursoId"
+            app:argType="long" />
+        <argument
+            android:name="cursoNombre"
+            app:argType="string" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_usuarios"

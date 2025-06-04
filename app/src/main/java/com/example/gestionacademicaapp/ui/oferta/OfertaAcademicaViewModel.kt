@@ -44,7 +44,7 @@ class OfertaAcademicaViewModel @Inject constructor(
     private val cicloRepository: CicloRepository,
     private val grupoRepository: GrupoRepository,
     private val profesorRepository: ProfesorRepository,
-    private val resourceProvider: ResourceProvider // Added ResourceProvider
+    private val resourceProvider: ResourceProvider
 ) : ViewModel() {
 
     private val reloadTrigger = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
@@ -119,10 +119,6 @@ class OfertaAcademicaViewModel @Inject constructor(
         reloadTrigger.tryEmit(Unit)
     }
 
-    fun reloadCursos() {
-        reloadTrigger.tryEmit(Unit)
-    }
-
     fun reloadGrupos() {
         reloadTrigger.tryEmit(Unit)
     }
@@ -150,7 +146,7 @@ class OfertaAcademicaViewModel @Inject constructor(
                     grupoRepository.insertar(grupo).fold(
                         onSuccess = {
                             _actionState.emit(UiState.Success(Unit, "CREATED"))
-                            reloadTrigger.tryEmit(Unit) // Trigger refresh
+                            reloadTrigger.tryEmit(Unit)
                         },
                         onFailure = { e -> _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e))) }
                     )
@@ -158,7 +154,7 @@ class OfertaAcademicaViewModel @Inject constructor(
                     grupoRepository.modificar(grupo).fold(
                         onSuccess = {
                             _actionState.emit(UiState.Success(Unit, "UPDATED"))
-                            reloadTrigger.tryEmit(Unit) // Trigger refresh
+                            reloadTrigger.tryEmit(Unit)
                         },
                         onFailure = { e -> _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e))) }
                     )
@@ -176,7 +172,7 @@ class OfertaAcademicaViewModel @Inject constructor(
                 grupoRepository.eliminar(grupo.idGrupo).fold(
                     onSuccess = {
                         _actionState.emit(UiState.Success(Unit, "DELETED"))
-                        reloadTrigger.tryEmit(Unit) // Trigger refresh
+                        reloadTrigger.tryEmit(Unit)
                     },
                     onFailure = { e -> _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e))) }
                 )
@@ -225,6 +221,6 @@ class OfertaAcademicaViewModel @Inject constructor(
     }
 
     private fun getString(resId: Int, vararg args: Any): String {
-        return resourceProvider.getString(resId, *args) // Updated to use ResourceProvider
+        return resourceProvider.getString(resId, *args)
     }
 }

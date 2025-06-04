@@ -180,4 +180,12 @@
     <string name="operacion_exitosa">Operación exitosa</string>
     <string name="curso_item">Elemento de curso para selección</string>
     <string name="grupo_item">Elemento de grupo para selección</string>
+    <string name="buscar_curso">Buscar curso</string>
+    <string name="confirmar_eliminar_grupo">Confirmar eliminación</string>
+    <string name="mensaje_confirmar_eliminar_grupo">¿Está seguro de eliminar este grupo?</string>
+    <string name="error_grupo_dependencia">No se puede eliminar el grupo debido a dependencias.</string>
+    <string name="error_validacion_datos">Error en los datos ingresados.</string>
+    <string name="titulo_grupos">Grupos</string>
+    <string name="grupo_actualizado_exito">Grupo actualizado exitosamente</string>
+    <string name="grupo_eliminado_exito">Grupo eliminado exitosamente</string>
 </resources>
