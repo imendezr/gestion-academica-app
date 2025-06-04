@@ -1,39 +1,52 @@
 package com.example.gestionacademicaapp.ui.profesores
 
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Path
+import android.graphics.Rect
+import android.graphics.RectF
+import android.os.Bundle
+import android.util.TypedValue
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import androidx.appcompat.widget.SearchView
+import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
-import com.example.gestionacademicaapp.data.api.model.Carrera
-import com.example.gestionacademicaapp.data.api.model.Curso
 import com.example.gestionacademicaapp.data.api.model.Profesor
 import com.example.gestionacademicaapp.ui.common.CampoFormulario
+import com.example.gestionacademicaapp.ui.common.CampoTipo
 import com.example.gestionacademicaapp.ui.common.DialogFormularioFragment
-import com.example.gestionacademicaapp.ui.common.state.ListUiState
-import com.example.gestionacademicaapp.ui.common.state.SingleUiState
+import com.example.gestionacademicaapp.ui.common.state.UiState
 import com.example.gestionacademicaapp.utils.Notificador
-import com.example.gestionacademicaapp.utils.enableSwipeActions
-import com.example.gestionacademicaapp.utils.isVisible
-import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.example.gestionacademicaapp.utils.clearSwipe
 import dagger.hilt.android.AndroidEntryPoint
-import kotlin.getValue
-import kotlin.text.toLongOrNull
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class ProfesoresFragment : Fragment() {
 
     private val viewModel: ProfesoresViewModel by viewModels()
     private lateinit var recyclerView: RecyclerView
+    private val adapter: ProfesoresAdapter by lazy {
+        ProfesoresAdapter(
+            onEditListener = { profesor, _ -> mostrarDialogoProfesor(profesor) }
+        )
+    }
     private lateinit var searchView: SearchView
-    private lateinit var adapter: ProfesoresAdapter
-    private lateinit var fab: ExtendedFloatingActionButton
     private lateinit var progressBar: View
-    private var currentSearchQuery: String? = null // Para almacenar la consulta actual
-    private var allProfesores: List<Profesor> = emptyList()
-
+    private var itemTouchHelper: ItemTouchHelper? = null
+    private var swipedPosition: Int? = null
+    private var allItems: List<Profesor> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -44,170 +57,254 @@ class ProfesoresFragment : Fragment() {
 
         recyclerView = view.findViewById(R.id.recyclerViewProfesores)
         searchView = view.findViewById(R.id.searchViewProfesores)
-        searchView.queryHint = getString(R.string.search_hint_codigo_nombre)
-        fab = view.findViewById(R.id.fabProfesores)
         progressBar = view.findViewById(R.id.progressBar)
 
-
-        // Configurar RecyclerView y Adapter
-        adapter = ProfesoresAdapter(
-            onEdit = { profesor, _ -> mostrarDialogoProfesor(profesor) },
-            onDelete = { profesor, _ ->
-                viewModel.deleteProfesor(profesor.idProfesor) }
-        )
-
-        recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        recyclerView.adapter = adapter
-
-        // Configurar SearchView
-        searchView.isIconified = false
-        searchView.clearFocus()
-        searchView.requestFocus()
-
-        // Configurar búsqueda
-        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
-            override fun onQueryTextSubmit(query: String?) = false
-            override fun onQueryTextChange(newText: String?): Boolean {
-                currentSearchQuery = newText
-                adapter.filter.filter(newText)
-                return false
-            }
-        })
-
-        // Configurar FAB
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                if (dy > 10 && fab.isExtended) fab.shrink()
-                else if (dy < -10 && !fab.isExtended) fab.extend()
-            }
-        })
-
-        fab.setOnClickListener {
-            searchView.setQuery("", false)
-            searchView.clearFocus()
-            mostrarDialogoProfesor(null)
-        }
-
-        // Configurar deslizamiento para eliminar/editar usando la función de extensión
-        recyclerView.enableSwipeActions(
-            onSwipeLeft = { position ->
-                adapter.onSwipeDelete(position)
-            },
-            onSwipeRight = { position ->
-                val profesor = adapter.getProfesorAt(position)
-                adapter.triggerEdit(profesor, position)
-            }
-        )
-// Observar estados del ViewModel
-        viewModel.profesoresState.observe(viewLifecycleOwner) { state ->
-            when (state) {
-                is ListUiState.Loading -> {
-                    progressBar.isVisible = true
-                    recyclerView.isVisible = false
-                }
-
-                is ListUiState.Success -> {
-                    progressBar.isVisible = false
-                    recyclerView.isVisible = true
-                    adapter.updateProfesores(state.data)
-                    // Reaplicar el filtro si hay una consulta activa
-                    currentSearchQuery?.let { adapter.filter.filter(it) }
-                }
-
-                is ListUiState.Error -> {
-                    progressBar.isVisible = false
-                    recyclerView.isVisible = false
-                    Notificador.show(requireView(), state.message, R.color.colorError)
-                }
-            }
-        }
-        // Observar feedback de acciones (crear/editar/eliminar)
-
-        viewModel.actionState.observe(viewLifecycleOwner) { state ->
-            when (state) {
-                is SingleUiState.Loading -> {
-                    progressBar.isVisible = true
-                    fab.isEnabled = false
-                }
-
-                is SingleUiState.Success -> {
-                    progressBar.isVisible = false
-                    fab.isEnabled = true
-
-                    val color = when {
-                        state.data.contains("creado", true) ||
-                                state.data.contains("actualizado", true) -> R.color.colorAccent
-                        state.data.contains("eliminado", true) -> R.color.colorError
-                        else -> R.color.colorPrimary
-                    }
-
-                    Notificador.show(
-                        view = requireView(),
-                        mensaje = state.data,
-                        colorResId = color,
-                        anchorView = fab
-                    )
-                }
-
-                is SingleUiState.Error -> {
-                    progressBar.isVisible = false
-                    fab.isEnabled = true
-                    Notificador.show(requireView(), state.message, R.color.colorError)
-                }
-            }
-        }
+        setupRecyclerView()
+        setupSearchView()
+        observeViewModel()
 
         return view
     }
-    private fun mostrarDialogoProfesor(profesor: Profesor?) {
-        val profesorIndex = profesor?.let {
-            allProfesores.indexOfFirst { it.idProfesor == profesor.idProfesor }
-        } ?: -1
-        val campos = listOf(
-            CampoFormulario(
-                "cedula", "Cedula", "texto", obligatorio = true,
-                editable = profesor == null
-            ),
-            CampoFormulario("nombre", "Nombre", "texto", obligatorio = true),
-            CampoFormulario("telefono", "Telefono", "texto", obligatorio = true),
-            CampoFormulario("email", "Email", "texto", obligatorio = true)
+
+    private fun setupRecyclerView() {
+        recyclerView.layoutManager = LinearLayoutManager(requireContext())
+        recyclerView.adapter = adapter
+        val paint = Paint().apply { isAntiAlias = true }
+        val path = Path()
+        val outerCornerRadius = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, 10f, resources.displayMetrics
+        )
+        val innerCornerRadius = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics
         )
 
-        val datosIniciales = profesor?.let {
-            mapOf(
-                "cedula" to it.cedula,
-                "nombre" to it.nombre,
-                "telefono" to it.telefono,
-                "email" to it.email
-            )
-        } ?: emptyMap()
+        itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(
+            0, ItemTouchHelper.RIGHT // Only allow swipe-right
+        ) {
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = false
 
-        val dialog = DialogFormularioFragment(
-            titulo = if (profesor == null) "Nuevo Profesor" else "Editar Profesor",
-            campos = campos,
-            datosIniciales = datosIniciales,
-            onGuardar = { datosMap ->
-                val nuevoProfesor = Profesor(
-                    idProfesor = profesor?.idProfesor ?: 0,
-                    cedula = datosMap["cedula"] ?: "",
-                    nombre = datosMap["nombre"] ?: "",
-                    telefono = datosMap["telefono"]?: "",
-                    email = datosMap["email"] ?: ""
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
+                val position = viewHolder.adapterPosition
+                if (direction == ItemTouchHelper.RIGHT) {
+                    swipedPosition = position
+                    val profesor = adapter.getItemAt(position)
+                    adapter.triggerEdit(profesor, position)
+                }
+                // Reset swipe state
+                recyclerView.clearSwipe(position, itemTouchHelper)
+            }
+
+            override fun onChildDraw(
+                c: Canvas,
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                dX: Float,
+                dY: Float,
+                actionState: Int,
+                isCurrentlyActive: Boolean
+            ) {
+                val itemView = viewHolder.itemView
+                val icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_reorder)?.apply {
+                    setTint(ContextCompat.getColor(requireContext(), android.R.color.white))
+                }
+
+                paint.color = ContextCompat.getColor(requireContext(), android.R.color.holo_orange_light)
+
+                val rect = RectF(
+                    itemView.left.toFloat(),
+                    itemView.top.toFloat(),
+                    itemView.left + dX,
+                    itemView.bottom.toFloat()
                 )
 
-                if (profesor == null) {
-                    viewModel.createProfesor(nuevoProfesor)
-                } else {
-                    viewModel.updateProfesor(nuevoProfesor)
+                val radii = floatArrayOf(
+                    outerCornerRadius, outerCornerRadius, // superior-izquierda
+                    innerCornerRadius, innerCornerRadius, // superior-derecha
+                    innerCornerRadius, innerCornerRadius, // inferior-derecha
+                    outerCornerRadius, outerCornerRadius  // inferior-izquierda
+                )
+
+                path.reset()
+                path.addRoundRect(rect, radii, Path.Direction.CW)
+                c.drawPath(path, paint)
+
+                icon?.let {
+                    val iconMargin = (itemView.height - it.intrinsicHeight) / 2
+                    val bounds = Rect(
+                        itemView.left + iconMargin,
+                        itemView.top + iconMargin,
+                        itemView.left + iconMargin + it.intrinsicWidth,
+                        itemView.bottom - iconMargin
+                    )
+                    it.bounds = bounds
+                    it.draw(c)
                 }
-            },
-            onCancel = {
-                if (profesorIndex != -1) {
-                    adapter.notifyItemChanged(profesorIndex)
+
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive)
+            }
+        }).apply { attachToRecyclerView(recyclerView) }
+    }
+
+    private fun setupSearchView() {
+        searchView.isIconified = false
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?) = false
+            override fun onQueryTextChange(newText: String?): Boolean {
+                filterList(newText)
+                return true
+            }
+        })
+    }
+
+    private fun observeViewModel() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.profesoresState.collect { state ->
+                        updateUiState(state, isFetch = true)
+                    }
+                }
+                launch {
+                    viewModel.actionState.collect { state ->
+                        updateUiState(state, isFetch = false)
+                    }
                 }
             }
+        }
+    }
+
+    private fun updateUiState(state: UiState<*>, isFetch: Boolean) {
+        when (state) {
+            is UiState.Loading -> {
+                progressBar.isVisible = true
+                recyclerView.isVisible = false
+            }
+            is UiState.Success<*> -> {
+                progressBar.isVisible = false
+                if (isFetch) {
+                    @Suppress("UNCHECKED_CAST")
+                    allItems = (state.data as? List<Profesor>) ?: emptyList()
+                    recyclerView.isVisible = allItems.isNotEmpty()
+                    adapter.submitList(allItems)
+                    filterList(searchView.query.toString())
+                } else if (state.message != null) {
+                    Notificador.show(
+                        view = requireView(),
+                        mensaje = state.message,
+                        colorResId = R.color.colorAccent,
+                        anchorView = null // No FAB
+                    )
+                }
+            }
+            is UiState.Error -> {
+                progressBar.isVisible = false
+                recyclerView.isVisible = allItems.isNotEmpty()
+                Notificador.show(
+                    view = requireView(),
+                    mensaje = state.message,
+                    colorResId = R.color.colorError,
+                    anchorView = null // No FAB
+                )
+                if (!isFetch && swipedPosition != null) {
+                    adapter.notifyItemChanged(swipedPosition!!)
+                    recyclerView.clearSwipe(swipedPosition!!, itemTouchHelper)
+                    swipedPosition = null
+                }
+                filterList(searchView.query.toString())
+            }
+        }
+    }
+
+    private fun filterList(query: String?) {
+        val filtered = if (query.isNullOrBlank()) {
+            allItems
+        } else {
+            val queryLower = query.lowercase()
+            allItems.filter {
+                it.cedula.lowercase().contains(queryLower) ||
+                        it.nombre.lowercase().contains(queryLower) ||
+                        it.telefono.lowercase().contains(queryLower) ||
+                        it.email.lowercase().contains(queryLower)
+            }
+        }
+        adapter.submitList(filtered)
+        recyclerView.isVisible = filtered.isNotEmpty()
+    }
+
+    private fun mostrarDialogoProfesor(profesor: Profesor?) {
+        if (profesor == null) return // Only allow editing existing professors
+
+        val campos = listOf(
+            CampoFormulario(
+                key = "cedula",
+                label = getString(R.string.cedula),
+                tipo = CampoTipo.TEXT,
+                obligatorio = true,
+                editable = true, // Cedula is now editable
+                rules = { value, _ -> ProfesorValidator.validateCedula(value) }
+            ),
+            CampoFormulario(
+                key = "nombre",
+                label = getString(R.string.nombre),
+                tipo = CampoTipo.TEXT,
+                obligatorio = true,
+                rules = { value, _ -> ProfesorValidator.validateNombre(value) }
+            ),
+            CampoFormulario(
+                key = "telefono",
+                label = getString(R.string.telefono),
+                tipo = CampoTipo.TEXT,
+                obligatorio = true,
+                rules = { value, _ -> ProfesorValidator.validateTelefono(value) }
+            ),
+            CampoFormulario(
+                key = "email",
+                label = getString(R.string.email),
+                tipo = CampoTipo.TEXT,
+                obligatorio = true,
+                rules = { value, _ -> ProfesorValidator.validateEmail(value) }
+            )
         )
 
+        val datosIniciales = mapOf(
+            "cedula" to profesor.cedula,
+            "nombre" to profesor.nombre,
+            "telefono" to profesor.telefono,
+            "email" to profesor.email
+        )
+
+        val dialog = DialogFormularioFragment.newInstance(
+            titulo = getString(R.string.editar_profesor),
+            campos = campos,
+            datosIniciales = datosIniciales
+        ).apply {
+            setOnGuardarListener { datosMap ->
+                val updatedProfesor = Profesor(
+                    idProfesor = profesor.idProfesor,
+                    cedula = datosMap["cedula"] ?: "",
+                    nombre = datosMap["nombre"] ?: "",
+                    telefono = datosMap["telefono"] ?: "",
+                    email = datosMap["email"] ?: ""
+                )
+                viewModel.updateProfesor(updatedProfesor)
+            }
+            setOnCancelListener {
+                if (swipedPosition != null) {
+                    adapter.notifyItemChanged(swipedPosition!!)
+                    recyclerView.clearSwipe(swipedPosition!!, itemTouchHelper)
+                    swipedPosition = null
+                }
+            }
+        }
         dialog.show(parentFragmentManager, "DialogFormularioProfesor")
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        itemTouchHelper = null
     }
 }

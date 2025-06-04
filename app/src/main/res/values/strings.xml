@@ -188,4 +188,14 @@
     <string name="titulo_grupos">Grupos</string>
     <string name="grupo_actualizado_exito">Grupo actualizado exitosamente</string>
     <string name="grupo_eliminado_exito">Grupo eliminado exitosamente</string>
+    <string name="add_profesor">Agregar Profesor</string>
+    <string name="search_hint_profesores">Buscar por cédula, nombre, teléfono o email</string>
+    <string name="profesor_details">Cédula: %1$s · Tel: %2$s</string>
+    <string name="accion_completada">Acción completada</string>
+    <string name="cedula">Cédula</string>
+    <string name="nombre">Nombre</string>
+    <string name="telefono">Teléfono</string>
+    <string name="email">Email</string>
+    <string name="nuevo_profesor">Nuevo Profesor</string>
+    <string name="editar_profesor">Editar Profesor</string>
 </resources>
