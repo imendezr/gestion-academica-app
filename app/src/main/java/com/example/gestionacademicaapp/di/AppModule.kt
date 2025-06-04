@@ -1,15 +1,28 @@
 package com.example.gestionacademicaapp.di
 
+
+import android.content.Context
 import com.example.gestionacademicaapp.data.api.ApiService
-import com.example.gestionacademicaapp.data.repository.*
+import com.example.gestionacademicaapp.data.repository.AlumnoRepository
+import com.example.gestionacademicaapp.data.repository.CarreraCursoRepository
+import com.example.gestionacademicaapp.data.repository.CarreraRepository
+import com.example.gestionacademicaapp.data.repository.CicloRepository
+import com.example.gestionacademicaapp.data.repository.CursoRepository
+import com.example.gestionacademicaapp.data.repository.GrupoRepository
+import com.example.gestionacademicaapp.data.repository.MatriculaRepository
+import com.example.gestionacademicaapp.data.repository.ProfesorRepository
+import com.example.gestionacademicaapp.data.repository.UsuarioRepository
 import com.example.gestionacademicaapp.utils.Constants
+import com.example.gestionacademicaapp.utils.ResourceProvider
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
+
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -17,9 +30,14 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideResourceProvider(@ApplicationContext context: Context): ResourceProvider =
+        ResourceProvider(context)
+
+    @Provides
+    @Singleton
     fun provideRetrofit(): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(Constants.BASE_URL) // Asegúrate que termine en "/"
+            .baseUrl(Constants.BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }

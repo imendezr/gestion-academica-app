@@ -43,7 +43,7 @@
 
     <fragment
         android:id="@+id/nav_ofertaAcademica"
-        android:name="com.example.gestionacademicaapp.ui.oferta_academica.OfertaAcademicaFragment"
+        android:name="com.example.gestionacademicaapp.ui.oferta.OfertaAcademicaFragment"
         android:label="Oferta Académica"
         tools:layout="@layout/fragment_oferta_academica" />
 

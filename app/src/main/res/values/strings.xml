@@ -162,4 +162,22 @@
     <string name="no_matriculas_ciclo">No se encontraron matrículas para este alumno en el ciclo seleccionado</string>
     <string name="error_matricula_dependencia">No se puede eliminar la matrícula debido a dependencias</string>
     <string name="select_curso_label">Seleccione un curso</string>
+    <string name="oferta_academica">Oferta Académica</string>
+    <string name="seleccionar_carrera">Seleccionar Carrera</string>
+    <string name="grupos_de_curso">Grupos de %s</string>
+    <string name="codigo_curso">Código de Curso</string>
+    <string name="ver_grupos">Ver Grupos</string>
+    <string name="horario">Horario</string>
+    <string name="profesor">Profesor</string>
+    <string name="crear_grupo">Crear Grupo</string>
+    <string name="editar_grupo">Editar Grupo</string>
+    <string name="eliminar_grupo">Eliminar Grupo</string>
+    <string name="volver">Volver</string>
+    <string name="error_no_grupos">No se encontraron grupos</string>
+    <string name="grupo_creado_exito">Grupo creado exitosamente</string>
+    <string name="grupo_actualizado_exitoso">Grupo actualizado exitosamente</string>
+    <string name="grupo_eliminado_exitoso">Grupo eliminado exitosamente</string>
+    <string name="operacion_exitosa">Operación exitosa</string>
+    <string name="curso_item">Elemento de curso para selección</string>
+    <string name="grupo_item">Elemento de grupo para selección</string>
 </resources>
