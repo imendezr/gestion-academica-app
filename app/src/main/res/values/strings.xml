@@ -1,5 +1,4 @@
 <resources>
-
     <string name="app_name">Gestión Académica</string>
     <string name="cedula_actual">%1$s (Usted)</string>
     <string name="ingrese_cedula">Ingrese su cédula</string>
@@ -41,7 +40,7 @@
     <string name="titulo_cursos">Cursos</string>
     <string name="titulo_cursos_de">Cursos de %1$s</string>
     <string name="dashboard_según_rol">Dashboard según tu rol</string>
-    <string name="inicio_subtitulo_dashboard">Dashboard según tu rol</string>
+    <string name="inicio_subtitulo_dashboard">Accede al menú para ver las opciones</string>
     <string name="inicio_titulo_bienvenida">Bienvenido</string>
     <string name="menu_alumnos">Alumnos</string>
     <string name="menu_carreras">Carreras</string>
@@ -168,7 +167,6 @@
     <string name="codigo_curso">Código de Curso</string>
     <string name="ver_grupos">Ver Grupos</string>
     <string name="horario">Horario</string>
-    <string name="profesor">Profesor</string>
     <string name="crear_grupo">Crear Grupo</string>
     <string name="editar_grupo">Editar Grupo</string>
     <string name="eliminar_grupo">Eliminar Grupo</string>
@@ -198,4 +196,48 @@
     <string name="email">Email</string>
     <string name="nuevo_profesor">Nuevo Profesor</string>
     <string name="editar_profesor">Editar Profesor</string>
+    <string name="fecha_nacimiento">Fecha de Nacimiento</string>
+    <string name="carrera">Carrera</string>
+    <string name="editar_alumno">Editar Alumno</string>
+    <string name="alumno_details">Cédula: %1$s, Teléfono: %2$s</string>
+    <string name="crear_alumno">Crear Alumno</string>
+    <string name="content_desc_ver_historial">Ver historial del alumno</string>
+    <string name="curso">Curso</string>
+    <string name="alumnos">Alumnos</string>
+    <string name="historial_academico">Historial Académico</string>
+    <string name="curso_details">%1$s - %2$s</string>
+    <string name="grupo">Grupo: %s</string>
+    <string name="profesor">Profesor: %s</string>
+    <string name="nota">Nota: %s</string>
+    <string name="estado">Estado: %s</string>
+    <string name="estado_aprobado">Aprobado</string>
+    <string name="estado_reprobado">Reprobado</string>
+    <string name="estado_en_curso">En curso</string>
+    <string name="estado_sin_evaluar">Sin evaluar</string>
+    <string name="historial_vacio">No hay matrículas registradas</string>
+    <string name="error_seleccione_carrera_ciclo_curso">Seleccione una carrera, ciclo y curso antes de agregar un grupo.</string>
+    <string name="confirmar_eliminar_curso">¿Eliminar curso?</string>
+    <string name="mensaje_confirmar_eliminar_curso">¿Estás seguro de que deseas eliminar este curso? Esta acción no se puede deshacer.</string>
+    <string name="curso_eliminado_exito">Curso eliminado exitosamente</string>
+    <string name="error_curso_dependencia">No se puede eliminar el curso porque tiene grupos asociados.</string>
+    <string name="crear_curso">Crear curso</string>
+    <string name="editar_curso">Editar curso</string>
+    <string name="curso_creado_exito">Curso creado correctamente</string>
+    <string name="curso_actualizado_exito">Curso actualizado correctamente</string>
+    <string name="agregar_curso">Agregar curso</string>
+    <string name="agregar_grupo">Agregar grupo</string>
+    <string name="error_curso_creacion_no_soportada">La creación de cursos no está disponible en esta sección</string>
+    <string name="error_curso_actualizacion_no_soportada">La actualización de cursos no está disponible</string>
+    <string name="error_seleccione_carrera_ciclo">Por favor, seleccione una carrera y un ciclo antes de continuar.</string>
+    <string name="mi_historial_academico">Mi Historial Académico</string>
+    <string name="historial_vacio_alumno">No tienes matrículas registradas</string>
+    <string name="registrar_nota">Registrar Nota</string>
+    <string name="error_no_alumnos">No hay alumnos matriculados en este grupo.</string>
+    <string name="error_nota_requerida">La nota es requerida.</string>
+    <string name="error_nota_rango">La nota debe estar entre 0 y 100.</string>
+    <string name="nota_actualizada_exito">Nota actualizada exitosamente.</string>
+    <string name="error_no_profesor">No se encontró el profesor autenticado.</string>
+    <string name="error_matricula_no_encontrada">Matrícula no encontrada.</string>
+    <string name="content_desc_cargando_alumnos">Cargando alumnos</string>
+    <string name="nota_success">Nota actualizada con éxito</string>
 </resources>

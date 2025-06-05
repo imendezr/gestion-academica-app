@@ -13,6 +13,7 @@ import com.example.gestionacademicaapp.data.repository.ProfesorRepository
 import com.example.gestionacademicaapp.data.repository.UsuarioRepository
 import com.example.gestionacademicaapp.ui.common.state.ErrorType
 import com.example.gestionacademicaapp.ui.common.state.UiState
+import com.example.gestionacademicaapp.ui.common.validators.UsuarioValidator
 import com.example.gestionacademicaapp.utils.SessionManager
 import com.example.gestionacademicaapp.utils.toUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel

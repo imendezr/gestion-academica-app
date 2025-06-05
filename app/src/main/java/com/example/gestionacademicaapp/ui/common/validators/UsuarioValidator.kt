@@ -1,4 +1,4 @@
-package com.example.gestionacademicaapp.ui.usuarios
+package com.example.gestionacademicaapp.ui.common.validators
 
 import com.example.gestionacademicaapp.data.api.model.Carrera
 import org.threeten.bp.LocalDate

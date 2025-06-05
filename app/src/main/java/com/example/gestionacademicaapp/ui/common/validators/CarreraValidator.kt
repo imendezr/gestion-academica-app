@@ -1,4 +1,4 @@
-package com.example.gestionacademicaapp.ui.carreras
+package com.example.gestionacademicaapp.ui.common.validators
 
 class CarreraValidator {
 

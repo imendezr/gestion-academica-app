@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
+    <!-- Texto y Spinner uno al lado del otro, alineados por baseline -->
     <TextView
         android:id="@+id/txt_select_ciclo_label"
         android:layout_width="wrap_content"
@@ -13,25 +14,28 @@
         android:text="@string/select_ciclo_label"
         android:textSize="16sp"
         android:textColor="@color/colorTextPrimary"
-        android:layout_marginBottom="8dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintBaseline_toBaselineOf="@id/spinnerCiclo" />
 
     <androidx.appcompat.widget.AppCompatSpinner
         android:id="@+id/spinnerCiclo"
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="48dp"
         android:contentDescription="@string/seleccionar_ciclo"
-        app:layout_constraintTop_toBottomOf="@id/txt_select_ciclo_label"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintStart_toEndOf="@id/txt_select_ciclo_label"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- Contenedor para RecyclerView y ProgressBar, separado 8dp del Spinner -->
     <FrameLayout
         android:id="@+id/recyclerContainer"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginTop="8dp"
         app:layout_constraintTop_toBottomOf="@id/spinnerCiclo"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/bottomBar"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
@@ -48,21 +52,40 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:visibility="gone" />
-
     </FrameLayout>
 
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="wrap_content"
+    <!-- Barra inferior con FAB alineado a la derecha -->
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:backgroundTint="@color/colorPrimary"
-        android:contentDescription="@string/agregar_matricula"
-        android:radius="24dp"
-        android:text="@string/agregar_matricula"
-        app:icon="@drawable/ic_add"
-        app:iconGravity="textStart"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:orientation="horizontal"
+        android:paddingTop="8dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <!-- Spacer para empujar el FAB a la derecha -->
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/fab"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:elevation="0dp"
+            android:stateListAnimator="@null"
+            android:layout_margin="8dp"
+            android:text="@string/agregar_matricula"
+            android:textSize="14sp"
+            android:tint="@android:color/white"
+            app:backgroundTint="@color/colorPrimary"
+            app:cornerRadius="24dp"
+            app:icon="@drawable/ic_add"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -17,6 +17,7 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.databinding.ActivityMainBinding
 import com.example.gestionacademicaapp.ui.login.LoginActivity
+import com.example.gestionacademicaapp.utils.Notificador
 import com.example.gestionacademicaapp.utils.RolePermissions
 import com.example.gestionacademicaapp.utils.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -34,7 +35,6 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Toolbar
         setSupportActionBar(binding.appBarMain.toolbar)
 
         navController = supportFragmentManager.findFragmentById(R.id.nav_host_fragment_content_main)
@@ -62,19 +62,15 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         binding.navView.setupWithNavController(navController)
 
-        // Depuración: Mostrar el rol del usuario
         val userRole = SessionManager.getUserRole(this)
         Log.d("MainActivity", "User Role: $userRole")
 
-        // Configurar visibilidad del menú según el rol
-        setupMenuVisibility()
+        userRole?.let { setupMenuVisibility(it) }
 
-        // Listener para restringir acceso a destinos según el rol
         navController.addOnDestinationChangedListener { _, destination, _ ->
             restrictAccessToDestination(destination)
         }
 
-        // Sidebar
         binding.navView.setNavigationItemSelectedListener { menuItem ->
             val allowed = checkDestinationAccess(menuItem.itemId)
             if (allowed) {
@@ -98,7 +94,6 @@ class MainActivity : AppCompatActivity() {
                 showLogoutConfirmationDialog()
                 true
             }
-
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -112,7 +107,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        // Verificar si hay sesión activa
         if (!SessionManager.isLoggedIn(this)) {
             val intent = Intent(this, LoginActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
@@ -143,27 +137,29 @@ class MainActivity : AppCompatActivity() {
         finish()
     }
 
-    private fun setupMenuVisibility() {
+    private fun setupMenuVisibility(userRole: String) {
         val menu = binding.navView.menu
-        // Log.d("MainActivity", "Setting up menu visibility for role: ${SessionManager.getUserRole(this)}")
-        menu.findItem(R.id.nav_cursos).isVisible = SessionManager.hasRole(this, "Administrador")
-        menu.findItem(R.id.nav_carreras).isVisible = SessionManager.hasRole(this, "Administrador")
-        menu.findItem(R.id.nav_profesores).isVisible = SessionManager.hasRole(this, "Administrador")
-        menu.findItem(R.id.nav_alumnos).isVisible = SessionManager.hasRole(this, "Administrador")
-        menu.findItem(R.id.nav_ciclos).isVisible = SessionManager.hasRole(this, "Administrador")
-        menu.findItem(R.id.nav_ofertaAcademica).isVisible =
-            SessionManager.hasRole(this, "Administrador")
-        menu.findItem(R.id.nav_usuarios).isVisible = SessionManager.hasRole(this, "Administrador")
-        menu.findItem(R.id.nav_matricula).isVisible = SessionManager.hasRole(this, "Matriculador")
-        menu.findItem(R.id.nav_notas).isVisible = SessionManager.hasRole(this, "Profesor")
-        menu.findItem(R.id.nav_historial).isVisible = SessionManager.hasRole(this, "Alumno")
-        menu.findItem(R.id.nav_perfil).isVisible = SessionManager.isLoggedIn(this)
+        RolePermissions.DESTINATION_ROLES.forEach { (destinationId, roles) ->
+            val isVisible = if (destinationId == R.id.nav_historial) {
+                SessionManager.hasRole(this, "Alumno") // Solo visible para "Alumno"
+            } else {
+                roles.isEmpty() || SessionManager.hasAnyRole(this, roles)
+            }
+            menu.findItem(destinationId)?.isVisible = isVisible
+        }
+        Log.d("MainActivity", "Menu visibility updated for role: $userRole")
     }
 
     private fun restrictAccessToDestination(destination: NavDestination) {
         val requiredRoles = RolePermissions.DESTINATION_ROLES[destination.id] ?: emptyList()
         if (requiredRoles.isNotEmpty() && !SessionManager.hasAnyRole(this, requiredRoles)) {
             navController.navigate(RolePermissions.DEFAULT_DESTINATION)
+            Notificador.show(
+                view = findViewById(android.R.id.content),
+                mensaje = "Acceso denegado",
+                colorResId = R.color.colorError,
+                anchorView = null
+            )
         }
     }
 

@@ -1,4 +1,4 @@
-package com.example.gestionacademicaapp.ui.cursos
+package com.example.gestionacademicaapp.ui.common.validators
 
 class CursoValidator {
     val codigoRequiredError = "El código es requerido"

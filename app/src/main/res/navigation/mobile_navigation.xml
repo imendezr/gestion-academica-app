@@ -16,13 +16,36 @@
         <action
             android:id="@+id/action_nav_inicio_to_nav_ofertaAcademica"
             app:destination="@id/nav_ofertaAcademica" />
+        <action
+            android:id="@+id/action_nav_inicio_to_nav_alumnos"
+            app:destination="@id/nav_alumnos" />
     </fragment>
 
     <fragment
         android:id="@+id/nav_cursos"
         android:name="com.example.gestionacademicaapp.ui.cursos.CursosFragment"
         android:label="Cursos"
-        tools:layout="@layout/fragment_cursos" />
+        tools:layout="@layout/fragment_cursos">
+        <action
+            android:id="@+id/action_nav_cursos_to_nav_alumnos"
+            app:destination="@id/nav_alumnos" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/nav_alumnos"
+        android:name="com.example.gestionacademicaapp.ui.alumnos.AlumnosFragment"
+        android:label="Alumnos"
+        tools:layout="@layout/fragment_alumnos">
+        <action
+            android:id="@+id/action_alumnosFragment_to_historialAcademicoFragment"
+            app:destination="@id/nav_historial"
+            app:popUpTo="@id/nav_alumnos"
+            app:popUpToInclusive="false">
+            <argument
+                android:name="cedula"
+                app:argType="string" />
+        </action>
+    </fragment>
 
     <fragment
         android:id="@+id/nav_carreras"
@@ -37,10 +60,29 @@
         tools:layout="@layout/fragment_profesores" />
 
     <fragment
-        android:id="@+id/nav_alumnos"
+        android:id="@+id/inicioFragment"
+        android:name="com.example.gestionacademicaapp.ui.inicio.InicioFragment"
+        android:label="@string/menu_inicio" />
+
+    <fragment
+        android:id="@+id/alumnosFragment"
         android:name="com.example.gestionacademicaapp.ui.alumnos.AlumnosFragment"
-        android:label="Alumnos"
-        tools:layout="@layout/fragment_alumnos" />
+        android:label="@string/menu_alumnos">
+        <action
+            android:id="@+id/action_alumnosFragment_to_historialAcademicoFragment"
+            app:destination="@id/historialAcademicoFragment"
+            app:popUpTo="@id/alumnosFragment"
+            app:popUpToInclusive="false" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/historialAcademicoFragment"
+        android:name="com.example.gestionacademicaapp.ui.historial_academico.HistorialAcademicoFragment"
+        android:label="@string/historial_academico">
+        <argument
+            android:name="cedula"
+            app:argType="string" />
+    </fragment>
 
     <fragment
         android:id="@+id/nav_ciclos"
@@ -50,7 +92,7 @@
 
     <fragment
         android:id="@+id/nav_ofertaAcademica"
-        android:name="com.example.gestionacademicaapp.ui.oferta.OfertaAcademicaFragment"
+        android:name="com.example.gestionacademicaapp.ui.oferta_academica.OfertaAcademicaFragment"
         android:label="Oferta Académica"
         tools:layout="@layout/fragment_oferta_academica">
         <action
@@ -61,9 +103,32 @@
     </fragment>
 
     <fragment
+        android:id="@+id/ofertaAcademicaFragment"
+        android:name="com.example.gestionacademicaapp.ui.oferta_academica.OfertaAcademicaFragment"
+        android:label="Oferta Académica"
+        tools:layout="@layout/fragment_oferta_academica">
+        <action
+            android:id="@+id/action_ofertaAcademicaFragment_to_gruposOfertaFragment"
+            app:destination="@id/gruposOfertaFragment">
+            <argument
+                android:name="cursoId"
+                app:argType="long" />
+            <argument
+                android:name="cursoNombre"
+                app:argType="string" />
+            <argument
+                android:name="idCarrera"
+                app:argType="long" />
+            <argument
+                android:name="idCiclo"
+                app:argType="long" />
+        </action>
+    </fragment>
+
+    <fragment
         android:id="@+id/gruposOfertaFragment"
-        android:name="com.example.gestionacademicaapp.ui.oferta.GruposOfertaFragment"
-        android:label="@string/grupos_de_curso"
+        android:name="com.example.gestionacademicaapp.ui.oferta_academica.GruposOfertaFragment"
+        android:label="Grupos"
         tools:layout="@layout/fragment_grupos_oferta">
         <argument
             android:name="cursoId"
@@ -71,6 +136,12 @@
         <argument
             android:name="cursoNombre"
             app:argType="string" />
+        <argument
+            android:name="idCarrera"
+            app:argType="long" />
+        <argument
+            android:name="idCiclo"
+            app:argType="long" />
     </fragment>
 
     <fragment

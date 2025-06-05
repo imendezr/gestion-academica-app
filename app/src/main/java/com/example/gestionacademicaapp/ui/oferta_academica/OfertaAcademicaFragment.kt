@@ -1,4 +1,4 @@
-package com.example.gestionacademicaapp.ui.oferta
+package com.example.gestionacademicaapp.ui.oferta_academica
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -25,26 +25,36 @@ import com.example.gestionacademicaapp.utils.setupSearchView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @FlowPreview
 @ExperimentalCoroutinesApi
 @AndroidEntryPoint
 class OfertaAcademicaFragment : Fragment() {
-
     private val viewModel: OfertaAcademicaViewModel by viewModels()
     private var _binding: FragmentOfertaAcademicaBinding? = null
     private val binding get() = _binding!!
     private val adapter = OfertaAcademicaAdapter(
         onVerGrupos = { curso ->
+            if (viewModel.idCarrera == null || viewModel.idCiclo == null) {
+                Notificador.show(
+                    view = binding.root,
+                    mensaje = getString(R.string.error_seleccione_carrera_ciclo),
+                    colorResId = R.color.colorError,
+                    anchorView = null,
+                    duracion = 2000
+                )
+                return@OfertaAcademicaAdapter
+            }
             val action = OfertaAcademicaFragmentDirections.actionOfertaAcademicaFragmentToGruposOfertaFragment(
                 cursoId = curso.idCurso,
-                cursoNombre = curso.nombre
+                cursoNombre = curso.nombre,
+                idCarrera = viewModel.idCarrera!!,
+                idCiclo = viewModel.idCiclo!!
             )
             findNavController().navigate(action)
-        },
-        onEditGrupo = {},
-        onDeleteGrupo = {}
+        }
     )
     private var isCarreraSpinnerInitialized = false
     private var isCicloSpinnerInitialized = false
@@ -64,13 +74,13 @@ class OfertaAcademicaFragment : Fragment() {
         setupRecyclerView()
         setupSpinners()
         setupSearchView()
-        setupFab()
+        setupToolbar()
         observeViewModel()
     }
 
     private fun setupRecyclerView() {
         binding.recyclerView.apply {
-            layoutManager = LinearLayoutManager(context)
+            layoutManager = LinearLayoutManager(requireContext())
             adapter = this@OfertaAcademicaFragment.adapter
         }
     }
@@ -92,8 +102,12 @@ class OfertaAcademicaFragment : Fragment() {
         )
     }
 
-    private fun setupFab() {
-        binding.fabBottom.isVisible = false
+    private fun setupToolbar() {
+        findNavController().currentDestination?.let { destination ->
+            if (destination.id == R.id.nav_ofertaAcademica) {
+                requireActivity().actionBar?.setDisplayHomeAsUpEnabled(true)
+            }
+        }
     }
 
     private fun observeViewModel() {
@@ -130,7 +144,6 @@ class OfertaAcademicaFragment : Fragment() {
                                 viewModel.setCarrera(carrera.idCarrera)
                             }
                         }
-
                         override fun onNothingSelected(parent: AdapterView<*>) = Unit
                     }
                 if (carreras.isNotEmpty() && !isCarreraSpinnerInitialized) {
@@ -143,7 +156,7 @@ class OfertaAcademicaFragment : Fragment() {
                     view = binding.root,
                     mensaje = state.message,
                     colorResId = R.color.colorError,
-                    anchorView = binding.fabBottom,
+                    anchorView = null,
                     duracion = 2000
                 )
             }
@@ -177,7 +190,6 @@ class OfertaAcademicaFragment : Fragment() {
                                 viewModel.setCiclo(ciclo.idCiclo)
                             }
                         }
-
                         override fun onNothingSelected(parent: AdapterView<*>) = Unit
                     }
                 if (ciclos.isNotEmpty() && !isCicloSpinnerInitialized) {
@@ -190,7 +202,7 @@ class OfertaAcademicaFragment : Fragment() {
                     view = binding.root,
                     mensaje = state.message,
                     colorResId = R.color.colorError,
-                    anchorView = binding.fabBottom,
+                    anchorView = null,
                     duracion = 2000
                 )
             }
@@ -200,19 +212,21 @@ class OfertaAcademicaFragment : Fragment() {
 
     private fun updateCursos(state: UiState<List<CursoDto>>) {
         binding.progressBar.isVisible = state is UiState.Loading
-        binding.recyclerView.isVisible = state is UiState.Success && allItems.isNotEmpty()
         when (state) {
             is UiState.Success -> {
                 allItems = state.data ?: emptyList()
                 filterList(binding.searchView.query.toString())
-                if (allItems.isEmpty()) {
-                    Notificador.show(
-                        view = binding.root,
-                        mensaje = getString(R.string.error_no_cursos),
-                        colorResId = R.color.colorError,
-                        anchorView = binding.fabBottom,
-                        duracion = 2000
-                    )
+                if (allItems.isEmpty() && !binding.progressBar.isVisible) {
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        delay(1000)
+                        Notificador.show(
+                            view = binding.root,
+                            mensaje = getString(R.string.error_no_cursos),
+                            colorResId = R.color.colorError,
+                            anchorView = null,
+                            duracion = 2000
+                        )
+                    }
                 }
             }
             is UiState.Error -> {
@@ -223,7 +237,7 @@ class OfertaAcademicaFragment : Fragment() {
                     view = binding.root,
                     mensaje = state.message,
                     colorResId = R.color.colorError,
-                    anchorView = binding.fabBottom,
+                    anchorView = null,
                     duracion = 2000
                 )
             }
@@ -244,6 +258,7 @@ class OfertaAcademicaFragment : Fragment() {
 
     override fun onDestroyView() {
         _binding = null
+        requireActivity().actionBar?.setDisplayHomeAsUpEnabled(false)
         super.onDestroyView()
     }
 }

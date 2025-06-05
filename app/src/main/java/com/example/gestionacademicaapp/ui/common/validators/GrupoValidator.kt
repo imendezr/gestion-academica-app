@@ -1,4 +1,4 @@
-package com.example.gestionacademicaapp.ui.oferta
+package com.example.gestionacademicaapp.ui.common.validators
 
 class GrupoValidator {
 

@@ -1,4 +1,4 @@
-package com.example.gestionacademicaapp.ui.oferta
+package com.example.gestionacademicaapp.ui.oferta_academica
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -17,6 +17,7 @@ import com.example.gestionacademicaapp.ui.common.CampoFormulario
 import com.example.gestionacademicaapp.ui.common.CampoTipo
 import com.example.gestionacademicaapp.ui.common.state.ErrorType
 import com.example.gestionacademicaapp.ui.common.state.UiState
+import com.example.gestionacademicaapp.ui.common.validators.GrupoValidator
 import com.example.gestionacademicaapp.utils.ResourceProvider
 import com.example.gestionacademicaapp.utils.toUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -48,10 +49,10 @@ class OfertaAcademicaViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val reloadTrigger = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
-    private var idCarrera: Long? = null
-    private var idCiclo: Long? = null
-    private var idCurso: Long? = null
-    var cursoNombre: String? = null
+    var idCarrera: Long? = null
+    var idCiclo: Long? = null
+    var idCurso: Long? = null
+    private var cursoNombre: String? = null
     private var profesores: List<Profesor> = emptyList()
 
     val carreras: StateFlow<UiState<List<Carrera>>> = flow {
@@ -78,10 +79,13 @@ class OfertaAcademicaViewModel @Inject constructor(
     val grupos: StateFlow<UiState<List<GrupoDto>>> = reloadTrigger
         .debounce(100)
         .flatMapLatest {
-            if (idCarrera == null || idCiclo == null || idCurso == null) flowOf(UiState.Success(emptyList()))
-            else flow {
-                emit(UiState.Loading)
-                emit(grupoRepository.gruposPorCursoCicloCarrera(idCurso!!, idCiclo!!, idCarrera!!).toUiState())
+            if (idCarrera == null || idCiclo == null || idCurso == null) {
+                flowOf(UiState.Success(emptyList()))
+            } else {
+                flow {
+                    emit(UiState.Loading)
+                    emit(grupoRepository.gruposPorCursoCicloCarrera(idCurso!!, idCiclo!!, idCarrera!!).toUiState())
+                }
             }
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Success(emptyList()))
@@ -98,7 +102,9 @@ class OfertaAcademicaViewModel @Inject constructor(
         viewModelScope.launch {
             profesorRepository.listar().fold(
                 onSuccess = { profesores = it },
-                onFailure = { /* Handle silently for now */ }
+                onFailure = { e ->
+                    _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e)))
+                }
             )
         }
     }
@@ -183,35 +189,43 @@ class OfertaAcademicaViewModel @Inject constructor(
     }
 
     fun getFormFields(): List<CampoFormulario> {
+        val profesorOptions = if (profesores.isEmpty()) {
+            listOf(Pair("0", "Sin profesores disponibles"))
+        } else {
+            profesores.map { Pair(it.idProfesor.toString(), it.nombre) }
+        }
         return listOf(
             CampoFormulario(
                 key = "numeroGrupo",
                 label = getString(R.string.numero_grupo),
                 tipo = CampoTipo.NUMBER,
                 rules = { value, _ -> GrupoValidator().validateNumeroGrupo(value) },
-                obligatorio = true
+                obligatorio = true,
+                obligatorioError = GrupoValidator.ERROR_NUMERO_GRUPO_REQUERIDO
             ),
             CampoFormulario(
                 key = "horario",
                 label = getString(R.string.horario),
                 tipo = CampoTipo.TEXT,
                 rules = { value, _ -> GrupoValidator().validateHorario(value) },
-                obligatorio = true
+                obligatorio = true,
+                obligatorioError = GrupoValidator.ERROR_HORARIO_REQUERIDO
             ),
             CampoFormulario(
                 key = "profesor",
                 label = getString(R.string.profesor),
                 tipo = CampoTipo.SPINNER,
-                opciones = profesores.map { Pair(it.idProfesor.toString(), it.nombre) },
+                opciones = profesorOptions,
                 rules = { value, _ -> GrupoValidator().validateProfesor(value) },
-                obligatorio = true
+                obligatorio = true,
+                obligatorioError = GrupoValidator.ERROR_PROFESOR_REQUERIDO
             )
         )
     }
 
     private fun <T> Result<T>.toUiState(): UiState<T> = fold(
-        onSuccess = { UiState.Success(it) },
-        onFailure = { e -> UiState.Error(e.toUserMessage(), mapErrorType(e)) }
+        { UiState.Success(it) },
+        { e -> UiState.Error(e.toUserMessage(), mapErrorType(e)) }
     )
 
     private fun mapErrorType(throwable: Throwable): ErrorType = when {

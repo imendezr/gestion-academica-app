@@ -1,10 +1,9 @@
-package com.example.gestionacademicaapp.ui.oferta
+package com.example.gestionacademicaapp.ui.oferta_academica
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
@@ -27,6 +26,7 @@ import com.example.gestionacademicaapp.utils.enableSwipeActions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @FlowPreview
@@ -40,7 +40,7 @@ class GruposOfertaFragment : Fragment() {
     private val adapter = OfertaAcademicaAdapter(
         onVerGrupos = null,
         onEditGrupo = { grupo -> mostrarFormulario(grupo) },
-        onDeleteGrupo = { grupo -> confirmDeleteGrupo(grupo) }
+        onDeleteGrupo = { grupo -> viewModel.deleteGrupo(grupo) }
     )
     private var itemTouchHelper: ItemTouchHelper? = null
     private var swipedPosition: Int? = null
@@ -48,6 +48,8 @@ class GruposOfertaFragment : Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        viewModel.setCarrera(args.idCarrera)
+        viewModel.setCiclo(args.idCiclo)
         viewModel.setCurso(args.cursoId, args.cursoNombre)
     }
 
@@ -77,35 +79,15 @@ class GruposOfertaFragment : Fragment() {
                 onSwipeLeft = { position ->
                     val localAdapter = this@GruposOfertaFragment.adapter
                     swipedPosition = position
-                    localAdapter.getItemAt(position)?.let { if (it is GrupoDto) confirmDeleteGrupo(it) }
+                    localAdapter.getItemAt(position)?.let { if (it is GrupoDto) viewModel.deleteGrupo(it) }
                 },
                 onSwipeRight = { position ->
                     val localAdapter = this@GruposOfertaFragment.adapter
                     swipedPosition = position
                     localAdapter.getItemAt(position)?.let { if (it is GrupoDto) mostrarFormulario(it) }
-                },
-                leftBackgroundColor = R.color.colorError,
-                rightBackgroundColor = R.color.colorPrimary
+                }
             )
         }
-    }
-
-    private fun confirmDeleteGrupo(grupo: GrupoDto) {
-        val localAdapter = adapter
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.confirmar_eliminar_grupo)
-            .setMessage(R.string.mensaje_confirmar_eliminar_grupo)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                viewModel.deleteGrupo(grupo)
-            }
-            .setNegativeButton(android.R.string.cancel) { _, _ ->
-                swipedPosition?.let { pos ->
-                    localAdapter.notifyItemChanged(pos)
-                    binding.recyclerView.clearSwipe(pos, itemTouchHelper)
-                    swipedPosition = null
-                }
-            }
-            .show()
     }
 
     private fun setupFab() {
@@ -144,14 +126,17 @@ class GruposOfertaFragment : Fragment() {
             is UiState.Success -> {
                 val grupos = state.data ?: emptyList()
                 adapter.submitGrupos(grupos)
-                if (grupos.isEmpty()) {
-                    Notificador.show(
-                        view = binding.root,
-                        mensaje = getString(R.string.error_no_grupos),
-                        colorResId = R.color.colorError,
-                        anchorView = binding.fabBottom,
-                        duracion = 2000
-                    )
+                if (grupos.isEmpty() && !binding.progressBar.isVisible && viewModel.actionState.value !is UiState.Success) {
+                    viewLifecycleOwner.lifecycleScope.launch {
+                        delay(1000)
+                        Notificador.show(
+                            view = binding.root,
+                            mensaje = getString(R.string.error_no_grupos),
+                            colorResId = R.color.colorError,
+                            anchorView = binding.fabBottom,
+                            duracion = 2000
+                        )
+                    }
                 }
             }
             is UiState.Error -> {
@@ -212,15 +197,20 @@ class GruposOfertaFragment : Fragment() {
 
     private fun mostrarFormulario(grupo: GrupoDto?) {
         val isEditing = grupo != null
-        val datosIniciales = if (isEditing) mapOf(
-            "numeroGrupo" to grupo!!.numeroGrupo.toString(),
-            "horario" to grupo.horario,
-            "profesor" to grupo.idProfesor.toString()
-        ) else emptyMap()
+        val datosIniciales = if (isEditing) {
+            mapOf(
+                "numeroGrupo" to grupo!!.numeroGrupo.toString(),
+                "horario" to grupo.horario,
+                "profesor" to grupo.idProfesor.toString()
+            )
+        } else {
+            emptyMap()
+        }
 
+        val campos = viewModel.getFormFields()
         val dialog = DialogFormularioFragment.newInstance(
             titulo = getString(if (isEditing) R.string.editar_grupo else R.string.crear_grupo),
-            campos = viewModel.getFormFields(),
+            campos = campos,
             datosIniciales = datosIniciales
         )
         dialog.setOnGuardarListener { datos ->

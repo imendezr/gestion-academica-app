@@ -1,4 +1,4 @@
-package com.example.gestionacademicaapp.ui.profesores
+package com.example.gestionacademicaapp.ui.common.validators
 
 object ProfesorValidator {
     private const val CEDULA_ERROR = "La cédula del profesor es requerida"

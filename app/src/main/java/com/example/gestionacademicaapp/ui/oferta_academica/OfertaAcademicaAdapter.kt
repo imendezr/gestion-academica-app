@@ -1,4 +1,4 @@
-package com.example.gestionacademicaapp.ui.oferta
+package com.example.gestionacademicaapp.ui.oferta_academica
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -11,8 +11,8 @@ import com.example.gestionacademicaapp.databinding.ItemGrupoBinding
 
 class OfertaAcademicaAdapter(
     private val onVerGrupos: ((CursoDto) -> Unit)? = null,
-    private val onEditGrupo: (GrupoDto) -> Unit,
-    private val onDeleteGrupo: (GrupoDto) -> Unit
+    private val onEditGrupo: ((GrupoDto) -> Unit)? = null, // Made optional
+    private val onDeleteGrupo: ((GrupoDto) -> Unit)? = null // Made optional
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
     private var items: List<Any> = emptyList()
@@ -26,9 +26,8 @@ class OfertaAcademicaAdapter(
             override fun getNewListSize() = newItems.size
             override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
                 when {
-                    items[oldItemPosition] is CursoDto ->
+                    items.getOrNull(oldItemPosition) is CursoDto ->
                         (items[oldItemPosition] as CursoDto).idCurso == newItems[newItemPosition].idCurso
-
                     else -> false
                 }
 
@@ -47,9 +46,8 @@ class OfertaAcademicaAdapter(
             override fun getNewListSize() = newItems.size
             override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean =
                 when {
-                    items[oldItemPosition] is GrupoDto ->
+                    items.getOrNull(oldItemPosition) is GrupoDto ->
                         (items[oldItemPosition] as GrupoDto).idGrupo == newItems[newItemPosition].idGrupo
-
                     else -> false
                 }
 
@@ -68,12 +66,10 @@ class OfertaAcademicaAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         return if (viewType == VIEW_TYPE_CURSO) {
-            val binding =
-                ItemCursoOfertaBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+            val binding = ItemCursoOfertaBinding.inflate(LayoutInflater.from(parent.context), parent, false)
             CursoViewHolder(binding)
         } else {
-            val binding =
-                ItemGrupoBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+            val binding = ItemGrupoBinding.inflate(LayoutInflater.from(parent.context), parent, false)
             GrupoViewHolder(binding)
         }
     }
@@ -87,8 +83,7 @@ class OfertaAcademicaAdapter(
 
     override fun getItemCount(): Int = items.size
 
-    inner class CursoViewHolder(private val binding: ItemCursoOfertaBinding) :
-        RecyclerView.ViewHolder(binding.root) {
+    inner class CursoViewHolder(private val binding: ItemCursoOfertaBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(curso: CursoDto) {
             with(binding) {
                 txtCodigo.text = curso.codigo
@@ -98,8 +93,7 @@ class OfertaAcademicaAdapter(
         }
     }
 
-    inner class GrupoViewHolder(private val binding: ItemGrupoBinding) :
-        RecyclerView.ViewHolder(binding.root) {
+    inner class GrupoViewHolder(private val binding: ItemGrupoBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(grupo: GrupoDto) {
             with(binding) {
                 txtNumeroGrupo.text = grupo.numeroGrupo.toString()

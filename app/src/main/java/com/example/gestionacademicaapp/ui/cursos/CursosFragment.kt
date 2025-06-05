@@ -20,6 +20,7 @@ import com.example.gestionacademicaapp.ui.common.CampoTipo
 import com.example.gestionacademicaapp.ui.common.DialogFormularioFragment
 import com.example.gestionacademicaapp.ui.common.state.ErrorType
 import com.example.gestionacademicaapp.ui.common.state.UiState
+import com.example.gestionacademicaapp.ui.common.validators.CursoValidator
 import com.example.gestionacademicaapp.utils.Notificador
 import com.example.gestionacademicaapp.utils.enableSwipeActions
 import com.example.gestionacademicaapp.utils.setupSearchView

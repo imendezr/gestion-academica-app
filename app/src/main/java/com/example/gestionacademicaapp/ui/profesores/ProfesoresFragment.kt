@@ -27,6 +27,7 @@ import com.example.gestionacademicaapp.ui.common.CampoFormulario
 import com.example.gestionacademicaapp.ui.common.CampoTipo
 import com.example.gestionacademicaapp.ui.common.DialogFormularioFragment
 import com.example.gestionacademicaapp.ui.common.state.UiState
+import com.example.gestionacademicaapp.ui.common.validators.ProfesorValidator
 import com.example.gestionacademicaapp.utils.Notificador
 import com.example.gestionacademicaapp.utils.clearSwipe
 import dagger.hilt.android.AndroidEntryPoint

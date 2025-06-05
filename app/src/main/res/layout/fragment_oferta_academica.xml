@@ -1,83 +1,97 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:padding="16dp">
 
-    <!-- Carrera Spinner -->
-    <Spinner
-        android:id="@+id/spinnerCarrera"
-        android:layout_width="0dp"
+    <!-- Fila: Título + Spinner de Carrera -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:contentDescription="@string/seleccionar_carrera"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
 
-    <!-- Ciclo Spinner -->
-    <Spinner
-        android:id="@+id/spinnerCiclo"
-        android:layout_width="0dp"
+        <!-- Título, ancho = 0dp, peso = 1 -->
+        <TextView
+            android:id="@+id/labelCarrera"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Carrera"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- Spinner, ancho = 0dp, peso = 3 -->
+        <Spinner
+            android:id="@+id/spinnerCarrera"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="3" />
+    </LinearLayout>
+
+    <!-- Fila: Título + Spinner de Ciclo -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:contentDescription="@string/seleccionar_ciclo"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/spinnerCarrera" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="8dp">
 
-    <!-- SearchView -->
+        <!-- Título, ancho = 0dp, peso = 1 -->
+        <TextView
+            android:id="@+id/labelCiclo"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Ciclo"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- Spinner, ancho = 0dp, peso = 3 -->
+        <Spinner
+            android:id="@+id/spinnerCiclo"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="3" />
+    </LinearLayout>
+
+    <!-- Barra de búsqueda -->
     <androidx.appcompat.widget.SearchView
         android:id="@+id/searchView"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
         android:background="@drawable/bg_searchview_rounded"
-        android:padding="12dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/spinnerCiclo"
-        app:queryHint="@string/buscar_curso" />
+        android:clickable="true"
+        android:elevation="2dp"
+        android:focusable="true"
+        android:focusableInTouchMode="true"
+        android:iconifiedByDefault="false"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:queryHint="@string/buscar_curso" />
 
-    <!-- RecyclerView with ProgressBar -->
+    <!-- Contenedor para RecyclerView y ProgressBar -->
     <FrameLayout
-        android:id="@+id/recyclerContainer"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@id/fabBottom"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchView">
+        android:layout_weight="1">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:overScrollMode="never"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+            android:clipToPadding="false"
+            android:nestedScrollingEnabled="true"
+            android:overScrollMode="never" />
 
         <ProgressBar
             android:id="@+id/progressBar"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
+            android:contentDescription="@string/content_desc_cargando_cursos"
             android:visibility="gone" />
     </FrameLayout>
-
-    <!-- FAB Bottom -->
-    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-        android:id="@+id/fabBottom"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:radius="24dp"
-        android:visibility="gone"
-        app:icon="@drawable/ic_add"
-        app:iconGravity="textStart"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:backgroundTint="@color/colorPrimary"
-        android:textColor="@android:color/white" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

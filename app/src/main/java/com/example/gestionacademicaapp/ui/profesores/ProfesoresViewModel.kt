@@ -6,6 +6,7 @@ import com.example.gestionacademicaapp.data.api.model.Profesor
 import com.example.gestionacademicaapp.data.repository.ProfesorRepository
 import com.example.gestionacademicaapp.ui.common.state.ErrorType
 import com.example.gestionacademicaapp.ui.common.state.UiState
+import com.example.gestionacademicaapp.ui.common.validators.ProfesorValidator
 import com.example.gestionacademicaapp.utils.toUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
@@ -51,25 +52,6 @@ class ProfesoresViewModel @Inject constructor(
         }
     }
 
-    fun createProfesor(profesor: Profesor) {
-        viewModelScope.launch {
-            performAction {
-                validateProfesor(profesor)
-                profesorRepository.insertar(profesor)
-                    .onSuccess {
-                        reloadTrigger.tryEmit(Unit)
-                        _actionState.value = UiState.Success(message = "Profesor creado exitosamente")
-                    }
-                    .onFailure { ex ->
-                        _actionState.value = UiState.Error(
-                            message = ex.toUserMessage(),
-                            type = mapErrorType(ex)
-                        )
-                    }
-            }
-        }
-    }
-
     fun updateProfesor(profesor: Profesor) {
         viewModelScope.launch {
             performAction {
@@ -77,7 +59,8 @@ class ProfesoresViewModel @Inject constructor(
                 profesorRepository.modificar(profesor)
                     .onSuccess {
                         reloadTrigger.tryEmit(Unit)
-                        _actionState.value = UiState.Success(message = "Profesor actualizado exitosamente")
+                        _actionState.value =
+                            UiState.Success(message = "Profesor actualizado exitosamente")
                     }
                     .onFailure { ex ->
                         _actionState.value = UiState.Error(
@@ -90,9 +73,12 @@ class ProfesoresViewModel @Inject constructor(
     }
 
     private fun validateProfesor(profesor: Profesor) {
-        ProfesorValidator.validateCedula(profesor.cedula)?.let { throw IllegalArgumentException(it) }
-        ProfesorValidator.validateNombre(profesor.nombre)?.let { throw IllegalArgumentException(it) }
-        ProfesorValidator.validateTelefono(profesor.telefono)?.let { throw IllegalArgumentException(it) }
+        ProfesorValidator.validateCedula(profesor.cedula)
+            ?.let { throw IllegalArgumentException(it) }
+        ProfesorValidator.validateNombre(profesor.nombre)
+            ?.let { throw IllegalArgumentException(it) }
+        ProfesorValidator.validateTelefono(profesor.telefono)
+            ?.let { throw IllegalArgumentException(it) }
         ProfesorValidator.validateEmail(profesor.email)?.let { throw IllegalArgumentException(it) }
     }
 
@@ -118,6 +104,7 @@ class ProfesoresViewModel @Inject constructor(
                 409 -> ErrorType.DEPENDENCY
                 else -> ErrorType.GENERAL
             }
+
             exception.message?.contains("20010") == true -> ErrorType.DEPENDENCY // User associated
             exception.message?.contains("20024") == true -> ErrorType.VALIDATION // Empty name
             exception.message?.contains("20025") == true -> ErrorType.VALIDATION // Invalid email

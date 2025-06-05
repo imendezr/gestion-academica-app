@@ -1,4 +1,4 @@
-package com.example.gestionacademicaapp.ui.ciclos
+package com.example.gestionacademicaapp.ui.common.validators
 
 class CicloValidator {
 

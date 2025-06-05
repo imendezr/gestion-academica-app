@@ -15,7 +15,7 @@ object RolePermissions {
         R.id.nav_usuarios to listOf("Administrador"),
         R.id.nav_matricula to listOf("Matriculador"),
         R.id.nav_notas to listOf("Profesor"),
-        R.id.nav_historial to listOf("Alumno"),
+        R.id.nav_historial to listOf("Administrador", "Alumno"),
         R.id.nav_perfil to emptyList() // Accesible para todos los autenticados
     )
 
