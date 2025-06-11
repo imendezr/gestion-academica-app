@@ -12,6 +12,9 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.example.gestionacademicaapp.R
+import com.example.gestionacademicaapp.ui.common.state.ErrorType
+import com.example.gestionacademicaapp.ui.common.state.UiState
+import retrofit2.HttpException
 
 /**
  * Habilita acciones de deslizamiento en un RecyclerView con indicadores visuales.
@@ -159,10 +162,21 @@ fun RecyclerView.clearSwipe(position: Int, itemTouchHelper: ItemTouchHelper?) {
                 callbackField.isAccessible = true
                 val callback = callbackField.get(helper) as ItemTouchHelper.Callback
                 callback.clearView(this, viewHolder)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // Fallback: Notify adapter to force redraw
                 adapter?.notifyItemChanged(position)
             }
         }
     }
+}
+
+fun <T> Result<T>.toUiState(): UiState<T> = fold(
+    { UiState.Success(it) },
+    { e -> UiState.Error(e.toUserMessage(), mapErrorType(e)) }
+)
+
+fun mapErrorType(throwable: Throwable): ErrorType = when {
+    throwable is HttpException && throwable.code() in 400..499 -> ErrorType.VALIDATION
+    throwable.message?.contains("dependencias", ignoreCase = true) == true -> ErrorType.DEPENDENCY
+    else -> ErrorType.GENERAL
 }

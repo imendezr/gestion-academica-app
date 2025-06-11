@@ -1,6 +1,8 @@
 package com.example.gestionacademicaapp.ui.common.validators
 
-class GrupoValidator {
+import jakarta.inject.Inject
+
+class GrupoValidator @Inject constructor() {
 
     companion object {
         const val ERROR_NUMERO_GRUPO_REQUERIDO = "El número de grupo es requerido"

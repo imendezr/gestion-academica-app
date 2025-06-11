@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Carrera
 import com.example.gestionacademicaapp.data.api.model.Ciclo
+import com.example.gestionacademicaapp.data.api.model.Profesor
 import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
 import com.example.gestionacademicaapp.databinding.FragmentOfertaAcademicaBinding
 import com.example.gestionacademicaapp.ui.common.state.UiState
@@ -25,7 +26,6 @@ import com.example.gestionacademicaapp.utils.setupSearchView
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @FlowPreview
@@ -35,7 +35,7 @@ class OfertaAcademicaFragment : Fragment() {
     private val viewModel: OfertaAcademicaViewModel by viewModels()
     private var _binding: FragmentOfertaAcademicaBinding? = null
     private val binding get() = _binding!!
-    private val adapter = OfertaAcademicaAdapter(
+    private val adapter = CursoAdapter(
         onVerGrupos = { curso ->
             if (viewModel.idCarrera == null || viewModel.idCiclo == null) {
                 Notificador.show(
@@ -45,20 +45,22 @@ class OfertaAcademicaFragment : Fragment() {
                     anchorView = null,
                     duracion = 2000
                 )
-                return@OfertaAcademicaAdapter
+                return@CursoAdapter
             }
-            val action = OfertaAcademicaFragmentDirections.actionOfertaAcademicaFragmentToGruposOfertaFragment(
-                cursoId = curso.idCurso,
-                cursoNombre = curso.nombre,
-                idCarrera = viewModel.idCarrera!!,
-                idCiclo = viewModel.idCiclo!!
-            )
+            val action =
+                OfertaAcademicaFragmentDirections.actionOfertaAcademicaFragmentToGruposOfertaFragment(
+                    cursoId = curso.idCurso,
+                    cursoNombre = curso.nombre,
+                    idCarrera = viewModel.idCarrera!!,
+                    idCiclo = viewModel.idCiclo!!
+                )
             findNavController().navigate(action)
         }
     )
     private var isCarreraSpinnerInitialized = false
     private var isCicloSpinnerInitialized = false
     private var allItems: List<CursoDto> = emptyList()
+    private var isFirstLoad = true // Nueva bandera
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -90,6 +92,7 @@ class OfertaAcademicaFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.carreras.collect { updateCarreras(it) } }
                 launch { viewModel.ciclos.collect { updateCiclos(it) } }
+                launch { viewModel.profesoresState.collect { updateProfesores(it) } }
             }
         }
     }
@@ -136,21 +139,24 @@ class OfertaAcademicaFragment : Fragment() {
                             position: Int,
                             id: Long
                         ) {
-                            if (!isCarreraSpinnerInitialized) {
-                                isCarreraSpinnerInitialized = true
-                                return
-                            }
                             carreras.getOrNull(position)?.let { carrera ->
                                 viewModel.setCarrera(carrera.idCarrera)
                             }
                         }
+
                         override fun onNothingSelected(parent: AdapterView<*>) = Unit
                     }
-                if (carreras.isNotEmpty() && !isCarreraSpinnerInitialized) {
-                    binding.spinnerCarrera.setSelection(0)
-                    isCarreraSpinnerInitialized = true
+                if (carreras.isNotEmpty()) {
+                    val selectedIndex =
+                        carreras.indexOfFirst { it.idCarrera == viewModel.idCarrera }
+                    val indexToSet = if (selectedIndex >= 0) selectedIndex else 0
+                    if (!isCarreraSpinnerInitialized || binding.spinnerCarrera.selectedItemPosition != indexToSet) {
+                        binding.spinnerCarrera.setSelection(indexToSet, false)
+                        isCarreraSpinnerInitialized = true
+                    }
                 }
             }
+
             is UiState.Error -> {
                 Notificador.show(
                     view = binding.root,
@@ -160,6 +166,7 @@ class OfertaAcademicaFragment : Fragment() {
                     duracion = 2000
                 )
             }
+
             is UiState.Loading -> Unit
         }
     }
@@ -182,21 +189,23 @@ class OfertaAcademicaFragment : Fragment() {
                             position: Int,
                             id: Long
                         ) {
-                            if (!isCicloSpinnerInitialized) {
-                                isCicloSpinnerInitialized = true
-                                return
-                            }
                             ciclos.getOrNull(position)?.let { ciclo ->
                                 viewModel.setCiclo(ciclo.idCiclo)
                             }
                         }
+
                         override fun onNothingSelected(parent: AdapterView<*>) = Unit
                     }
-                if (ciclos.isNotEmpty() && !isCicloSpinnerInitialized) {
-                    binding.spinnerCiclo.setSelection(0)
-                    isCicloSpinnerInitialized = true
+                if (ciclos.isNotEmpty()) {
+                    val selectedIndex = ciclos.indexOfFirst { it.idCiclo == viewModel.idCiclo }
+                    val indexToSet = if (selectedIndex >= 0) selectedIndex else 0
+                    if (!isCicloSpinnerInitialized || binding.spinnerCiclo.selectedItemPosition != indexToSet) {
+                        binding.spinnerCiclo.setSelection(indexToSet, false)
+                        isCicloSpinnerInitialized = true
+                    }
                 }
             }
+
             is UiState.Error -> {
                 Notificador.show(
                     view = binding.root,
@@ -206,7 +215,20 @@ class OfertaAcademicaFragment : Fragment() {
                     duracion = 2000
                 )
             }
+
             is UiState.Loading -> Unit
+        }
+    }
+
+    private fun updateProfesores(state: UiState<List<Profesor>>) {
+        if (state is UiState.Error) {
+            Notificador.show(
+                view = binding.root,
+                mensaje = getString(R.string.error_no_profesores),
+                colorResId = R.color.colorError,
+                anchorView = null,
+                duracion = 2000
+            )
         }
     }
 
@@ -216,22 +238,21 @@ class OfertaAcademicaFragment : Fragment() {
             is UiState.Success -> {
                 allItems = state.data ?: emptyList()
                 filterList(binding.searchView.query.toString())
-                if (allItems.isEmpty() && !binding.progressBar.isVisible) {
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        delay(1000)
-                        Notificador.show(
-                            view = binding.root,
-                            mensaje = getString(R.string.error_no_cursos),
-                            colorResId = R.color.colorError,
-                            anchorView = null,
-                            duracion = 2000
-                        )
-                    }
+                binding.recyclerView.isVisible = allItems.isNotEmpty()
+                if (allItems.isEmpty() && !binding.progressBar.isVisible && !isFirstLoad) {
+                    Notificador.show(
+                        view = binding.root,
+                        mensaje = getString(R.string.error_no_cursos),
+                        colorResId = R.color.colorError,
+                        anchorView = null,
+                        duracion = 2000
+                    )
                 }
+                isFirstLoad = false // Marcar que la primera carga ha terminado
             }
             is UiState.Error -> {
                 allItems = emptyList()
-                adapter.submitCursos(emptyList())
+                adapter.submitList(emptyList())
                 binding.recyclerView.isVisible = false
                 Notificador.show(
                     view = binding.root,
@@ -240,19 +261,23 @@ class OfertaAcademicaFragment : Fragment() {
                     anchorView = null,
                     duracion = 2000
                 )
+                isFirstLoad = false // Marcar que la primera carga ha terminado
             }
             is UiState.Loading -> {
                 allItems = emptyList()
-                adapter.submitCursos(emptyList())
+                adapter.submitList(emptyList())
             }
         }
     }
 
     private fun filterList(query: String?) {
         val filtered = if (query.isNullOrBlank()) allItems else allItems.filter {
-            it.nombre.contains(query, ignoreCase = true) || it.codigo.contains(query, ignoreCase = true)
+            it.nombre.contains(query, ignoreCase = true) || it.codigo.contains(
+                query,
+                ignoreCase = true
+            )
         }
-        adapter.submitCursos(filtered)
+        adapter.submitList(filtered)
         binding.recyclerView.isVisible = filtered.isNotEmpty()
     }
 

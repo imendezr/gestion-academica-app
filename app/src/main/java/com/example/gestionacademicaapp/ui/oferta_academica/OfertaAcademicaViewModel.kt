@@ -19,6 +19,8 @@ import com.example.gestionacademicaapp.ui.common.state.ErrorType
 import com.example.gestionacademicaapp.ui.common.state.UiState
 import com.example.gestionacademicaapp.ui.common.validators.GrupoValidator
 import com.example.gestionacademicaapp.utils.ResourceProvider
+import com.example.gestionacademicaapp.utils.mapErrorType
+import com.example.gestionacademicaapp.utils.toUiState
 import com.example.gestionacademicaapp.utils.toUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
@@ -35,7 +37,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
 
 @FlowPreview
 @ExperimentalCoroutinesApi
@@ -45,15 +46,21 @@ class OfertaAcademicaViewModel @Inject constructor(
     private val cicloRepository: CicloRepository,
     private val grupoRepository: GrupoRepository,
     private val profesorRepository: ProfesorRepository,
-    private val resourceProvider: ResourceProvider
+    private val resourceProvider: ResourceProvider,
+    private val grupoValidator: GrupoValidator
 ) : ViewModel() {
 
-    private val reloadTrigger = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
+    private val courseReloadTrigger = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
+    private val groupReloadTrigger = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
     var idCarrera: Long? = null
+        private set
     var idCiclo: Long? = null
+        private set
     var idCurso: Long? = null
+        private set
     private var cursoNombre: String? = null
-    private var profesores: List<Profesor> = emptyList()
+    private val _actionState = MutableStateFlow<UiState<Unit>?>(null)
+    val actionState: StateFlow<UiState<Unit>?> = _actionState.asStateFlow()
 
     val carreras: StateFlow<UiState<List<Carrera>>> = flow {
         emit(UiState.Loading)
@@ -65,7 +72,12 @@ class OfertaAcademicaViewModel @Inject constructor(
         emit(cicloRepository.listar().toUiState())
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UiState.Loading)
 
-    val cursos: StateFlow<UiState<List<CursoDto>>> = reloadTrigger
+    val profesoresState: StateFlow<UiState<List<Profesor>>> = flow {
+        emit(UiState.Loading)
+        emit(profesorRepository.listar().toUiState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UiState.Loading)
+
+    val cursos: StateFlow<UiState<List<CursoDto>>> = courseReloadTrigger
         .debounce(100)
         .flatMapLatest {
             if (idCarrera == null || idCiclo == null) flowOf(UiState.Success(emptyList()))
@@ -74,9 +86,9 @@ class OfertaAcademicaViewModel @Inject constructor(
                 emit(grupoRepository.cursosPorCarreraYCiclo(idCarrera!!, idCiclo!!).toUiState())
             }
         }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Success(emptyList()))
+        .stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Loading) // Cambiado a UiState.Loading
 
-    val grupos: StateFlow<UiState<List<GrupoDto>>> = reloadTrigger
+    val grupos: StateFlow<UiState<List<GrupoDto>>> = groupReloadTrigger
         .debounce(100)
         .flatMapLatest {
             if (idCarrera == null || idCiclo == null || idCurso == null) {
@@ -84,59 +96,60 @@ class OfertaAcademicaViewModel @Inject constructor(
             } else {
                 flow {
                     emit(UiState.Loading)
-                    emit(grupoRepository.gruposPorCursoCicloCarrera(idCurso!!, idCiclo!!, idCarrera!!).toUiState())
+                    emit(
+                        grupoRepository.gruposPorCursoCicloCarrera(
+                            idCurso!!,
+                            idCiclo!!,
+                            idCarrera!!
+                        ).toUiState()
+                    )
                 }
             }
         }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Success(emptyList()))
-
-    private val _actionState = MutableStateFlow<UiState<Unit>?>(null)
-    val actionState: StateFlow<UiState<Unit>?> = _actionState.asStateFlow()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Loading) // Cambiado a UiState.Loading
 
     init {
-        reloadTrigger.tryEmit(Unit)
-        loadProfesores()
-    }
-
-    private fun loadProfesores() {
-        viewModelScope.launch {
-            profesorRepository.listar().fold(
-                onSuccess = { profesores = it },
-                onFailure = { e ->
-                    _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e)))
-                }
-            )
-        }
+        courseReloadTrigger.tryEmit(Unit)
     }
 
     fun setCarrera(idCarrera: Long) {
-        this.idCarrera = idCarrera
-        reloadTrigger.tryEmit(Unit)
+        if (this.idCarrera != idCarrera) {
+            this.idCarrera = idCarrera
+            this.idCurso = null
+            this.cursoNombre = null
+            courseReloadTrigger.tryEmit(Unit)
+        }
     }
 
     fun setCiclo(idCiclo: Long) {
-        this.idCiclo = idCiclo
-        reloadTrigger.tryEmit(Unit)
+        if (this.idCiclo != idCiclo) {
+            this.idCiclo = idCiclo
+            this.idCurso = null
+            this.cursoNombre = null
+            courseReloadTrigger.tryEmit(Unit)
+        }
     }
 
     fun setCurso(idCurso: Long, nombre: String) {
-        this.idCurso = idCurso
-        this.cursoNombre = nombre
-        reloadTrigger.tryEmit(Unit)
-    }
-
-    fun reloadGrupos() {
-        reloadTrigger.tryEmit(Unit)
+        if (this.idCurso != idCurso) {
+            this.idCurso = idCurso
+            this.cursoNombre = nombre
+            groupReloadTrigger.tryEmit(Unit)
+        }
     }
 
     fun saveGrupo(idGrupo: Long?, numeroGrupo: Long, horario: String, idProfesor: Long) {
         viewModelScope.launch {
             _actionState.emit(UiState.Loading)
             try {
-                val grupoValidator = GrupoValidator()
                 val errors = grupoValidator.validate(numeroGrupo, horario, idProfesor)
                 if (errors.isNotEmpty()) {
-                    _actionState.emit(UiState.Error(errors.joinToString(", "), ErrorType.VALIDATION))
+                    _actionState.emit(
+                        UiState.Error(
+                            errors.joinToString(", "),
+                            ErrorType.VALIDATION
+                        )
+                    )
                     return@launch
                 }
 
@@ -152,17 +165,31 @@ class OfertaAcademicaViewModel @Inject constructor(
                     grupoRepository.insertar(grupo).fold(
                         onSuccess = {
                             _actionState.emit(UiState.Success(Unit, "CREATED"))
-                            reloadTrigger.tryEmit(Unit)
+                            groupReloadTrigger.tryEmit(Unit)
                         },
-                        onFailure = { e -> _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e))) }
+                        onFailure = { e ->
+                            _actionState.emit(
+                                UiState.Error(
+                                    e.toUserMessage(),
+                                    mapErrorType(e)
+                                )
+                            )
+                        }
                     )
                 } else {
                     grupoRepository.modificar(grupo).fold(
                         onSuccess = {
                             _actionState.emit(UiState.Success(Unit, "UPDATED"))
-                            reloadTrigger.tryEmit(Unit)
+                            groupReloadTrigger.tryEmit(Unit)
                         },
-                        onFailure = { e -> _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e))) }
+                        onFailure = { e ->
+                            _actionState.emit(
+                                UiState.Error(
+                                    e.toUserMessage(),
+                                    mapErrorType(e)
+                                )
+                            )
+                        }
                     )
                 }
             } catch (e: Exception) {
@@ -178,9 +205,16 @@ class OfertaAcademicaViewModel @Inject constructor(
                 grupoRepository.eliminar(grupo.idGrupo).fold(
                     onSuccess = {
                         _actionState.emit(UiState.Success(Unit, "DELETED"))
-                        reloadTrigger.tryEmit(Unit)
+                        groupReloadTrigger.tryEmit(Unit)
                     },
-                    onFailure = { e -> _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e))) }
+                    onFailure = { e ->
+                        _actionState.emit(
+                            UiState.Error(
+                                e.toUserMessage(),
+                                mapErrorType(e)
+                            )
+                        )
+                    }
                 )
             } catch (e: Exception) {
                 _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e)))
@@ -189,52 +223,38 @@ class OfertaAcademicaViewModel @Inject constructor(
     }
 
     fun getFormFields(): List<CampoFormulario> {
-        val profesorOptions = if (profesores.isEmpty()) {
-            listOf(Pair("0", "Sin profesores disponibles"))
-        } else {
-            profesores.map { Pair(it.idProfesor.toString(), it.nombre) }
+        val profesorOptions = when (val state = profesoresState.value) {
+            is UiState.Success -> state.data?.map { Pair(it.idProfesor.toString(), it.nombre) }
+                ?: listOf(Pair("0", "Sin profesores disponibles"))
+
+            else -> listOf(Pair("0", "Sin profesores disponibles"))
         }
         return listOf(
             CampoFormulario(
                 key = "numeroGrupo",
-                label = getString(R.string.numero_grupo),
+                label = resourceProvider.getString(R.string.numero_grupo),
                 tipo = CampoTipo.NUMBER,
-                rules = { value, _ -> GrupoValidator().validateNumeroGrupo(value) },
+                rules = { value, _ -> grupoValidator.validateNumeroGrupo(value) },
                 obligatorio = true,
                 obligatorioError = GrupoValidator.ERROR_NUMERO_GRUPO_REQUERIDO
             ),
             CampoFormulario(
                 key = "horario",
-                label = getString(R.string.horario),
+                label = resourceProvider.getString(R.string.horario),
                 tipo = CampoTipo.TEXT,
-                rules = { value, _ -> GrupoValidator().validateHorario(value) },
+                rules = { value, _ -> grupoValidator.validateHorario(value) },
                 obligatorio = true,
                 obligatorioError = GrupoValidator.ERROR_HORARIO_REQUERIDO
             ),
             CampoFormulario(
                 key = "profesor",
-                label = getString(R.string.profesor),
+                label = resourceProvider.getString(R.string.profesor),
                 tipo = CampoTipo.SPINNER,
                 opciones = profesorOptions,
-                rules = { value, _ -> GrupoValidator().validateProfesor(value) },
+                rules = { value, _ -> grupoValidator.validateProfesor(value) },
                 obligatorio = true,
                 obligatorioError = GrupoValidator.ERROR_PROFESOR_REQUERIDO
             )
         )
-    }
-
-    private fun <T> Result<T>.toUiState(): UiState<T> = fold(
-        { UiState.Success(it) },
-        { e -> UiState.Error(e.toUserMessage(), mapErrorType(e)) }
-    )
-
-    private fun mapErrorType(throwable: Throwable): ErrorType = when {
-        throwable is HttpException && throwable.code() in 400..499 -> ErrorType.VALIDATION
-        throwable.message?.contains("dependencias", ignoreCase = true) == true -> ErrorType.DEPENDENCY
-        else -> ErrorType.GENERAL
-    }
-
-    private fun getString(resId: Int, vararg args: Any): String {
-        return resourceProvider.getString(resId, *args)
     }
 }

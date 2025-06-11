@@ -15,6 +15,7 @@ import androidx.navigation.fragment.navArgs
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.gestionacademicaapp.R
+import com.example.gestionacademicaapp.data.api.model.Profesor
 import com.example.gestionacademicaapp.data.api.model.dto.GrupoDto
 import com.example.gestionacademicaapp.databinding.FragmentGruposOfertaBinding
 import com.example.gestionacademicaapp.ui.common.DialogFormularioFragment
@@ -26,25 +27,23 @@ import com.example.gestionacademicaapp.utils.enableSwipeActions
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @FlowPreview
 @ExperimentalCoroutinesApi
 @AndroidEntryPoint
 class GruposOfertaFragment : Fragment() {
-
     private val viewModel: OfertaAcademicaViewModel by activityViewModels()
     private var _binding: FragmentGruposOfertaBinding? = null
     private val binding get() = _binding!!
-    private val adapter = OfertaAcademicaAdapter(
-        onVerGrupos = null,
+    private val adapter = GrupoAdapter(
         onEditGrupo = { grupo -> mostrarFormulario(grupo) },
         onDeleteGrupo = { grupo -> viewModel.deleteGrupo(grupo) }
     )
     private var itemTouchHelper: ItemTouchHelper? = null
     private var swipedPosition: Int? = null
     private val args: GruposOfertaFragmentArgs by navArgs()
+    private var isFirstLoad = true // Nueva bandera
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,19 +71,18 @@ class GruposOfertaFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
+        val localAdapter = adapter
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
-            adapter = this@GruposOfertaFragment.adapter
+            adapter = localAdapter
             itemTouchHelper = enableSwipeActions(
                 onSwipeLeft = { position ->
-                    val localAdapter = this@GruposOfertaFragment.adapter
                     swipedPosition = position
-                    localAdapter.getItemAt(position)?.let { if (it is GrupoDto) viewModel.deleteGrupo(it) }
+                    localAdapter.getItemAt(position).let { viewModel.deleteGrupo(it) }
                 },
                 onSwipeRight = { position ->
-                    val localAdapter = this@GruposOfertaFragment.adapter
                     swipedPosition = position
-                    localAdapter.getItemAt(position)?.let { if (it is GrupoDto) mostrarFormulario(it) }
+                    mostrarFormulario(localAdapter.getItemAt(position))
                 }
             )
         }
@@ -108,7 +106,20 @@ class GruposOfertaFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.grupos.collect { updateGrupos(it) } }
                 launch { viewModel.actionState.collect { it?.let { updateActionState(it) } } }
+                launch { viewModel.profesoresState.collect { updateProfesores(it) } }
             }
+        }
+    }
+
+    private fun updateProfesores(state: UiState<List<Profesor>>) {
+        if (state is UiState.Error) {
+            Notificador.show(
+                view = binding.root,
+                mensaje = getString(R.string.error_no_profesores),
+                colorResId = R.color.colorError,
+                anchorView = binding.fabBottom,
+                duracion = 2000
+            )
         }
     }
 
@@ -121,26 +132,24 @@ class GruposOfertaFragment : Fragment() {
 
     private fun updateGrupos(state: UiState<List<GrupoDto>>) {
         binding.progressBar.isVisible = state is UiState.Loading
-        binding.recyclerView.isVisible = state is UiState.Success && (state.data?.isNotEmpty() ?: false)
+        binding.recyclerView.isVisible = state is UiState.Success && (state.data?.isNotEmpty() == true)
         when (state) {
             is UiState.Success -> {
                 val grupos = state.data ?: emptyList()
-                adapter.submitGrupos(grupos)
-                if (grupos.isEmpty() && !binding.progressBar.isVisible && viewModel.actionState.value !is UiState.Success) {
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        delay(1000)
-                        Notificador.show(
-                            view = binding.root,
-                            mensaje = getString(R.string.error_no_grupos),
-                            colorResId = R.color.colorError,
-                            anchorView = binding.fabBottom,
-                            duracion = 2000
-                        )
-                    }
+                adapter.submitList(grupos)
+                if (grupos.isEmpty() && !binding.progressBar.isVisible && !isFirstLoad) {
+                    Notificador.show(
+                        view = binding.root,
+                        mensaje = getString(R.string.error_no_grupos),
+                        colorResId = R.color.colorError,
+                        anchorView = binding.fabBottom,
+                        duracion = 2000
+                    )
                 }
+                isFirstLoad = false // Marcar que la primera carga ha terminado
             }
             is UiState.Error -> {
-                adapter.submitGrupos(emptyList())
+                adapter.submitList(emptyList())
                 binding.recyclerView.isVisible = false
                 Notificador.show(
                     view = binding.root,
@@ -149,13 +158,13 @@ class GruposOfertaFragment : Fragment() {
                     anchorView = binding.fabBottom,
                     duracion = 2000
                 )
+                isFirstLoad = false // Marcar que la primera carga ha terminado
             }
-            is UiState.Loading -> adapter.submitGrupos(emptyList())
+            is UiState.Loading -> adapter.submitList(emptyList())
         }
     }
 
     private fun updateActionState(state: UiState<Unit>) {
-        val localAdapter = adapter
         when (state) {
             is UiState.Success -> {
                 swipedPosition = null
@@ -174,24 +183,26 @@ class GruposOfertaFragment : Fragment() {
                     duracion = 2000
                 )
             }
+
             is UiState.Error -> {
                 swipedPosition?.let { pos ->
-                    localAdapter.notifyItemChanged(pos)
+                    adapter.notifyItemChanged(pos)
                     binding.recyclerView.clearSwipe(pos, itemTouchHelper)
-                    swipedPosition = null
+                    Notificador.show(
+                        view = binding.root,
+                        mensaje = when (state.type) {
+                            ErrorType.DEPENDENCY -> getString(R.string.error_grupo_dependencia)
+                            else -> state.message
+                        },
+                        colorResId = R.color.colorError,
+                        anchorView = binding.fabBottom,
+                        duracion = 2000
+                    )
                 }
-                Notificador.show(
-                    view = binding.root,
-                    mensaje = when (state.type) {
-                        ErrorType.DEPENDENCY -> getString(R.string.error_grupo_dependencia)
-                        else -> state.message
-                    },
-                    colorResId = R.color.colorError,
-                    anchorView = binding.fabBottom,
-                    duracion = 2000
-                )
+                swipedPosition = null
             }
-            is UiState.Loading -> Unit
+
+            is UiState.Loading -> {}
         }
     }
 
@@ -199,7 +210,7 @@ class GruposOfertaFragment : Fragment() {
         val isEditing = grupo != null
         val datosIniciales = if (isEditing) {
             mapOf(
-                "numeroGrupo" to grupo!!.numeroGrupo.toString(),
+                "numeroGrupo" to grupo.numeroGrupo.toString(),
                 "horario" to grupo.horario,
                 "profesor" to grupo.idProfesor.toString()
             )
@@ -208,12 +219,12 @@ class GruposOfertaFragment : Fragment() {
         }
 
         val campos = viewModel.getFormFields()
-        val dialog = DialogFormularioFragment.newInstance(
+        val dialogo = DialogFormularioFragment.newInstance(
             titulo = getString(if (isEditing) R.string.editar_grupo else R.string.crear_grupo),
             campos = campos,
             datosIniciales = datosIniciales
         )
-        dialog.setOnGuardarListener { datos ->
+        dialogo.setOnGuardarListener { datos ->
             try {
                 viewModel.saveGrupo(
                     idGrupo = grupo?.idGrupo,
@@ -221,7 +232,7 @@ class GruposOfertaFragment : Fragment() {
                     horario = datos["horario"] ?: "",
                     idProfesor = datos["profesor"]?.toLongOrNull() ?: 0L
                 )
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 Notificador.show(
                     view = binding.root,
                     mensaje = getString(R.string.error_validacion_datos),
@@ -231,18 +242,17 @@ class GruposOfertaFragment : Fragment() {
                 )
             }
         }
-        dialog.setOnCancelListener {
+        dialogo.setOnCancelListener {
             swipedPosition?.let { pos ->
                 adapter.notifyItemChanged(pos)
                 binding.recyclerView.clearSwipe(pos, itemTouchHelper)
                 swipedPosition = null
             }
         }
-        dialog.show(childFragmentManager, "DialogFormularioFragment")
+        dialogo.show(childFragmentManager, "DialogFormularioFragment")
     }
 
     private fun updateUi() {
         binding.fabBottom.isVisible = true
-        viewModel.reloadGrupos()
     }
 }
