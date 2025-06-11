@@ -1,8 +1,10 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="16dp"
+    android:clipToPadding="false">
 
     <!-- Fila: Título + Spinner de Carrera -->
     <LinearLayout
@@ -10,9 +12,8 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="12dp">
 
-        <!-- Título, ancho = 0dp, peso = 1 -->
         <TextView
             android:id="@+id/labelCarrera"
             android:layout_width="0dp"
@@ -22,7 +23,6 @@
             android:textSize="16sp"
             android:textStyle="bold" />
 
-        <!-- Spinner, ancho = 0dp, peso = 3 -->
         <Spinner
             android:id="@+id/spinnerCarrera"
             android:layout_width="0dp"
@@ -36,9 +36,8 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
+        android:layout_marginBottom="12dp">
 
-        <!-- Título, ancho = 0dp, peso = 1 -->
         <TextView
             android:id="@+id/labelCiclo"
             android:layout_width="0dp"
@@ -48,7 +47,6 @@
             android:textSize="16sp"
             android:textStyle="bold" />
 
-        <!-- Spinner, ancho = 0dp, peso = 3 -->
         <Spinner
             android:id="@+id/spinnerCiclo"
             android:layout_width="0dp"
@@ -61,7 +59,7 @@
         android:id="@+id/searchView"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:layout_marginBottom="8dp"
+        android:layout_marginBottom="12dp"
         android:background="@drawable/bg_searchview_rounded"
         android:clickable="true"
         android:elevation="2dp"
@@ -76,7 +74,8 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:layout_marginBottom="12dp">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recyclerView"
@@ -94,4 +93,32 @@
             android:contentDescription="@string/content_desc_cargando_cursos"
             android:visibility="gone" />
     </FrameLayout>
+
+    <!-- Botón flotante alineado a la derecha -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:paddingTop="4dp">
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/fabCursos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:elevation="0dp"
+            android:stateListAnimator="@null"
+            android:text="@string/fab_agregar_curso"
+            android:textSize="14sp"
+            android:tint="@android:color/white"
+            app:backgroundTint="@color/colorPrimary"
+            app:cornerRadius="24dp"
+            app:icon="@drawable/ic_add"
+            app:iconGravity="textStart"
+            app:iconPadding="8dp" />
+    </LinearLayout>
 </LinearLayout>
