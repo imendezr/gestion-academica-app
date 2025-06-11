@@ -52,6 +52,9 @@ interface ApiService {
     @GET("alumnos/alumnosConOfertaEnCiclo")
     suspend fun getAlumnosConOfertaEnCiclo(@Query("idCiclo") idCiclo: Long): List<Alumno>
 
+    @GET("alumnos/buscarPorId/{id}")
+    suspend fun getAlumnoById(@Path("id") id: Long): Alumno
+
 
     // CARRERAS
     @POST("carreras/insertar")
@@ -230,6 +233,12 @@ interface ApiService {
         @Path("idAlumno") idAlumno: Long,
         @Path("idCiclo") idCiclo: Long
     ): List<MatriculaAlumnoDto>
+
+    @GET("matricular/listarMatriculasPorGrupo/{idGrupo}")
+    suspend fun getMatriculasPorGrupo(@Path("idGrupo") idGrupo: Long): List<MatriculaAlumnoDto>
+
+    @GET("matricular/buscar/{id}")
+    suspend fun getMatriculaById(@Path("id") id: Long): Matricula
 
 
     // PROFESORES

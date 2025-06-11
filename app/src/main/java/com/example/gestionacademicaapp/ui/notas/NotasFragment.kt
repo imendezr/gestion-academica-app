@@ -37,7 +37,11 @@ class NotasFragment : Fragment() {
     private val viewModel: NotasViewModel by viewModels()
     private var _binding: FragmentNotasBinding? = null
     private val binding get() = _binding!!
-    private val adapter = NotasAdapter { matricula -> mostrarDialogoNota(matricula) }
+    private val studentNames = mutableMapOf<Long, String>()
+    private val adapter = NotasAdapter(
+        onEditNota = { matricula -> mostrarDialogoNota(matricula) },
+        getStudentName = { idMatricula -> studentNames[idMatricula] ?: "Unknown Student" }
+    )
     private var allItems: List<MatriculaAlumnoDto> = emptyList()
     private var itemTouchHelper: ItemTouchHelper? = null
     private var swipedPosition: Int? = null
@@ -64,9 +68,9 @@ class NotasFragment : Fragment() {
         binding.recyclerView.apply {
             layoutManager = LinearLayoutManager(requireContext())
             adapter = this@NotasFragment.adapter
-            val localAdapter = this@NotasFragment.adapter // Avoid smart cast issues
+            val localAdapter = this@NotasFragment.adapter
             itemTouchHelper = enableSwipeActions(
-                onSwipeLeft = {}, // Empty lambda to disable left swipe
+                onSwipeLeft = {},
                 onSwipeRight = { position ->
                     swipedPosition = position
                     localAdapter.getItemAt(position)?.let { mostrarDialogoNota(it) }
@@ -148,7 +152,16 @@ class NotasFragment : Fragment() {
         when (state) {
             is UiState.Success -> {
                 allItems = state.data ?: emptyList()
-                filterList(binding.searchView.query.toString())
+                viewLifecycleOwner.lifecycleScope.launch {
+                    allItems.forEach { matricula ->
+                        if (!studentNames.containsKey(matricula.idMatricula)) {
+                            viewModel.getStudentName(matricula.idMatricula)?.let { name ->
+                                studentNames[matricula.idMatricula] = name
+                            }
+                        }
+                    }
+                    filterList(binding.searchView.query.toString())
+                }
                 binding.recyclerView.isVisible = allItems.isNotEmpty()
                 if (allItems.isEmpty() && !binding.progressBar.isVisible) {
                     viewLifecycleOwner.lifecycleScope.launch {
@@ -214,7 +227,8 @@ class NotasFragment : Fragment() {
 
     private fun filterList(query: String?) {
         val filtered = if (query.isNullOrBlank()) allItems else allItems.filter {
-            it.nombreCurso.contains(query, ignoreCase = true) || it.nombreProfesor.contains(query, ignoreCase = true)
+            it.nombreCurso.contains(query, ignoreCase = true) ||
+                    studentNames[it.idMatricula]?.contains(query, ignoreCase = true) == true
         }
         adapter.submitList(filtered)
         binding.recyclerView.isVisible = filtered.isNotEmpty()
@@ -231,7 +245,6 @@ class NotasFragment : Fragment() {
                 obligatorioError = getString(R.string.error_nota_requerida)
             )
         )
-
         val dialog = DialogFormularioFragment.newInstance(
             titulo = getString(R.string.registrar_nota),
             campos = campos,

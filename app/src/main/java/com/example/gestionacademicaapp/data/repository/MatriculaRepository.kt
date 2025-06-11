@@ -48,6 +48,20 @@ class MatriculaRepository @Inject constructor(
         response
     }
 
+    suspend fun listarPorGrupo(idGrupo: Long): Result<List<MatriculaAlumnoDto>> = safeApiCall {
+        println("Listando matrículas por grupo: $idGrupo")
+        val response = apiService.getMatriculasPorGrupo(idGrupo)
+        println("Respuesta de listarPorGrupo: $response")
+        response
+    }
+
+    suspend fun buscarPorId(idMatricula: Long): Result<Matricula> = safeApiCall {
+        println("Buscando matrícula por id: $idMatricula")
+        val response = apiService.getMatriculaById(idMatricula)
+        println("Respuesta de buscarPorId: $response")
+        response
+    }
+
     private inline fun <T> safeApiCall(block: () -> T): Result<T> {
         return try {
             Result.success(block())

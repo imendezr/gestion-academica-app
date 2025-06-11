@@ -240,4 +240,6 @@
     <string name="error_matricula_no_encontrada">Matrícula no encontrada.</string>
     <string name="content_desc_cargando_alumnos">Cargando alumnos</string>
     <string name="nota_success">Nota actualizada con éxito</string>
+    <string name="error_no_grupo_seleccionado">Por favor, seleccione un grupo primero.</string>
+    <string name="error_alumno_no_encontrado">No se encontró el alumno.</string>
 </resources>

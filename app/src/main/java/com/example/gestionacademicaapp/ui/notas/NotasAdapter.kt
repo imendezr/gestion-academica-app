@@ -8,7 +8,8 @@ import com.example.gestionacademicaapp.data.api.model.dto.MatriculaAlumnoDto
 import com.example.gestionacademicaapp.databinding.ItemNotaBinding
 
 class NotasAdapter(
-    private val onEditNota: (MatriculaAlumnoDto) -> Unit
+    private val onEditNota: (MatriculaAlumnoDto) -> Unit,
+    private val getStudentName: (Long) -> String
 ) : RecyclerView.Adapter<NotasAdapter.ViewHolder>() {
 
     private var items: List<MatriculaAlumnoDto> = emptyList()
@@ -42,7 +43,7 @@ class NotasAdapter(
     inner class ViewHolder(private val binding: ItemNotaBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(matricula: MatriculaAlumnoDto) {
             with(binding) {
-                txtNombre.text = matricula.nombreProfesor // Assuming nombreProfesor is student name
+                txtNombre.text = getStudentName(matricula.idMatricula)
                 txtNota.text = matricula.nota.toString()
                 root.setOnClickListener { onEditNota.invoke(matricula) }
             }

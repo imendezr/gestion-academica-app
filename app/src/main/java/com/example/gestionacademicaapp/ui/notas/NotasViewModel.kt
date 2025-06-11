@@ -7,6 +7,7 @@ import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.data.api.model.Matricula
 import com.example.gestionacademicaapp.data.api.model.dto.GrupoProfesorDto
 import com.example.gestionacademicaapp.data.api.model.dto.MatriculaAlumnoDto
+import com.example.gestionacademicaapp.data.repository.AlumnoRepository
 import com.example.gestionacademicaapp.data.repository.GrupoRepository
 import com.example.gestionacademicaapp.data.repository.MatriculaRepository
 import com.example.gestionacademicaapp.ui.common.state.ErrorType
@@ -36,6 +37,7 @@ import retrofit2.HttpException
 class NotasViewModel @Inject constructor(
     private val grupoRepository: GrupoRepository,
     private val matriculaRepository: MatriculaRepository,
+    private val alumnoRepository: AlumnoRepository,
     private val resourceProvider: ResourceProvider,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
@@ -60,11 +62,8 @@ class NotasViewModel @Inject constructor(
             if (idGrupo == null) flowOf(UiState.Success(emptyList()))
             else flow {
                 emit(UiState.Loading)
-                matriculaRepository.listarPorCedula("").fold(
-                    onSuccess = { allMatriculas ->
-                        val filtered = allMatriculas.filter { it.numeroGrupo.toLongOrNull() == idGrupo }
-                        emit(UiState.Success(filtered))
-                    },
+                matriculaRepository.listarPorGrupo(idGrupo!!).fold(
+                    onSuccess = { emit(UiState.Success(it)) },
                     onFailure = { e -> emit(UiState.Error(e.toUserMessage(), mapErrorType(e))) }
                 )
             }
@@ -100,33 +99,48 @@ class NotasViewModel @Inject constructor(
                     _actionState.emit(UiState.Error(getString(R.string.error_nota_rango), ErrorType.VALIDATION))
                     return@launch
                 }
-                matriculaRepository.listarPorCedula("").fold(
-                    onSuccess = { matriculas ->
-                        val matricula = matriculas.find { it.idMatricula == idMatricula }
-                        if (matricula != null) {
-                            val updatedMatricula = Matricula(
-                                idMatricula = idMatricula,
-                                pkAlumno = matricula.idMatricula, // Placeholder: Adjust if student ID available
-                                pkGrupo = idGrupo ?: 0L,
-                                nota = nota
-                            )
-                            matriculaRepository.modificar(updatedMatricula).fold(
-                                onSuccess = {
-                                    _actionState.emit(UiState.Success(Unit))
-                                    reloadTrigger.tryEmit(Unit)
-                                },
-                                onFailure = { e -> _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e))) }
-                            )
-                        } else {
-                            _actionState.emit(UiState.Error(getString(R.string.error_matricula_no_encontrada), ErrorType.GENERAL))
-                        }
+                if (idGrupo == null) {
+                    _actionState.emit(UiState.Error(getString(R.string.error_no_grupo_seleccionado), ErrorType.VALIDATION))
+                    return@launch
+                }
+                matriculaRepository.buscarPorId(idMatricula).fold(
+                    onSuccess = { matricula ->
+                        val updatedMatricula = Matricula(
+                            idMatricula = idMatricula,
+                            pkAlumno = matricula.pkAlumno,
+                            pkGrupo = idGrupo!!,
+                            nota = nota
+                        )
+                        matriculaRepository.modificar(updatedMatricula).fold(
+                            onSuccess = {
+                                _actionState.emit(UiState.Success(Unit))
+                                reloadTrigger.tryEmit(Unit)
+                            },
+                            onFailure = { e ->
+                                _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e)))
+                            }
+                        )
                     },
-                    onFailure = { e -> _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e))) }
+                    onFailure = { e ->
+                        _actionState.emit(UiState.Error(getString(R.string.error_matricula_no_encontrada), ErrorType.GENERAL))
+                    }
                 )
             } catch (e: Exception) {
                 _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e)))
             }
         }
+    }
+
+    suspend fun getStudentName(idMatricula: Long): String? {
+        return matriculaRepository.buscarPorId(idMatricula).fold(
+            onSuccess = { matricula ->
+                alumnoRepository.buscarPorId(matricula.pkAlumno).fold(
+                    onSuccess = { alumno -> alumno.nombre },
+                    onFailure = { null }
+                )
+            },
+            onFailure = { null }
+        )
     }
 
     private fun <T> Result<T>.toUiState(): UiState<T> = fold(

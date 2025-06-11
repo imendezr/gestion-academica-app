@@ -34,6 +34,10 @@ class AlumnoRepository @Inject constructor(
         if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
+    suspend fun buscarPorId(idAlumno: Long): Result<Alumno> = safeApiCall {
+        apiService.getAlumnoById(idAlumno)
+    }
+
     suspend fun buscarPorCedula(cedula: String): Result<Alumno> = safeApiCall {
         apiService.getAlumnoByCedula(cedula)
     }
