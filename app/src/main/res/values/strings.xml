@@ -249,4 +249,5 @@
     <string name="error_no_grupos_curso">No hay grupos disponibles para el curso seleccionado.</string>
     <string name="error_no_grupo_corto">Sin grupos disponibles.</string>
     <string name="error_no_profesores">No se pudieron cargar los profesores. Intente de nuevo.</string>
+    <string name="error_dependencia_login">Error de dependencia en el inicio de sesión</string>
 </resources>
