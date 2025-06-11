@@ -12,16 +12,39 @@ app/src/main/java/com/example/gestionacademicaapp/
 │
 ├── data/                          # Lógica de acceso a datos
 │   ├── api/
-│   │   ├── ApiClient.kt          # Configura baseUrl y cliente HTTP
 │   │   └── ApiService.kt         # Define endpoints del backend
 │   ├── api/model/
-│   │   └── dto/                  # Data Transfer Objects (CursoDto, GrupoDto, etc.)
-│   └── repository/               # Repositorios por entidad (CursoRepository.kt, etc.)
+│	│		├── dto/                  # Data Transfer Objects
+│ 	│ 		│	├── CursoDto.kt
+│ 	│ 		│	├── GrupoDto.kt
+│ 	│ 		│	├── GrupoProfesorDto.kt
+│ 	│ 		│	└── MatriculaAlumnoDto.kt
+│	│		├── Alumno.kt
+│	│		├── Carrera.kt
+│	│		├── CarreraCurso.kt
+│	│		├── Ciclo.kt
+│	│		├── Curso.kt
+│	│		├── Grupo.kt
+│	│		├── Matricula.kt
+│	│		├── Profesor.kt
+│	│		└── Usuario.kt
+│   │   
+│   └── repository/               # Repositorios por entidad
+│		├── AlumnoRepository.kt
+│		├── CarreraCursoRepository.kt
+│		├── CarreraRepository.kt
+│		├── CicloRepository.kt
+│		├── CursoRepository.kt
+│		├── GrupoRepository.kt
+│		├── MatriculaRepository.kt
+│		├── ProfesorRepository.kt
+│		└── UsuarioRepository.kt
 │
 ├── di/
 │   └── AppModule.kt              # Inyección de dependencias con Hilt
 │
 ├── ui/                            # Vista y lógica de presentación
+│   ├── MainActivity.kt
 │   ├── alumnos/
 │   │   ├── AlumnosAdapter.kt
 │   │   ├── AlumnosFragment.kt
@@ -84,21 +107,30 @@ app/src/main/java/com/example/gestionacademicaapp/
 │   └── common/
 │       ├── DialogFormularioFragment.kt
 │       ├── CampoFormulario.kt
-│       ├── adapter/              # Reutilizables: RecyclerView ListAdapter, ViewHolders
-│       ├── state/                # ListUiState, SingleUiState
+│       ├── adapter/
+│ 		│ 	└── BaseAdapter.kt
+│       ├── state/
+│ 		│ 	└── UiState.kt
 │       └── validators/           # Validaciones de campos de texto, fechas, etc.
+│ 			├── AlumnoValidator.kt
+│ 			├── CarreraCursoValidator.kt
+│ 			├── CarreraValidator.kt
+│ 			├── CicloValidator.kt
+│ 			├── CursoValidator.kt
+│ 			├── GrupoValidator.kt
+│ 			├── ProfesorValidator.kt
+│ 			└── UsuarioValidator.kt
 │
-├── utils/
-│   ├── Constants.kt              # Constantes globales
-│   ├── ErrorHandler.kt           # Manejo de errores centralizado
-│   ├── Extensions.kt             # Funciones de extensión útiles
-│   ├── Notificador.kt            # Utilidad para mostrar Snackbars
-│   ├── ResourceProvider.kt       # Acceso a strings desde ViewModels
-│   ├── RolePermissions.kt        # Permisos por tipo de usuario
-│   ├── SearchViewUtils.kt        # Configuración estandarizada de SearchView
-│   └── SessionManager.kt         # Manejo de sesión de usuario actual
-│
-├── GestionAcademicaApp.kt        # Clase Application para inicializar Hilt
+└── utils/
+    ├── Constants.kt              # Constantes globales
+    ├── ErrorHandler.kt           # Manejo de errores centralizado
+    ├── Extensions.kt             # Funciones de extensión útiles
+    ├── Notificador.kt            # Utilidad para mostrar Snackbars
+    ├── ResourceProvider.kt       # Acceso a strings desde ViewModels
+    ├── RolePermissions.kt        # Permisos por tipo de usuario
+    ├── SearchViewUtils.kt        # Configuración estandarizada de SearchView
+    └── SessionManager.kt         # Manejo de sesión de usuario actual
+ 
 ```
 
 ---
