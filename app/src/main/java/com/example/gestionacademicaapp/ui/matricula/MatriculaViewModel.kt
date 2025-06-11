@@ -239,18 +239,6 @@ class MatriculaViewModel @Inject constructor(
     )
 
     private fun mapErrorType(throwable: Throwable): ErrorType = when {
-        throwable is HttpException -> when (throwable.code()) {
-            in 400..499 -> {
-                println("HTTP Error ${throwable.code()}: ${throwable.message()}")
-                ErrorType.VALIDATION
-            }
-
-            else -> {
-                println("HTTP Error ${throwable.code()}: ${throwable.message()}")
-                ErrorType.GENERAL
-            }
-        }
-
         throwable.message?.contains("dependencias", ignoreCase = true) == true -> {
             println("Error de dependencia detectado")
             ErrorType.DEPENDENCY
