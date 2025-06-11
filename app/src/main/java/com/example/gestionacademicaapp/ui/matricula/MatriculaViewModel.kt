@@ -7,7 +7,6 @@ import com.example.gestionacademicaapp.data.api.model.Ciclo
 import com.example.gestionacademicaapp.data.api.model.Matricula
 import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
 import com.example.gestionacademicaapp.data.api.model.dto.GrupoDto
-import com.example.gestionacademicaapp.data.api.model.dto.MatriculaAlumnoDto
 import com.example.gestionacademicaapp.data.repository.AlumnoRepository
 import com.example.gestionacademicaapp.data.repository.CicloRepository
 import com.example.gestionacademicaapp.data.repository.GrupoRepository
@@ -21,8 +20,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.flatMapLatest
@@ -48,10 +49,15 @@ class MatriculaViewModel @Inject constructor(
     private var idAlumno: Long = 0L
     private var idCiclo: Long = 0L
     private var idCarrera: Long = 0L
-    private var idCurso: Long? = null
+    internal var idCurso: Long? = null
     var idGrupo: Long? = null
 
+    // Agregar al inicio de la clase
+    private val _matriculaUpdated = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
+    val matriculaUpdated: SharedFlow<Unit> = _matriculaUpdated.asSharedFlow()
+
     val alumnosState: StateFlow<UiState<List<Alumno>>> = reloadTrigger
+        .debounce(100) // Add debounce
         .flatMapLatest {
             selectedCicloId?.let { idCiclo ->
                 flow {
@@ -80,7 +86,7 @@ class MatriculaViewModel @Inject constructor(
     val cursos: StateFlow<UiState<List<CursoDto>>> = reloadTrigger
         .debounce(100)
         .flatMapLatest {
-            if (idCiclo == 0L) flowOf(UiState.Success(emptyList()))
+            if (idCiclo == 0L || idCarrera == 0L) flowOf(UiState.Success(emptyList()))
             else flow {
                 println("Starting course fetch for carrera=$idCarrera, ciclo=$idCiclo")
                 emit(UiState.Loading)
@@ -94,22 +100,28 @@ class MatriculaViewModel @Inject constructor(
                 }
             }
         }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Loading)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, UiState.Success(emptyList()))
 
     val gruposState: StateFlow<UiState<List<GrupoDto>>> = reloadTrigger
         .debounce(100)
         .flatMapLatest {
-            if (idCiclo == 0L || idCurso == null) flowOf(UiState.Success(emptyList()))
+            if (idCiclo == 0L || idCurso == null || idCurso == 0L) flowOf(UiState.Success(emptyList()))
             else flow {
                 println("Starting group fetch for curso=$idCurso, ciclo=$idCiclo, carrera=$idCarrera")
                 emit(UiState.Loading)
                 try {
-                    val result = grupoRepository.gruposPorCursoCicloCarrera(idCurso!!, idCiclo, idCarrera)
+                    val result =
+                        grupoRepository.gruposPorCursoCicloCarrera(idCurso!!, idCiclo, idCarrera)
                     println("Groups fetched: ${result.getOrNull()?.size ?: 0}, result=$result")
                     emit(result.toUiState())
                 } catch (e: Exception) {
                     println("Group fetch error: ${e.message}")
-                    emit(UiState.Error(e.toUserMessage(), mapErrorType(e)))
+                    emit(
+                        UiState.Error(
+                            "No hay grupos disponibles para este curso",
+                            mapErrorType(e)
+                        )
+                    )
                 }
             }
         }
@@ -123,13 +135,15 @@ class MatriculaViewModel @Inject constructor(
     }
 
     fun setParams(idAlumno: Long, idCiclo: Long, idCarrera: Long) {
-        this.idAlumno = idAlumno
-        this.idCiclo = idCiclo
-        this.idCarrera = idCarrera
-        println("Params set: alumno=$idAlumno, ciclo=$idCiclo, carrera=$idCarrera")
-        idCurso = null
-        idGrupo = null
-        reloadTrigger.tryEmit(Unit)
+        if (this.idAlumno != idAlumno || this.idCiclo != idCiclo || this.idCarrera != idCarrera) {
+            this.idAlumno = idAlumno
+            this.idCiclo = idCiclo
+            this.idCarrera = idCarrera
+            println("Params set: alumno=$idAlumno, ciclo=$idCiclo, carrera=$idCarrera")
+            idCurso = null
+            idGrupo = null
+            reloadTrigger.tryEmit(Unit)
+        }
     }
 
     fun setCiclo(idCiclo: Long) {
@@ -142,11 +156,13 @@ class MatriculaViewModel @Inject constructor(
     }
 
     fun setCurso(idCurso: Long) {
-        if (this.idCurso != idCurso) {
+        if (this.idCurso != idCurso && idCurso != 0L) { // Only update if course changes and is valid
             this.idCurso = idCurso
             this.idGrupo = null
             println("Curso set to: $idCurso")
             reloadTrigger.tryEmit(Unit)
+        } else {
+            println("Curso not changed or invalid: idCurso=$idCurso, current=$idCurso")
         }
     }
 
@@ -155,75 +171,65 @@ class MatriculaViewModel @Inject constructor(
         println("Grupo selected: $idGrupo")
     }
 
-    fun confirmarMatricula() {
+    fun confirmarMatricula(idMatricula: Long? = null) {
         viewModelScope.launch {
             _actionState.emit(UiState.Loading)
             try {
                 idGrupo?.let { grupoId ->
-                    val matricula = Matricula(idMatricula = 0, pkAlumno = idAlumno, pkGrupo = grupoId, nota = 0)
-                    matriculaRepository.insertar(matricula).fold(
-                        onSuccess = {
-                            println("Matricula successful")
-                            _actionState.emit(UiState.Success(Unit))
-                        },
-                        onFailure = { e ->
-                            println("Matricula failed: ${e.message}")
-                            _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e)))
-                        }
-                    )
-                } ?: _actionState.emit(UiState.Error("Seleccione un grupo", ErrorType.VALIDATION))
-            } catch (e: Exception) {
-                println("Matricula exception: ${e.message}")
-                _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e)))
-            }
-        }
-    }
-
-    suspend fun getGrupoIdForMatricula(matricula: MatriculaAlumnoDto): Long? {
-        try {
-            val ciclosResult = cicloRepository.listar()
-            return ciclosResult.fold(
-                onSuccess = { ciclos ->
-                    for (ciclo in ciclos) {
-                        val cursosResult = grupoRepository.cursosPorCarreraYCiclo(idCarrera, ciclo.idCiclo)
-                        val grupoId = cursosResult.fold(
-                            onSuccess = { cursos ->
-                                val curso = cursos.find { it.codigo == matricula.codigoCurso }
-                                curso?.idCurso?.let { idCurso ->
-                                    val gruposResult = grupoRepository.gruposPorCursoCicloCarrera(idCurso, ciclo.idCiclo, idCarrera)
-                                    gruposResult.fold(
-                                        onSuccess = { grupos ->
-                                            grupos.find { it.numeroGrupo.toString() == matricula.numeroGrupo }?.idGrupo
-                                        },
-                                        onFailure = {
-                                            println("Failed to fetch groups for ciclo=${ciclo.idCiclo}: ${it.message}")
-                                            null
-                                        }
-                                    )
-                                }
+                    if (idMatricula != null && idMatricula != 0L) {
+                        println("Intentando modificar matrícula: idMatricula=$idMatricula, grupoId=$grupoId")
+                        matriculaRepository.modificarGrupoMatricula(idMatricula, grupoId).fold(
+                            onSuccess = {
+                                println("Matrícula actualizada exitosamente: idMatricula=$idMatricula")
+                                _actionState.emit(UiState.Success(Unit))
+                                _matriculaUpdated.tryEmit(Unit)
                             },
-                            onFailure = {
-                                println("Failed to fetch courses for ciclo=${ciclo.idCiclo}: ${it.message}")
-                                null
+                            onFailure = { e ->
+                                println("Fallo al actualizar matrícula: ${e.message}, stackTrace=${e.stackTraceToString()}")
+                                _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e)))
                             }
                         )
-                        if (grupoId != null) {
-                            this.idCiclo = ciclo.idCiclo
-                            println("Grupo encontrado en ciclo=${ciclo.idCiclo}, grupoId=$grupoId")
-                            return grupoId
+                    } else {
+                        println("Creando nueva matrícula para alumno=$idAlumno, grupo=$grupoId")
+                        val exists =
+                            matriculaRepository.existeMatriculaPorAlumnoYGrupo(idAlumno, grupoId)
+                                .getOrNull() == true
+                        if (exists) {
+                            println("Matrícula ya existe para alumno=$idAlumno, grupo=$grupoId")
+                            _actionState.emit(
+                                UiState.Error(
+                                    "El alumno ya está matriculado en este grupo",
+                                    ErrorType.VALIDATION
+                                )
+                            )
+                            return@launch
                         }
+                        val matricula = Matricula(
+                            idMatricula = 0,
+                            pkAlumno = idAlumno,
+                            pkGrupo = grupoId,
+                            nota = 0
+                        )
+                        matriculaRepository.insertar(matricula).fold(
+                            onSuccess = {
+                                println("Matrícula creada exitosamente")
+                                _actionState.emit(UiState.Success(Unit))
+                                _matriculaUpdated.tryEmit(Unit)
+                            },
+                            onFailure = { e ->
+                                println("Fallo al crear matrícula: ${e.message}, stackTrace=${e.stackTraceToString()}")
+                                _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e)))
+                            }
+                        )
                     }
-                    println("No se encontró grupo para matricula en ningún ciclo")
-                    null
-                },
-                onFailure = {
-                    println("Failed to fetch ciclos: ${it.message}")
-                    null
+                } ?: run {
+                    println("Error: No se seleccionó un grupo")
+                    _actionState.emit(UiState.Error("Seleccione un grupo", ErrorType.VALIDATION))
                 }
-            )
-        } catch (e: Exception) {
-            println("Error fetching grupo: ${e.message}")
-            return null
+            } catch (e: Exception) {
+                println("Excepción en confirmarMatricula: ${e.message}, stackTrace=${e.stackTraceToString()}")
+                _actionState.emit(UiState.Error(e.toUserMessage(), mapErrorType(e)))
+            }
         }
     }
 
@@ -233,10 +239,41 @@ class MatriculaViewModel @Inject constructor(
     )
 
     private fun mapErrorType(throwable: Throwable): ErrorType = when {
-        throwable is HttpException && throwable.code() in 400..499 -> ErrorType.VALIDATION
-        throwable.message?.contains("dependencias", ignoreCase = true) == true -> ErrorType.DEPENDENCY
-        throwable.message?.contains("ya está matriculado", ignoreCase = true) == true -> ErrorType.VALIDATION
-        throwable.message?.contains("-2000", ignoreCase = true) == true -> ErrorType.VALIDATION
-        else -> ErrorType.GENERAL
+        throwable is HttpException -> when (throwable.code()) {
+            in 400..499 -> {
+                println("HTTP Error ${throwable.code()}: ${throwable.message()}")
+                ErrorType.VALIDATION
+            }
+
+            else -> {
+                println("HTTP Error ${throwable.code()}: ${throwable.message()}")
+                ErrorType.GENERAL
+            }
+        }
+
+        throwable.message?.contains("dependencias", ignoreCase = true) == true -> {
+            println("Error de dependencia detectado")
+            ErrorType.DEPENDENCY
+        }
+
+        throwable.message?.contains("ya está matriculado", ignoreCase = true) == true -> {
+            println("Error de matrícula duplicada")
+            ErrorType.VALIDATION
+        }
+
+        throwable.message?.contains("matricula duplicada", ignoreCase = true) == true -> {
+            println("Error de matrícula duplicada")
+            ErrorType.VALIDATION
+        }
+
+        throwable.message?.contains("-2000", ignoreCase = true) == true -> {
+            println("Error de validación específico (-2000)")
+            ErrorType.VALIDATION
+        }
+
+        else -> {
+            println("Error general: ${throwable.message}")
+            ErrorType.GENERAL
+        }
     }
 }

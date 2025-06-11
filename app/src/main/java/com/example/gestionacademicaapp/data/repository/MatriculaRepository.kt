@@ -62,6 +62,19 @@ class MatriculaRepository @Inject constructor(
         response
     }
 
+    suspend fun existeMatriculaPorAlumnoYGrupo(idAlumno: Long, idGrupo: Long): Result<Boolean> = safeApiCall {
+        apiService.checkMatriculaExists(idAlumno, idGrupo)
+    }
+
+    suspend fun modificarGrupoMatricula(idMatricula: Long, idGrupo: Long): Result<Unit> = safeApiCall {
+        val response = apiService.updateMatriculaGrupo(idMatricula, idGrupo)
+        if (response.isSuccessful) Unit else throw HttpException(response)
+    }
+
+    suspend fun buscarMatriculaPorGrupo(grupoId: Long): Result<Matricula> = safeApiCall {
+        apiService.getMatriculaByGrupoId(grupoId)
+    }
+
     private inline fun <T> safeApiCall(block: () -> T): Result<T> {
         return try {
             Result.success(block())

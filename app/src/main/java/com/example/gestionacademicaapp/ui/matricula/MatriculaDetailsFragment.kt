@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
-import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -65,32 +64,22 @@ class MatriculaDetailsFragment : Fragment() {
         setupSpinner()
         setupFab()
         observeViewModel()
+        // Forzar el fetch inicial después de la configuración
+        viewModel.reloadTrigger.tryEmit(Unit)
     }
 
     private fun setupRecyclerView() {
         val localAdapter = MatriculaDetailsAdapter(
             onEdit = { matricula ->
-                viewLifecycleOwner.lifecycleScope.launch {
-                    val idGrupo = matriculaViewModel.getGrupoIdForMatricula(matricula)
-                    if (idGrupo != null) {
-                        findNavController().navigate(
-                            MatriculaDetailsFragmentDirections.actionMatriculaDetailsFragmentToMatriculaCursoGrupoFragment(
-                                idAlumno = viewModel.idAlumno,
-                                idCiclo = viewModel.selectedCicloId ?: 0L,
-                                idCarrera = viewModel.idCarrera,
-                                idGrupo = idGrupo
-                            )
-                        )
-                    } else {
-                        Notificador.show(
-                            view = binding.root,
-                            mensaje = getString(R.string.error_grupo_no_encontrado),
-                            colorResId = R.color.colorError,
-                            anchorView = binding.fab,
-                            duracion = 2000
-                        )
-                    }
-                }
+                findNavController().navigate(
+                    MatriculaDetailsFragmentDirections.actionMatriculaDetailsFragmentToMatriculaCursoGrupoFragment(
+                        idAlumno = viewModel.idAlumno,
+                        idCiclo = viewModel.selectedCicloId ?: 0L,
+                        idCarrera = viewModel.idCarrera,
+                        idGrupo = 0L, // Not needed for edit mode
+                        idMatricula = matricula.idMatricula // Pass matricula ID directly
+                    )
+                )
             }
         )
         adapter = localAdapter
@@ -101,35 +90,20 @@ class MatriculaDetailsFragment : Fragment() {
                 onSwipeLeft = { position ->
                     swipedPosition = position
                     val matricula = localAdapter.getItemAt(position)
-                    confirmDeleteMatricula(matricula.idMatricula)
+                    viewModel.deleteMatricula(matricula.idMatricula)
                 },
                 onSwipeRight = { position ->
                     swipedPosition = position
                     val matricula = localAdapter.getItemAt(position)
-                    viewLifecycleOwner.lifecycleScope.launch {
-                        val idGrupo = matriculaViewModel.getGrupoIdForMatricula(matricula)
-                        if (idGrupo != null) {
-                            findNavController().navigate(
-                                MatriculaDetailsFragmentDirections.actionMatriculaDetailsFragmentToMatriculaCursoGrupoFragment(
-                                    idAlumno = viewModel.idAlumno,
-                                    idCiclo = viewModel.selectedCicloId ?: 0L,
-                                    idCarrera = viewModel.idCarrera,
-                                    idGrupo = idGrupo
-                                )
-                            )
-                        } else {
-                            Notificador.show(
-                                view = binding.root,
-                                mensaje = getString(R.string.error_grupo_no_encontrado),
-                                colorResId = R.color.colorError,
-                                anchorView = binding.fab,
-                                duracion = 2000
-                            )
-                            localAdapter.notifyItemChanged(position)
-                            clearSwipe(position, itemTouchHelper)
-                            swipedPosition = null
-                        }
-                    }
+                    findNavController().navigate(
+                        MatriculaDetailsFragmentDirections.actionMatriculaDetailsFragmentToMatriculaCursoGrupoFragment(
+                            idAlumno = viewModel.idAlumno,
+                            idCiclo = viewModel.selectedCicloId ?: 0L,
+                            idCarrera = viewModel.idCarrera,
+                            idGrupo = 0L, // Not needed for edit mode
+                            idMatricula = matricula.idMatricula // Pass matricula ID directly
+                        )
+                    )
                 }
             )
         }
@@ -142,29 +116,48 @@ class MatriculaDetailsFragment : Fragment() {
                     when (state) {
                         is UiState.Success -> {
                             val ciclos = state.data ?: emptyList()
+                            if (ciclos.isEmpty()) {
+                                Notificador.show(
+                                    view = binding.root,
+                                    mensaje = getString(R.string.error_no_ciclos),
+                                    colorResId = R.color.colorError,
+                                    anchorView = binding.fab,
+                                    duracion = 2000
+                                )
+                            }
                             val adapter = ArrayAdapter(
                                 requireContext(),
                                 android.R.layout.simple_spinner_item,
                                 ciclos.map { "${it.anio}-${it.numero}" }
                             ).apply { setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
                             binding.spinnerCiclo.adapter = adapter
-                            binding.spinnerCiclo.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                                override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
-                                    if (!isSpinnerInitialized) {
-                                        isSpinnerInitialized = true
-                                        return
+                            binding.spinnerCiclo.onItemSelectedListener =
+                                object : AdapterView.OnItemSelectedListener {
+                                    override fun onItemSelected(
+                                        parent: AdapterView<*>,
+                                        view: View?,
+                                        position: Int,
+                                        id: Long
+                                    ) {
+                                        ciclos.getOrNull(position)?.let { ciclo ->
+                                            viewModel.setCiclo(ciclo.idCiclo, forceReload = true)
+                                            println("Spinner selected ciclo: ${ciclo.idCiclo}")
+                                        }
                                     }
-                                    ciclos.getOrNull(position)?.let { ciclo ->
-                                        viewModel.setCiclo(ciclo.idCiclo)
-                                    }
+
+                                    override fun onNothingSelected(parent: AdapterView<*>) = Unit
                                 }
-                                override fun onNothingSelected(parent: AdapterView<*>) = Unit
-                            }
-                            if (ciclos.isNotEmpty() && !isSpinnerInitialized) {
-                                binding.spinnerCiclo.setSelection(0)
+                            // Seleccionar ciclo inicial solo si no está inicializado
+                            if (!isSpinnerInitialized && ciclos.isNotEmpty()) {
+                                val selectedIndex =
+                                    ciclos.indexOfFirst { it.idCiclo == viewModel.selectedCicloId }
+                                val indexToSet = if (selectedIndex >= 0) selectedIndex else 0
+                                binding.spinnerCiclo.setSelection(indexToSet, false)
                                 isSpinnerInitialized = true
+                                println("Initial spinner selection: index=$indexToSet, cicloId=${viewModel.selectedCicloId}")
                             }
                         }
+
                         is UiState.Error -> {
                             Notificador.show(
                                 view = binding.root,
@@ -174,6 +167,7 @@ class MatriculaDetailsFragment : Fragment() {
                                 duracion = 2000
                             )
                         }
+
                         is UiState.Loading -> Unit
                     }
                 }
@@ -205,6 +199,15 @@ class MatriculaDetailsFragment : Fragment() {
     private fun observeViewModel() {
         observeState(viewModel.matriculasState) { updateMatriculasState(it) }
         observeState(viewModel.actionState) { it?.let { updateActionState(it) } }
+        // Agregar observación de matriculaUpdated
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                matriculaViewModel.matriculaUpdated.collect {
+                    println("Matricula updated, triggering reload")
+                    viewModel.reloadTrigger.tryEmit(Unit)
+                }
+            }
+        }
     }
 
     private fun <T> observeState(flow: Flow<T>, block: (T) -> Unit) {
@@ -221,8 +224,8 @@ class MatriculaDetailsFragment : Fragment() {
             is UiState.Success -> {
                 allItems = state.data ?: emptyList()
                 adapter.submitList(allItems)
+                binding.recyclerView.isVisible = allItems.isNotEmpty()
                 if (allItems.isEmpty() && isSpinnerInitialized) {
-                    binding.recyclerView.isVisible = false
                     Notificador.show(
                         view = binding.root,
                         mensaje = getString(R.string.no_matriculas_ciclo),
@@ -230,10 +233,9 @@ class MatriculaDetailsFragment : Fragment() {
                         anchorView = binding.fab,
                         duracion = 2000
                     )
-                } else {
-                    binding.recyclerView.isVisible = allItems.isNotEmpty()
                 }
             }
+
             is UiState.Error -> {
                 allItems = emptyList()
                 adapter.submitList(emptyList())
@@ -241,13 +243,17 @@ class MatriculaDetailsFragment : Fragment() {
                 if (isSpinnerInitialized) {
                     Notificador.show(
                         view = binding.root,
-                        mensaje = state.message,
+                        mensaje = when (state.type) {
+                            ErrorType.VALIDATION -> getString(R.string.error_no_matriculas_ciclo)
+                            else -> state.message
+                        },
                         colorResId = R.color.colorError,
                         anchorView = binding.fab,
                         duracion = 2000
                     )
                 }
             }
+
             is UiState.Loading -> {
                 allItems = emptyList()
                 adapter.submitList(emptyList())
@@ -270,7 +276,7 @@ class MatriculaDetailsFragment : Fragment() {
                     adapter.notifyItemChanged(position)
                     binding.recyclerView.clearSwipe(position, itemTouchHelper)
                     swipedPosition = null
-                }
+                } ?: println("Warning: swipedPosition is null on success state")
                 viewLifecycleOwner.lifecycleScope.launch {
                     delay(2000)
                     viewModel.reloadTrigger.tryEmit(Unit)
@@ -291,27 +297,10 @@ class MatriculaDetailsFragment : Fragment() {
                     adapter.notifyItemChanged(position)
                     binding.recyclerView.clearSwipe(position, itemTouchHelper)
                     swipedPosition = null
-                }
+                } ?: println("Warning: swipedPosition is null on error state")
             }
             is UiState.Loading -> Unit
         }
-    }
-
-    private fun confirmDeleteMatricula(idMatricula: Long) {
-        AlertDialog.Builder(requireContext())
-            .setTitle(R.string.confirmar_eliminar_matricula)
-            .setMessage(R.string.mensaje_confirmar_eliminar_matricula)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
-                viewModel.deleteMatricula(idMatricula)
-            }
-            .setNegativeButton(android.R.string.cancel) { _, _ ->
-                swipedPosition?.let { pos ->
-                    adapter.notifyItemChanged(pos)
-                    binding.recyclerView.clearSwipe(pos, itemTouchHelper)
-                    swipedPosition = null
-                }
-            }
-            .show()
     }
 
     override fun onDestroyView() {

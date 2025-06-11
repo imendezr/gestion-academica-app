@@ -40,6 +40,10 @@ class MatriculaCursoGrupoAdapter(
                 txtNumeroGrupo.contentDescription = itemView.context.getString(R.string.numero_grupo)
                 txtProfesor.contentDescription = itemView.context.getString(R.string.nombre_profe)
                 root.isSelected = grupo.idGrupo == selectedGrupoId
+                // Cambiar el icono según el estado de selección
+                btnSelectGrupo.setImageResource(
+                    if (grupo.idGrupo == selectedGrupoId) R.drawable.ic_active else R.drawable.ic_activate
+                )
                 btnSelectGrupo.apply {
                     contentDescription = itemView.context.getString(R.string.seleccionar_grupo)
                     setOnClickListener {

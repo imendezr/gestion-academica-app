@@ -59,6 +59,14 @@ class GrupoRepository @Inject constructor(
         apiService.getGruposByProfesorCicloActivo(cedula)
     }
 
+    suspend fun buscarGrupoPorMatricula(idMatricula: Long): Result<GrupoDto> = safeApiCall {
+        apiService.getGrupoByMatriculaId(idMatricula)
+    }
+
+    suspend fun buscarCursoPorGrupo(idGrupo: Long): Result<CursoDto> = safeApiCall {
+        apiService.getCursoByGrupoId(idGrupo)
+    }
+
     private inline fun <T> safeApiCall(block: () -> T): Result<T> {
         return try {
             Result.success(block())

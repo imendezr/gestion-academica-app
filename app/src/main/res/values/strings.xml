@@ -242,4 +242,10 @@
     <string name="nota_success">Nota actualizada con éxito</string>
     <string name="error_no_grupo_seleccionado">Por favor, seleccione un grupo primero.</string>
     <string name="error_alumno_no_encontrado">No se encontró el alumno.</string>
+    <string name="error_no_ciclos">No hay ciclos disponibles.</string>
+    <string name="error_curso_no_encontrado">No se encontró el curso asociado.</string>
+    <string name="error_no_matriculas_ciclo">No hay matrículas registradas para este ciclo</string>
+    <string name="error_seleccione_curso">Debe seleccionar un curso</string>
+    <string name="error_no_grupos_curso">No hay grupos disponibles para el curso seleccionado.</string>
+    <string name="error_no_grupo_corto">Sin grupos disponibles.</string>
 </resources>

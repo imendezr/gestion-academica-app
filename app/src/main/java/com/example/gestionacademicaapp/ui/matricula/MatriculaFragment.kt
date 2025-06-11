@@ -58,16 +58,25 @@ class MatriculaFragment : Fragment() {
     private fun setupRecyclerView() {
         val localAdapter = MatriculaAdapter(
             onClick = { alumno ->
-                findNavController().navigate(
-                    MatriculaFragmentDirections.actionMatriculaFragmentToMatriculaDetailsFragment(
-                        idAlumno = alumno.idAlumno,
-                        idCiclo = 0L,
-                        idCarrera = alumno.pkCarrera
+                viewModel.selectedCicloId?.let { cicloId ->
+                    viewModel.setParams(alumno.idAlumno, cicloId, alumno.pkCarrera)
+                    findNavController().navigate(
+                        MatriculaFragmentDirections.actionMatriculaFragmentToMatriculaDetailsFragment(
+                            idAlumno = alumno.idAlumno,
+                            idCiclo = cicloId,
+                            idCarrera = alumno.pkCarrera
+                        )
                     )
+                } ?: Notificador.show(
+                    view = binding.root,
+                    mensaje = getString(R.string.error_seleccione_ciclo),
+                    colorResId = R.color.colorError,
+                    anchorView = null
                 )
             },
             onMatricular = { alumno ->
                 viewModel.selectedCicloId?.let { cicloId ->
+                    viewModel.setParams(alumno.idAlumno, cicloId, alumno.pkCarrera)
                     findNavController().navigate(
                         MatriculaFragmentDirections.actionMatriculaFragmentToMatriculaCursoGrupoFragment(
                             idAlumno = alumno.idAlumno,
@@ -117,6 +126,15 @@ class MatriculaFragment : Fragment() {
         when (state) {
             is UiState.Success -> {
                 val ciclos = state.data ?: emptyList()
+                // Fix: Show error if no cycles are available
+                if (ciclos.isEmpty()) {
+                    Notificador.show(
+                        view = binding.root,
+                        mensaje = getString(R.string.error_no_ciclos),
+                        colorResId = R.color.colorError,
+                        anchorView = null
+                    )
+                }
                 val adapter = ArrayAdapter(
                     requireContext(),
                     android.R.layout.simple_spinner_item,
@@ -131,6 +149,7 @@ class MatriculaFragment : Fragment() {
                         }
                         ciclos.getOrNull(position)?.let { ciclo ->
                             viewModel.setCiclo(ciclo.idCiclo)
+                            println("Cycle selected in spinner: ${ciclo.idCiclo}") // Fix: Add logging
                         }
                     }
                     override fun onNothingSelected(parent: AdapterView<*>) = Unit

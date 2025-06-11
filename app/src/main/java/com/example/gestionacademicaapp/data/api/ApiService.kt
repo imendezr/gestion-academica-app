@@ -213,6 +213,12 @@ interface ApiService {
     @GET("grupos/buscarGruposPorProfesorEnCicloActivo/{cedula}")
     suspend fun getGruposByProfesorCicloActivo(@Path("cedula") cedula: String): List<GrupoProfesorDto>
 
+    @GET("grupos/buscarPorMatricula/{idMatricula}")
+    suspend fun getGrupoByMatriculaId(@Path("idMatricula") idMatricula: Long): GrupoDto
+
+    @GET("grupos/buscarCursoPorGrupo/{idGrupo}")
+    suspend fun getCursoByGrupoId(@Path("idGrupo") idGrupo: Long): CursoDto
+
     // MATRÍCULAS
     @POST("matricular/insertar")
     suspend fun insertMatricula(@Body matricula: Matricula): Response<Unit>
@@ -239,6 +245,21 @@ interface ApiService {
 
     @GET("matricular/buscar/{id}")
     suspend fun getMatriculaById(@Path("id") id: Long): Matricula
+
+    @GET("matricular/existeMatricula")
+    suspend fun checkMatriculaExists(
+        @Query("idAlumno") idAlumno: Long,
+        @Query("idGrupo") idGrupo: Long
+    ): Boolean
+
+    @PUT("matricular/modificarGrupo/{idMatricula}/{idGrupo}")
+    suspend fun updateMatriculaGrupo(
+        @Path("idMatricula") idMatricula: Long,
+        @Path("idGrupo") idGrupo: Long
+    ): Response<Unit>
+
+    @GET("matricular/buscarPorGrupo/{idGrupo}")
+    suspend fun getMatriculaByGrupoId(@Path("idGrupo") idGrupo: Long): Matricula
 
 
     // PROFESORES

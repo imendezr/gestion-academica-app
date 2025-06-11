@@ -209,7 +209,6 @@
     <fragment
         android:id="@+id/matriculaCursoGrupoFragment"
         android:name="com.example.gestionacademicaapp.ui.matricula.MatriculaCursoGrupoFragment"
-        android:label="Seleccionar Curso y Grupo"
         tools:layout="@layout/fragment_matricula_curso_grupo">
         <argument
             android:name="idAlumno"
@@ -224,6 +223,10 @@
             android:name="idGrupo"
             app:argType="long"
             android:defaultValue="0L" />
+        <argument
+            android:name="idMatricula"
+            app:argType="long"
+            android:defaultValue="-1L" />
     </fragment>
 
 </navigation>

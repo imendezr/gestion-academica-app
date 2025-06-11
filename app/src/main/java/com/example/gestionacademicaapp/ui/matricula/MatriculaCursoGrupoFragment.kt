@@ -42,6 +42,7 @@ class MatriculaCursoGrupoFragment : Fragment() {
     private var hasFetchedCourses = false
     private var isEditing = false
     private var idGrupo: Long = 0L
+    private var idMatricula: Long? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -55,11 +56,13 @@ class MatriculaCursoGrupoFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         with(MatriculaCursoGrupoFragmentArgs.fromBundle(requireArguments())) {
-            isEditing = idGrupo != 0L
+            isEditing = idMatricula != -1L
+            this@MatriculaCursoGrupoFragment.idMatricula = if (idMatricula != -1L) idMatricula else null
             this@MatriculaCursoGrupoFragment.idGrupo = idGrupo
             viewModel.setParams(idAlumno, idCiclo, idCarrera)
         }
         setupRecyclerView()
+        updateFabIcon(idGrupo)
         setupSpinner()
         setupFab()
         observeViewModel()
@@ -75,7 +78,8 @@ class MatriculaCursoGrupoFragment : Fragment() {
             layoutManager = LinearLayoutManager(context)
             adapter = this@MatriculaCursoGrupoFragment.adapter
         }
-        if (isEditing) {
+        if (isEditing && idGrupo != 0L) {
+            viewModel.selectGrupo(idGrupo) // Inicializar idGrupo
             adapter.updateSelection(idGrupo)
             updateFabIcon(viewModel.idGrupo) // Update FAB icon for editing mode
         }
@@ -93,9 +97,29 @@ class MatriculaCursoGrupoFragment : Fragment() {
 
     private fun setupFab() {
         binding.fab.setOnClickListener {
-            viewModel.confirmarMatricula()
+            if (viewModel.idGrupo == null || viewModel.idGrupo == 0L) {
+                Notificador.show(
+                    view = binding.root,
+                    mensaje = getString(R.string.error_seleccione_grupo),
+                    colorResId = R.color.colorError,
+                    anchorView = binding.fab,
+                    duracion = 2000
+                )
+                return@setOnClickListener
+            }
+            if (viewModel.idCurso == null || viewModel.idCurso == 0L) {
+                Notificador.show(
+                    view = binding.root,
+                    mensaje = getString(R.string.error_seleccione_curso),
+                    colorResId = R.color.colorError,
+                    anchorView = binding.fab,
+                    duracion = 2000
+                )
+                return@setOnClickListener
+            }
+            viewModel.confirmarMatricula(idMatricula)
         }
-        updateFabIcon(viewModel.idGrupo) // Initial FAB icon setup
+        updateFabIcon(viewModel.idGrupo)
     }
 
     private fun updateFabIcon(idGrupo: Long?) {
@@ -124,23 +148,21 @@ class MatriculaCursoGrupoFragment : Fragment() {
 
     private fun updateGruposState(state: UiState<List<GrupoDto>>) {
         binding.progressBar.isVisible = state is UiState.Loading
-        binding.recyclerView.isVisible = state is UiState.Success && (state.data?.isNotEmpty() ?: false)
+        binding.recyclerView.isVisible = state is UiState.Success && (state.data?.isNotEmpty() == true)
         when (state) {
             is UiState.Success -> {
                 allItems = state.data ?: emptyList()
                 adapter.submitList(allItems)
                 hasFetchedGroups = true
-                updateFabIcon(viewModel.idGrupo) // Update FAB icon when groups load
+                updateFabIcon(viewModel.idGrupo)
                 if (allItems.isEmpty()) {
-                    state.message?.let {
-                        Notificador.show(
-                            view = binding.root,
-                            mensaje = it,
-                            colorResId = R.color.colorError,
-                            anchorView = binding.fab,
-                            duracion = 2000
-                        )
-                    }
+                    Notificador.show(
+                        view = binding.root,
+                        mensaje = getString(R.string.error_no_grupos_curso),
+                        colorResId = R.color.colorError,
+                        anchorView = binding.fab,
+                        duracion = 2000
+                    )
                 }
             }
             is UiState.Error -> {
@@ -148,10 +170,10 @@ class MatriculaCursoGrupoFragment : Fragment() {
                 allItems = emptyList()
                 adapter.submitList(emptyList())
                 binding.recyclerView.isVisible = false
-                updateFabIcon(viewModel.idGrupo) // Reset FAB icon on error
+                updateFabIcon(viewModel.idGrupo)
                 Notificador.show(
                     view = binding.root,
-                    mensaje = state.message,
+                    mensaje = getString(R.string.error_no_grupo_corto),
                     colorResId = R.color.colorError,
                     anchorView = binding.fab,
                     duracion = 2000
@@ -209,20 +231,31 @@ class MatriculaCursoGrupoFragment : Fragment() {
                 binding.spinnerCurso.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                     override fun onItemSelected(parent: AdapterView<*>, view: View?, position: Int, id: Long) {
                         courses.getOrNull(position)?.let { curso ->
-                            viewModel.setCurso(curso.idCurso)
+                            if (viewModel.idCurso != curso.idCurso) { // Prevent redundant calls
+                                viewModel.setCurso(curso.idCurso)
+                                println("Course selected: ${curso.idCurso}")
+                            }
                         }
                     }
                     override fun onNothingSelected(parent: AdapterView<*>) {
                         viewModel.setCurso(0L)
                     }
                 }
+                // Set spinner selection based on viewModel.idCurso
                 if (courses.isNotEmpty()) {
-                    binding.spinnerCurso.setSelection(0)
-                    if (!isSpinnerInitialized) {
-                        isSpinnerInitialized = true
-                        viewModel.setCurso(courses[0].idCurso)
+                    val selectedIndex = courses.indexOfFirst { it.idCurso == viewModel.idCurso }
+                    val indexToSet = if (selectedIndex >= 0) selectedIndex else 0
+                    if (!isSpinnerInitialized || binding.spinnerCurso.selectedItemPosition != indexToSet) {
+                        binding.spinnerCurso.setSelection(indexToSet, false)
+                        if (!isSpinnerInitialized) {
+                            isSpinnerInitialized = true
+                            // Only set curso if not already set (e.g., in edit mode)
+                            if (viewModel.idCurso == null || viewModel.idCurso == 0L) {
+                                viewModel.setCurso(courses[indexToSet].idCurso)
+                            }
+                        }
                     }
-                } else if (hasFetchedCourses) {
+                } else if (hasFetchedCourses && courses.isEmpty()) {
                     Notificador.show(
                         view = binding.root,
                         mensaje = getString(R.string.error_no_cursos),
