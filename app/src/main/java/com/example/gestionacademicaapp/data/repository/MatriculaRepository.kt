@@ -4,6 +4,7 @@ import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Matricula
 import com.example.gestionacademicaapp.data.api.model.dto.MatriculaAlumnoDto
 import com.example.gestionacademicaapp.data.dao.MatriculaDao
+import com.example.gestionacademicaapp.utils.ConfigManager
 import jakarta.inject.Inject
 import retrofit2.HttpException
 
@@ -196,50 +197,57 @@ class MatriculaRepositoryLocal @Inject constructor(
 class MatriculaRepositoryImpl @Inject constructor(
     private val remote: MatriculaRepositoryRemote,
     private val local: MatriculaRepositoryLocal,
-    private val isLocalMode: Boolean
+    private val configManager: ConfigManager
 ) : MatriculaRepository {
     override suspend fun insertar(matricula: Matricula): Result<Unit> =
-        if (isLocalMode) local.insertar(matricula) else remote.insertar(matricula)
+        if (configManager.isLocalMode()) local.insertar(matricula) else remote.insertar(matricula)
 
     override suspend fun modificar(matricula: Matricula): Result<Unit> =
-        if (isLocalMode) local.modificar(matricula) else remote.modificar(matricula)
+        if (configManager.isLocalMode()) local.modificar(matricula) else remote.modificar(matricula)
 
     override suspend fun eliminar(id: Long): Result<Unit> =
-        if (isLocalMode) local.eliminar(id) else remote.eliminar(id)
+        if (configManager.isLocalMode()) local.eliminar(id) else remote.eliminar(id)
 
     override suspend fun listarPorCedula(cedula: String): Result<List<MatriculaAlumnoDto>> =
-        if (isLocalMode) local.listarPorCedula(cedula) else remote.listarPorCedula(cedula)
+        if (configManager.isLocalMode()) local.listarPorCedula(cedula) else remote.listarPorCedula(
+            cedula
+        )
 
     override suspend fun listarPorAlumnoYCiclo(
         idAlumno: Long,
         idCiclo: Long
-    ): Result<List<MatriculaAlumnoDto>> = if (isLocalMode) local.listarPorAlumnoYCiclo(
-        idAlumno,
-        idCiclo
-    ) else remote.listarPorAlumnoYCiclo(idAlumno, idCiclo)
+    ): Result<List<MatriculaAlumnoDto>> =
+        if (configManager.isLocalMode()) local.listarPorAlumnoYCiclo(
+            idAlumno,
+            idCiclo
+        ) else remote.listarPorAlumnoYCiclo(idAlumno, idCiclo)
 
     override suspend fun listarPorGrupo(idGrupo: Long): Result<List<MatriculaAlumnoDto>> =
-        if (isLocalMode) local.listarPorGrupo(idGrupo) else remote.listarPorGrupo(idGrupo)
+        if (configManager.isLocalMode()) local.listarPorGrupo(idGrupo) else remote.listarPorGrupo(
+            idGrupo
+        )
 
     override suspend fun buscarPorId(idMatricula: Long): Result<Matricula> =
-        if (isLocalMode) local.buscarPorId(idMatricula) else remote.buscarPorId(idMatricula)
+        if (configManager.isLocalMode()) local.buscarPorId(idMatricula) else remote.buscarPorId(
+            idMatricula
+        )
 
     override suspend fun existeMatriculaPorAlumnoYGrupo(
         idAlumno: Long,
         idGrupo: Long
-    ): Result<Boolean> = if (isLocalMode) local.existeMatriculaPorAlumnoYGrupo(
+    ): Result<Boolean> = if (configManager.isLocalMode()) local.existeMatriculaPorAlumnoYGrupo(
         idAlumno,
         idGrupo
     ) else remote.existeMatriculaPorAlumnoYGrupo(idAlumno, idGrupo)
 
     override suspend fun modificarGrupoMatricula(idMatricula: Long, idGrupo: Long): Result<Unit> =
-        if (isLocalMode) local.modificarGrupoMatricula(
+        if (configManager.isLocalMode()) local.modificarGrupoMatricula(
             idMatricula,
             idGrupo
         ) else remote.modificarGrupoMatricula(idMatricula, idGrupo)
 
     override suspend fun buscarMatriculaPorGrupo(grupoId: Long): Result<Matricula> =
-        if (isLocalMode) local.buscarMatriculaPorGrupo(grupoId) else remote.buscarMatriculaPorGrupo(
+        if (configManager.isLocalMode()) local.buscarMatriculaPorGrupo(grupoId) else remote.buscarMatriculaPorGrupo(
             grupoId
         )
 }

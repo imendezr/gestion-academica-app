@@ -5,6 +5,7 @@ import com.example.gestionacademicaapp.data.api.model.Carrera
 import com.example.gestionacademicaapp.data.api.model.CarreraCurso
 import com.example.gestionacademicaapp.data.dao.CarreraCursoDao
 import com.example.gestionacademicaapp.data.dao.CarreraDao
+import com.example.gestionacademicaapp.utils.ConfigManager
 import jakarta.inject.Inject
 import retrofit2.HttpException
 
@@ -164,35 +165,43 @@ class CarreraRepositoryLocal @Inject constructor(
 class CarreraRepositoryImpl @Inject constructor(
     private val remote: CarreraRepositoryRemote,
     private val local: CarreraRepositoryLocal,
-    private val isLocalMode: Boolean
+    private val configManager: ConfigManager
 ) : CarreraRepository {
     override suspend fun listar(): Result<List<Carrera>> =
-        if (isLocalMode) local.listar() else remote.listar()
+        if (configManager.isLocalMode()) local.listar() else remote.listar()
 
     override suspend fun insertar(carrera: Carrera): Result<Unit> =
-        if (isLocalMode) local.insertar(carrera) else remote.insertar(carrera)
+        if (configManager.isLocalMode()) local.insertar(carrera) else remote.insertar(carrera)
 
     override suspend fun modificar(carrera: Carrera): Result<Unit> =
-        if (isLocalMode) local.modificar(carrera) else remote.modificar(carrera)
+        if (configManager.isLocalMode()) local.modificar(carrera) else remote.modificar(carrera)
 
     override suspend fun eliminar(id: Long): Result<Unit> =
-        if (isLocalMode) local.eliminar(id) else remote.eliminar(id)
+        if (configManager.isLocalMode()) local.eliminar(id) else remote.eliminar(id)
 
     override suspend fun buscarPorCodigo(codigo: String): Result<Carrera> =
-        if (isLocalMode) local.buscarPorCodigo(codigo) else remote.buscarPorCodigo(codigo)
+        if (configManager.isLocalMode()) local.buscarPorCodigo(codigo) else remote.buscarPorCodigo(
+            codigo
+        )
 
     override suspend fun buscarPorNombre(nombre: String): Result<Carrera> =
-        if (isLocalMode) local.buscarPorNombre(nombre) else remote.buscarPorNombre(nombre)
+        if (configManager.isLocalMode()) local.buscarPorNombre(nombre) else remote.buscarPorNombre(
+            nombre
+        )
 
     override suspend fun agregarCurso(idCarrera: Long, idCurso: Long, idCiclo: Long): Result<Unit> =
-        if (isLocalMode) local.agregarCurso(idCarrera, idCurso, idCiclo) else remote.agregarCurso(
+        if (configManager.isLocalMode()) local.agregarCurso(
+            idCarrera,
+            idCurso,
+            idCiclo
+        ) else remote.agregarCurso(
             idCarrera,
             idCurso,
             idCiclo
         )
 
     override suspend fun eliminarCurso(idCarrera: Long, idCurso: Long): Result<Unit> =
-        if (isLocalMode) local.eliminarCurso(
+        if (configManager.isLocalMode()) local.eliminarCurso(
             idCarrera,
             idCurso
         ) else remote.eliminarCurso(idCarrera, idCurso)
@@ -201,7 +210,7 @@ class CarreraRepositoryImpl @Inject constructor(
         idCarrera: Long,
         idCurso: Long,
         nuevoIdCiclo: Long
-    ): Result<Unit> = if (isLocalMode) local.actualizarOrdenCurso(
+    ): Result<Unit> = if (configManager.isLocalMode()) local.actualizarOrdenCurso(
         idCarrera,
         idCurso,
         nuevoIdCiclo

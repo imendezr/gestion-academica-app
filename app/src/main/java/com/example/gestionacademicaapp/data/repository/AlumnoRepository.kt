@@ -3,6 +3,7 @@ package com.example.gestionacademicaapp.data.repository
 import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Alumno
 import com.example.gestionacademicaapp.data.dao.AlumnoDao
+import com.example.gestionacademicaapp.utils.ConfigManager
 import jakarta.inject.Inject
 import retrofit2.HttpException
 
@@ -151,37 +152,47 @@ class AlumnoRepositoryLocal @Inject constructor(
 class AlumnoRepositoryImpl @Inject constructor(
     private val remote: AlumnoRepositoryRemote,
     private val local: AlumnoRepositoryLocal,
-    private val isLocalMode: Boolean
+    private val configManager: ConfigManager
 ) : AlumnoRepository {
     override suspend fun listar(): Result<List<Alumno>> =
-        if (isLocalMode) local.listar() else remote.listar()
+        if (configManager.isLocalMode()) local.listar() else remote.listar()
 
     override suspend fun insertar(alumno: Alumno): Result<Unit> =
-        if (isLocalMode) local.insertar(alumno) else remote.insertar(alumno)
+        if (configManager.isLocalMode()) local.insertar(alumno) else remote.insertar(alumno)
 
     override suspend fun modificar(alumno: Alumno): Result<Unit> =
-        if (isLocalMode) local.modificar(alumno) else remote.modificar(alumno)
+        if (configManager.isLocalMode()) local.modificar(alumno) else remote.modificar(alumno)
 
     override suspend fun eliminar(id: Long): Result<Unit> =
-        if (isLocalMode) local.eliminar(id) else remote.eliminar(id)
+        if (configManager.isLocalMode()) local.eliminar(id) else remote.eliminar(id)
 
     override suspend fun eliminarPorCedula(cedula: String): Result<Unit> =
-        if (isLocalMode) local.eliminarPorCedula(cedula) else remote.eliminarPorCedula(cedula)
+        if (configManager.isLocalMode()) local.eliminarPorCedula(cedula) else remote.eliminarPorCedula(
+            cedula
+        )
 
     override suspend fun buscarPorId(idAlumno: Long): Result<Alumno> =
-        if (isLocalMode) local.buscarPorId(idAlumno) else remote.buscarPorId(idAlumno)
+        if (configManager.isLocalMode()) local.buscarPorId(idAlumno) else remote.buscarPorId(
+            idAlumno
+        )
 
     override suspend fun buscarPorCedula(cedula: String): Result<Alumno> =
-        if (isLocalMode) local.buscarPorCedula(cedula) else remote.buscarPorCedula(cedula)
+        if (configManager.isLocalMode()) local.buscarPorCedula(cedula) else remote.buscarPorCedula(
+            cedula
+        )
 
     override suspend fun buscarPorNombre(nombre: String): Result<Alumno> =
-        if (isLocalMode) local.buscarPorNombre(nombre) else remote.buscarPorNombre(nombre)
+        if (configManager.isLocalMode()) local.buscarPorNombre(nombre) else remote.buscarPorNombre(
+            nombre
+        )
 
     override suspend fun buscarPorCarrera(idCarrera: Long): Result<List<Alumno>> =
-        if (isLocalMode) local.buscarPorCarrera(idCarrera) else remote.buscarPorCarrera(idCarrera)
+        if (configManager.isLocalMode()) local.buscarPorCarrera(idCarrera) else remote.buscarPorCarrera(
+            idCarrera
+        )
 
     override suspend fun alumnosConOfertaEnCiclo(idCiclo: Long): Result<List<Alumno>> =
-        if (isLocalMode) local.alumnosConOfertaEnCiclo(idCiclo) else remote.alumnosConOfertaEnCiclo(
+        if (configManager.isLocalMode()) local.alumnosConOfertaEnCiclo(idCiclo) else remote.alumnosConOfertaEnCiclo(
             idCiclo
         )
 }

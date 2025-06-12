@@ -5,6 +5,7 @@ import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.CarreraCurso
 import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
 import com.example.gestionacademicaapp.data.dao.CarreraCursoDao
+import com.example.gestionacademicaapp.utils.ConfigManager
 import jakarta.inject.Inject
 import retrofit2.HttpException
 
@@ -132,31 +133,35 @@ class CarreraCursoRepositoryLocal @Inject constructor(
 class CarreraCursoRepositoryImpl @Inject constructor(
     private val remote: CarreraCursoRepositoryRemote,
     private val local: CarreraCursoRepositoryLocal,
-    private val isLocalMode: Boolean
+    private val configManager: ConfigManager
 ) : CarreraCursoRepository {
     override suspend fun insertar(carreraCurso: CarreraCurso): Result<Unit> =
-        if (isLocalMode) local.insertar(carreraCurso) else remote.insertar(carreraCurso)
+        if (configManager.isLocalMode()) local.insertar(carreraCurso) else remote.insertar(
+            carreraCurso
+        )
 
     override suspend fun modificar(carreraCurso: CarreraCurso): Result<Unit> =
-        if (isLocalMode) local.modificar(carreraCurso) else remote.modificar(carreraCurso)
+        if (configManager.isLocalMode()) local.modificar(carreraCurso) else remote.modificar(
+            carreraCurso
+        )
 
     override suspend fun eliminar(idCarrera: Long, idCurso: Long): Result<Unit> =
-        if (isLocalMode) local.eliminar(idCarrera, idCurso) else remote.eliminar(idCarrera, idCurso)
+        if (configManager.isLocalMode()) local.eliminar(idCarrera, idCurso) else remote.eliminar(
+            idCarrera,
+            idCurso
+        )
 
     override suspend fun listar(): Result<List<CarreraCurso>> =
-        if (isLocalMode) local.listar() else remote.listar()
+        if (configManager.isLocalMode()) local.listar() else remote.listar()
 
     override suspend fun buscarCursosPorCarreraYCiclo(
         idCarrera: Long,
         idCiclo: Long
-    ): Result<List<CursoDto>> = if (isLocalMode) local.buscarCursosPorCarreraYCiclo(
-        idCarrera,
-        idCiclo
-    ) else remote.buscarCursosPorCarreraYCiclo(idCarrera, idCiclo)
+    ): Result<List<CursoDto>> =
+        if (configManager.isLocalMode()) local.buscarCursosPorCarreraYCiclo(idCarrera, idCiclo)
+        else remote.buscarCursosPorCarreraYCiclo(idCarrera, idCiclo)
 
     override suspend fun tieneGruposAsociados(idCarrera: Long, idCurso: Long): Result<Boolean> =
-        if (isLocalMode) local.tieneGruposAsociados(
-            idCarrera,
-            idCurso
-        ) else remote.tieneGruposAsociados(idCarrera, idCurso)
+        if (configManager.isLocalMode()) local.tieneGruposAsociados(idCarrera, idCurso)
+        else remote.tieneGruposAsociados(idCarrera, idCurso)
 }

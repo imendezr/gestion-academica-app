@@ -3,6 +3,7 @@ package com.example.gestionacademicaapp.data.repository
 import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Usuario
 import com.example.gestionacademicaapp.data.dao.UsuarioDao
+import com.example.gestionacademicaapp.utils.ConfigManager
 import jakarta.inject.Inject
 import retrofit2.HttpException
 
@@ -102,23 +103,25 @@ class UsuarioRepositoryLocal @Inject constructor(
 class UsuarioRepositoryImpl @Inject constructor(
     private val remote: UsuarioRepositoryRemote,
     private val local: UsuarioRepositoryLocal,
-    private val isLocalMode: Boolean
+    private val configManager: ConfigManager
 ) : UsuarioRepository {
     override suspend fun listar(): Result<List<Usuario>> =
-        if (isLocalMode) local.listar() else remote.listar()
+        if (configManager.isLocalMode()) local.listar() else remote.listar()
 
     override suspend fun insertar(usuario: Usuario): Result<Unit> =
-        if (isLocalMode) local.insertar(usuario) else remote.insertar(usuario)
+        if (configManager.isLocalMode()) local.insertar(usuario) else remote.insertar(usuario)
 
     override suspend fun modificar(usuario: Usuario): Result<Unit> =
-        if (isLocalMode) local.modificar(usuario) else remote.modificar(usuario)
+        if (configManager.isLocalMode()) local.modificar(usuario) else remote.modificar(usuario)
 
     override suspend fun eliminar(id: Long): Result<Unit> =
-        if (isLocalMode) local.eliminar(id) else remote.eliminar(id)
+        if (configManager.isLocalMode()) local.eliminar(id) else remote.eliminar(id)
 
     override suspend fun buscarPorCedula(cedula: String): Result<Usuario> =
-        if (isLocalMode) local.buscarPorCedula(cedula) else remote.buscarPorCedula(cedula)
+        if (configManager.isLocalMode()) local.buscarPorCedula(cedula) else remote.buscarPorCedula(
+            cedula
+        )
 
     override suspend fun login(cedula: String, clave: String): Result<Usuario> =
-        if (isLocalMode) local.login(cedula, clave) else remote.login(cedula, clave)
+        if (configManager.isLocalMode()) local.login(cedula, clave) else remote.login(cedula, clave)
 }

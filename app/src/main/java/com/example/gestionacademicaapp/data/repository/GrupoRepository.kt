@@ -6,6 +6,7 @@ import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
 import com.example.gestionacademicaapp.data.api.model.dto.GrupoDto
 import com.example.gestionacademicaapp.data.api.model.dto.GrupoProfesorDto
 import com.example.gestionacademicaapp.data.dao.GrupoDao
+import com.example.gestionacademicaapp.utils.ConfigManager
 import jakarta.inject.Inject
 import retrofit2.HttpException
 
@@ -188,24 +189,24 @@ class GrupoRepositoryLocal @Inject constructor(
 class GrupoRepositoryImpl @Inject constructor(
     private val remote: GrupoRepositoryRemote,
     private val local: GrupoRepositoryLocal,
-    private val isLocalMode: Boolean
+    private val configManager: ConfigManager
 ) : GrupoRepository {
     override suspend fun listar(): Result<List<Grupo>> =
-        if (isLocalMode) local.listar() else remote.listar()
+        if (configManager.isLocalMode()) local.listar() else remote.listar()
 
     override suspend fun insertar(grupo: Grupo): Result<Unit> =
-        if (isLocalMode) local.insertar(grupo) else remote.insertar(grupo)
+        if (configManager.isLocalMode()) local.insertar(grupo) else remote.insertar(grupo)
 
     override suspend fun modificar(grupo: Grupo): Result<Unit> =
-        if (isLocalMode) local.modificar(grupo) else remote.modificar(grupo)
+        if (configManager.isLocalMode()) local.modificar(grupo) else remote.modificar(grupo)
 
     override suspend fun eliminar(id: Long): Result<Unit> =
-        if (isLocalMode) local.eliminar(id) else remote.eliminar(id)
+        if (configManager.isLocalMode()) local.eliminar(id) else remote.eliminar(id)
 
     override suspend fun cursosPorCarreraYCiclo(
         idCarrera: Long,
         idCiclo: Long
-    ): Result<List<CursoDto>> = if (isLocalMode) local.cursosPorCarreraYCiclo(
+    ): Result<List<CursoDto>> = if (configManager.isLocalMode()) local.cursosPorCarreraYCiclo(
         idCarrera,
         idCiclo
     ) else remote.cursosPorCarreraYCiclo(idCarrera, idCiclo)
@@ -213,34 +214,38 @@ class GrupoRepositoryImpl @Inject constructor(
     override suspend fun gruposPorCarreraCurso(
         idCarrera: Long,
         idCurso: Long
-    ): Result<List<GrupoDto>> = if (isLocalMode) local.gruposPorCarreraCurso(
+    ): Result<List<GrupoDto>> = if (configManager.isLocalMode()) local.gruposPorCarreraCurso(
         idCarrera,
-        idCurso
+        idCurso,
     ) else remote.gruposPorCarreraCurso(idCarrera, idCurso)
 
     override suspend fun gruposPorCursoCicloCarrera(
         idCurso: Long,
         idCiclo: Long,
         idCarrera: Long
-    ): Result<List<GrupoDto>> = if (isLocalMode) local.gruposPorCursoCicloCarrera(
+    ): Result<List<GrupoDto>> = if (configManager.isLocalMode()) local.gruposPorCursoCicloCarrera(
         idCurso,
         idCiclo,
         idCarrera
     ) else remote.gruposPorCursoCicloCarrera(idCurso, idCiclo, idCarrera)
 
     override suspend fun gruposPorProfesor(cedula: String): Result<List<GrupoDto>> =
-        if (isLocalMode) local.gruposPorProfesor(cedula) else remote.gruposPorProfesor(cedula)
+        if (configManager.isLocalMode()) local.gruposPorProfesor(cedula) else remote.gruposPorProfesor(
+            cedula
+        )
 
     override suspend fun gruposPorProfesorCicloActivo(cedula: String): Result<List<GrupoProfesorDto>> =
-        if (isLocalMode) local.gruposPorProfesorCicloActivo(cedula) else remote.gruposPorProfesorCicloActivo(
+        if (configManager.isLocalMode()) local.gruposPorProfesorCicloActivo(cedula) else remote.gruposPorProfesorCicloActivo(
             cedula
         )
 
     override suspend fun buscarGrupoPorMatricula(idMatricula: Long): Result<GrupoDto> =
-        if (isLocalMode) local.buscarGrupoPorMatricula(idMatricula) else remote.buscarGrupoPorMatricula(
+        if (configManager.isLocalMode()) local.buscarGrupoPorMatricula(idMatricula) else remote.buscarGrupoPorMatricula(
             idMatricula
         )
 
     override suspend fun buscarCursoPorGrupo(idGrupo: Long): Result<CursoDto> =
-        if (isLocalMode) local.buscarCursoPorGrupo(idGrupo) else remote.buscarCursoPorGrupo(idGrupo)
+        if (configManager.isLocalMode()) local.buscarCursoPorGrupo(idGrupo) else remote.buscarCursoPorGrupo(
+            idGrupo
+        )
 }

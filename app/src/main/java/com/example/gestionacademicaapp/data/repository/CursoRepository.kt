@@ -5,6 +5,7 @@ import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Curso
 import com.example.gestionacademicaapp.data.api.model.dto.CursoDto
 import com.example.gestionacademicaapp.data.dao.CursoDao
+import com.example.gestionacademicaapp.utils.ConfigManager
 import jakarta.inject.Inject
 import retrofit2.HttpException
 
@@ -168,37 +169,46 @@ class CursoRepositoryLocal @Inject constructor(
 class CursoRepositoryImpl @Inject constructor(
     private val remote: CursoRepositoryRemote,
     private val local: CursoRepositoryLocal,
-    private val isLocalMode: Boolean
+    private val configManager: ConfigManager
 ) : CursoRepository {
     override suspend fun listar(): Result<List<Curso>> =
-        if (isLocalMode) local.listar() else remote.listar()
+        if (configManager.isLocalMode()) local.listar() else remote.listar()
 
     override suspend fun insertar(curso: Curso): Result<Unit> =
-        if (isLocalMode) local.insertar(curso) else remote.insertar(curso)
+        if (configManager.isLocalMode()) local.insertar(curso) else remote.insertar(curso)
 
     override suspend fun modificar(curso: Curso): Result<Unit> =
-        if (isLocalMode) local.modificar(curso) else remote.modificar(curso)
+        if (configManager.isLocalMode()) local.modificar(curso) else remote.modificar(curso)
 
     override suspend fun eliminar(id: Long): Result<Unit> =
-        if (isLocalMode) local.eliminar(id) else remote.eliminar(id)
+        if (configManager.isLocalMode()) local.eliminar(id) else remote.eliminar(id)
 
     override suspend fun buscarPorCodigo(codigo: String): Result<Curso> =
-        if (isLocalMode) local.buscarPorCodigo(codigo) else remote.buscarPorCodigo(codigo)
+        if (configManager.isLocalMode()) local.buscarPorCodigo(codigo) else remote.buscarPorCodigo(
+            codigo
+        )
 
     override suspend fun buscarPorNombre(nombre: String): Result<Curso> =
-        if (isLocalMode) local.buscarPorNombre(nombre) else remote.buscarPorNombre(nombre)
+        if (configManager.isLocalMode()) local.buscarPorNombre(nombre) else remote.buscarPorNombre(
+            nombre
+        )
 
     override suspend fun buscarPorCarrera(idCarrera: Long): Result<List<CursoDto>> =
-        if (isLocalMode) local.buscarPorCarrera(idCarrera) else remote.buscarPorCarrera(idCarrera)
+        if (configManager.isLocalMode()) local.buscarPorCarrera(idCarrera) else remote.buscarPorCarrera(
+            idCarrera
+        )
 
     override suspend fun buscarPorCarreraYCiclo(
         idCarrera: Long,
         idCiclo: Long
-    ): Result<List<CursoDto>> = if (isLocalMode) local.buscarPorCarreraYCiclo(
-        idCarrera,
-        idCiclo
-    ) else remote.buscarPorCarreraYCiclo(idCarrera, idCiclo)
+    ): Result<List<CursoDto>> =
+        if (configManager.isLocalMode()) local.buscarPorCarreraYCiclo(
+            idCarrera,
+            idCiclo
+        ) else remote.buscarPorCarreraYCiclo(idCarrera, idCiclo)
 
     override suspend fun buscarPorCiclo(idCiclo: Long): Result<List<CursoDto>> =
-        if (isLocalMode) local.buscarPorCiclo(idCiclo) else remote.buscarPorCiclo(idCiclo)
+        if (configManager.isLocalMode()) local.buscarPorCiclo(idCiclo) else remote.buscarPorCiclo(
+            idCiclo
+        )
 }

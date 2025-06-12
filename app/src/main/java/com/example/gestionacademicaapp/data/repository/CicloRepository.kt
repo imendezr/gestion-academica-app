@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Ciclo
 import com.example.gestionacademicaapp.data.dao.CicloDao
+import com.example.gestionacademicaapp.utils.ConfigManager
 import jakarta.inject.Inject
 import retrofit2.HttpException
 
@@ -120,26 +121,26 @@ class CicloRepositoryLocal @Inject constructor(
 class CicloRepositoryImpl @Inject constructor(
     private val remote: CicloRepositoryRemote,
     private val local: CicloRepositoryLocal,
-    private val isLocalMode: Boolean
+    private val configManager: ConfigManager
 ) : CicloRepository {
     override suspend fun listar(): Result<List<Ciclo>> =
-        if (isLocalMode) local.listar() else remote.listar()
+        if (configManager.isLocalMode()) local.listar() else remote.listar()
 
     override suspend fun insertar(ciclo: Ciclo): Result<Unit> =
-        if (isLocalMode) local.insertar(ciclo) else remote.insertar(ciclo)
+        if (configManager.isLocalMode()) local.insertar(ciclo) else remote.insertar(ciclo)
 
     override suspend fun modificar(ciclo: Ciclo): Result<Unit> =
-        if (isLocalMode) local.modificar(ciclo) else remote.modificar(ciclo)
+        if (configManager.isLocalMode()) local.modificar(ciclo) else remote.modificar(ciclo)
 
     override suspend fun eliminar(id: Long): Result<Unit> =
-        if (isLocalMode) local.eliminar(id) else remote.eliminar(id)
+        if (configManager.isLocalMode()) local.eliminar(id) else remote.eliminar(id)
 
     override suspend fun buscarPorAnio(anio: Long): Result<Ciclo> =
-        if (isLocalMode) local.buscarPorAnio(anio) else remote.buscarPorAnio(anio)
+        if (configManager.isLocalMode()) local.buscarPorAnio(anio) else remote.buscarPorAnio(anio)
 
     override suspend fun activar(id: Long): Result<Unit> =
-        if (isLocalMode) local.activar(id) else remote.activar(id)
+        if (configManager.isLocalMode()) local.activar(id) else remote.activar(id)
 
     override suspend fun obtenerPorId(id: Long): Result<Ciclo> =
-        if (isLocalMode) local.obtenerPorId(id) else remote.obtenerPorId(id)
+        if (configManager.isLocalMode()) local.obtenerPorId(id) else remote.obtenerPorId(id)
 }

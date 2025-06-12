@@ -219,10 +219,6 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideIsLocalMode(configManager: ConfigManager): Boolean = configManager.isLocalMode()
-
-    @Provides
-    @Singleton
     fun provideUsuarioRepositoryRemote(apiService: ApiService): UsuarioRepositoryRemote =
         UsuarioRepositoryRemote(apiService)
 
@@ -236,8 +232,8 @@ object AppModule {
     fun provideUsuarioRepository(
         remote: UsuarioRepositoryRemote,
         local: UsuarioRepositoryLocal,
-        isLocalMode: Boolean
-    ): UsuarioRepository = UsuarioRepositoryImpl(remote, local, isLocalMode)
+        configManager: ConfigManager
+    ): UsuarioRepository = UsuarioRepositoryImpl(remote, local, configManager)
 
     @Provides
     @Singleton
@@ -254,8 +250,8 @@ object AppModule {
     fun provideProfesorRepository(
         remote: ProfesorRepositoryRemote,
         local: ProfesorRepositoryLocal,
-        isLocalMode: Boolean
-    ): ProfesorRepository = ProfesorRepositoryImpl(remote, local, isLocalMode)
+        configManager: ConfigManager
+    ): ProfesorRepository = ProfesorRepositoryImpl(remote, local, configManager)
 
     @Provides
     @Singleton
@@ -272,8 +268,8 @@ object AppModule {
     fun provideMatriculaRepository(
         remote: MatriculaRepositoryRemote,
         local: MatriculaRepositoryLocal,
-        isLocalMode: Boolean
-    ): MatriculaRepository = MatriculaRepositoryImpl(remote, local, isLocalMode)
+        configManager: ConfigManager
+    ): MatriculaRepository = MatriculaRepositoryImpl(remote, local, configManager)
 
     @Provides
     @Singleton
@@ -290,8 +286,8 @@ object AppModule {
     fun provideGrupoRepository(
         remote: GrupoRepositoryRemote,
         local: GrupoRepositoryLocal,
-        isLocalMode: Boolean
-    ): GrupoRepository = GrupoRepositoryImpl(remote, local, isLocalMode)
+        configManager: ConfigManager
+    ): GrupoRepository = GrupoRepositoryImpl(remote, local, configManager)
 
     @Provides
     @Singleton
@@ -308,8 +304,8 @@ object AppModule {
     fun provideCursoRepository(
         remote: CursoRepositoryRemote,
         local: CursoRepositoryLocal,
-        isLocalMode: Boolean
-    ): CursoRepository = CursoRepositoryImpl(remote, local, isLocalMode)
+        configManager: ConfigManager
+    ): CursoRepository = CursoRepositoryImpl(remote, local, configManager)
 
     @Provides
     @Singleton
@@ -326,8 +322,8 @@ object AppModule {
     fun provideCicloRepository(
         remote: CicloRepositoryRemote,
         local: CicloRepositoryLocal,
-        isLocalMode: Boolean
-    ): CicloRepository = CicloRepositoryImpl(remote, local, isLocalMode)
+        configManager: ConfigManager
+    ): CicloRepository = CicloRepositoryImpl(remote, local, configManager)
 
     @Provides
     @Singleton
@@ -346,8 +342,8 @@ object AppModule {
     fun provideCarreraRepository(
         remote: CarreraRepositoryRemote,
         local: CarreraRepositoryLocal,
-        isLocalMode: Boolean
-    ): CarreraRepository = CarreraRepositoryImpl(remote, local, isLocalMode)
+        configManager: ConfigManager
+    ): CarreraRepository = CarreraRepositoryImpl(remote, local, configManager)
 
     @Provides
     @Singleton
@@ -364,8 +360,8 @@ object AppModule {
     fun provideCarreraCursoRepository(
         remote: CarreraCursoRepositoryRemote,
         local: CarreraCursoRepositoryLocal,
-        isLocalMode: Boolean
-    ): CarreraCursoRepository = CarreraCursoRepositoryImpl(remote, local, isLocalMode)
+        configManager: ConfigManager
+    ): CarreraCursoRepository = CarreraCursoRepositoryImpl(remote, local, configManager)
 
     @Provides
     @Singleton
@@ -382,6 +378,6 @@ object AppModule {
     fun provideAlumnoRepository(
         remote: AlumnoRepositoryRemote,
         local: AlumnoRepositoryLocal,
-        isLocalMode: Boolean
-    ): AlumnoRepository = AlumnoRepositoryImpl(remote, local, isLocalMode)
+        configManager: ConfigManager
+    ): AlumnoRepository = AlumnoRepositoryImpl(remote, local, configManager)
 }
