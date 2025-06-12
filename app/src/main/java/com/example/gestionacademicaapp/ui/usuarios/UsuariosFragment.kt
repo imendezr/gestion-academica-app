@@ -57,7 +57,7 @@ class UsuariosFragment : Fragment() {
 
         adapter = UsuariosAdapter(
             onEdit = { viewModel.prepareUserForEdit(it) },
-            onDelete = { viewModel.deleteUsuario(it.idUsuario, requireContext()) }
+            onDelete = { viewModel.deleteUsuario(it.idUsuario) }
         )
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = adapter
@@ -72,7 +72,7 @@ class UsuariosFragment : Fragment() {
         recyclerView.enableSwipeActions(
             onSwipeLeft = { pos ->
                 val usuario = adapter.getItemAt(pos)
-                viewModel.deleteUsuario(usuario.idUsuario, requireContext())
+                viewModel.deleteUsuario(usuario.idUsuario)
                 adapter.notifyItemChanged(pos)
             },
             onSwipeRight = { pos ->
@@ -122,6 +122,7 @@ class UsuariosFragment : Fragment() {
                 recyclerView.isVisible = !isAction && allUsuarios.isNotEmpty()
                 fab.isEnabled = !isAction
             }
+
             is UiState.Success -> {
                 progressBar.isVisible = false
                 fab.isEnabled = true
@@ -135,7 +136,11 @@ class UsuariosFragment : Fragment() {
                 }
                 state.message?.let { message ->
                     val color = when {
-                        message.contains("creado", true) || message.contains("actualizado", true) -> R.color.colorAccent
+                        message.contains("creado", true) || message.contains(
+                            "actualizado",
+                            true
+                        ) -> R.color.colorAccent
+
                         message.contains("eliminado", true) -> R.color.colorError
                         else -> R.color.colorPrimary
                     }
@@ -147,6 +152,7 @@ class UsuariosFragment : Fragment() {
                     editingPosition = null
                 }
             }
+
             is UiState.Error -> {
                 progressBar.isVisible = false
                 recyclerView.isVisible = allUsuarios.isNotEmpty()
@@ -201,7 +207,12 @@ class UsuariosFragment : Fragment() {
                 tipo = CampoTipo.SPINNER,
                 obligatorio = true,
                 obligatorioError = validator.tipoRequiredError,
-                opciones = listOf("Administrador", "Matriculador", "Profesor", "Alumno").map { it to it },
+                opciones = listOf(
+                    "Administrador",
+                    "Matriculador",
+                    "Profesor",
+                    "Alumno"
+                ).map { it to it },
                 editable = !isEditMode,
                 rules = { value, _ -> validator.validateTipo(value) },
                 onValueChanged = { newTipo -> updateDynamicFields(newTipo) }
@@ -209,7 +220,8 @@ class UsuariosFragment : Fragment() {
         )
 
         when (tipo) {
-            "Alumno" -> campos.addAll(listOf(
+            "Alumno" -> campos.addAll(
+                listOf(
                 CampoFormulario(
                     key = "nombre",
                     label = "Nombre",
@@ -249,11 +261,18 @@ class UsuariosFragment : Fragment() {
                     obligatorio = true,
                     obligatorioError = validator.carreraRequiredError,
                     opciones = viewModel.carreras.value.map { it.idCarrera.toString() to it.nombre },
-                    rules = { value, _ -> validator.validateCarrera(value, viewModel.carreras.value) }
+                    rules = { value, _ ->
+                        validator.validateCarrera(
+                            value,
+                            viewModel.carreras.value
+                        )
+                    }
                 )
             ))
-            "Profesor" -> campos.addAll(listOf(
-                CampoFormulario(
+
+            "Profesor" -> campos.addAll(
+                listOf(
+                    CampoFormulario(
                     key = "nombre",
                     label = "Nombre",
                     tipo = CampoTipo.TEXT,
@@ -305,7 +324,8 @@ class UsuariosFragment : Fragment() {
     }
 
     private fun updateDynamicFields(tipo: String) {
-        val dialog = parentFragmentManager.findFragmentByTag("UserDialog") as? DialogFormularioFragment
+        val dialog =
+            parentFragmentManager.findFragmentByTag("UserDialog") as? DialogFormularioFragment
         dialog?.let {
             val currentValues = it.getCurrentValues()
             val campos = buildCampos(tipo)

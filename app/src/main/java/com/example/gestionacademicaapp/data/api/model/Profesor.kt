@@ -1,12 +1,17 @@
 package com.example.gestionacademicaapp.data.api.model
+
 import android.os.Parcelable
+import androidx.room.ColumnInfo
+import androidx.room.Entity
+import androidx.room.PrimaryKey
 import kotlinx.parcelize.Parcelize
 
+@Entity(tableName = "profesores")
 @Parcelize
 data class Profesor(
-    val idProfesor: Long,
-    var cedula: String,
-    var nombre: String,
-    var telefono: String,
-    var email: String
-): Parcelable
+    @PrimaryKey val idProfesor: Long,
+    @ColumnInfo(name = "cedula") var cedula: String,
+    @ColumnInfo(name = "nombre") var nombre: String,
+    @ColumnInfo(name = "telefono") var telefono: String,
+    @ColumnInfo(name = "email") var email: String
+) : Parcelable

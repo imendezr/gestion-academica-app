@@ -250,4 +250,6 @@
     <string name="error_no_grupo_corto">Sin grupos disponibles.</string>
     <string name="error_no_profesores">No se pudieron cargar los profesores. Intente de nuevo.</string>
     <string name="error_dependencia_login">Error de dependencia en el inicio de sesión</string>
+    <string name="mode_toggle">Modo local</string>
+    <string name="mode_toggle_desc">Alternar entre modo local y remoto</string>
 </resources>

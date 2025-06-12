@@ -1,94 +1,120 @@
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/colorBackground"
-    android:fillViewport="true"
-    android:fitsSystemWindows="true"
-    android:paddingTop="@dimen/status_bar_height">
+    android:fitsSystemWindows="true">
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp"
-        android:paddingBottom="24dp">
+    <!-- Contenido principal desplazable -->
+    <ScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:paddingTop="@dimen/status_bar_height"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/switchMode"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Título -->
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:contentDescription="@string/login_title_desc"
             android:gravity="center"
-            android:paddingBottom="32dp"
-            android:text="@string/login_title"
-            android:textColor="@color/colorPrimary"
-            android:textSize="28sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp"
+            android:paddingBottom="24dp">
 
-        <!-- Campo: Cédula -->
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:hint="@string/login_hint_cedula"
-            app:boxBackgroundMode="outline"
-            app:boxStrokeColor="@color/colorPrimary"
-            app:hintTextColor="@color/colorTextSecondaryLight"
-            app:startIconDrawable="@drawable/ic_account">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etUsername"
+            <!-- Título -->
+            <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:autofillHints="username"
-                android:imeOptions="actionNext"
-                android:textColor="@color/colorTextPrimary" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:contentDescription="@string/login_title_desc"
+                android:gravity="center"
+                android:paddingBottom="32dp"
+                android:text="@string/login_title"
+                android:textColor="@color/colorPrimary"
+                android:textSize="28sp"
+                android:textStyle="bold" />
 
-        <!-- Campo: Contraseña -->
-        <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:hint="@string/login_hint_password"
-            app:boxBackgroundMode="outline"
-            app:boxStrokeColor="@color/colorPrimary"
-            app:hintTextColor="@color/colorTextSecondaryLight"
-            app:startIconDrawable="@drawable/ic_lock">
-
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etPassword"
+            <!-- Campo: Cédula -->
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:autofillHints="password"
-                android:imeOptions="actionDone"
-                android:inputType="textPassword"
-                android:textColor="@color/colorTextPrimary" />
-        </com.google.android.material.textfield.TextInputLayout>
+                android:layout_marginBottom="16dp"
+                android:hint="@string/login_hint_cedula"
+                app:boxBackgroundMode="outline"
+                app:boxStrokeColor="@color/colorPrimary"
+                app:hintTextColor="@color/colorTextSecondaryLight"
+                app:startIconDrawable="@drawable/ic_account">
 
-        <!-- Botón de inicio de sesión -->
-        <Button
-            android:id="@+id/btnLogin"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:backgroundTint="@color/colorPrimary"
-            android:contentDescription="@string/login_button_desc"
-            android:text="@string/login_button"
-            android:textColor="@android:color/white" />
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etUsername"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:autofillHints="username"
+                    android:imeOptions="actionNext"
+                    android:textColor="@color/colorTextPrimary" />
+            </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Indicador de carga -->
-        <ProgressBar
-            android:id="@+id/progressBar"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="20dp"
-            android:contentDescription="@string/login_loading_desc"
-            android:visibility="invisible" />
-    </LinearLayout>
-</ScrollView>
+            <!-- Campo: Contraseña -->
+            <com.google.android.material.textfield.TextInputLayout
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                android:hint="@string/login_hint_password"
+                app:boxBackgroundMode="outline"
+                app:boxStrokeColor="@color/colorPrimary"
+                app:hintTextColor="@color/colorTextSecondaryLight"
+                app:startIconDrawable="@drawable/ic_lock">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:autofillHints="password"
+                    android:imeOptions="actionDone"
+                    android:inputType="textPassword"
+                    android:textColor="@color/colorTextPrimary" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Botón de inicio de sesión -->
+            <Button
+                android:id="@+id/btnLogin"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:backgroundTint="@color/colorPrimary"
+                android:contentDescription="@string/login_button_desc"
+                android:text="@string/login_button"
+                android:textColor="@android:color/white" />
+
+            <!-- Indicador de carga -->
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="20dp"
+                android:contentDescription="@string/login_loading_desc"
+                android:visibility="invisible" />
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Toggle Modo Local/Remoto centrado y abajo -->
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switchMode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:contentDescription="@string/mode_toggle_desc"
+        android:text="@string/mode_toggle"
+        android:textColor="@color/colorTextPrimary"
+        app:thumbTint="@color/colorPrimary"
+        app:trackTint="@color/colorTextSecondaryLight"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

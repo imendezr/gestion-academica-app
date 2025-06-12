@@ -2,37 +2,46 @@ package com.example.gestionacademicaapp.data.repository
 
 import com.example.gestionacademicaapp.data.api.ApiService
 import com.example.gestionacademicaapp.data.api.model.Usuario
+import com.example.gestionacademicaapp.data.dao.UsuarioDao
 import jakarta.inject.Inject
 import retrofit2.HttpException
 
-class UsuarioRepository @Inject constructor(
-    private val apiService: ApiService
-) {
+interface UsuarioRepository {
+    suspend fun listar(): Result<List<Usuario>>
+    suspend fun insertar(usuario: Usuario): Result<Unit>
+    suspend fun modificar(usuario: Usuario): Result<Unit>
+    suspend fun eliminar(id: Long): Result<Unit>
+    suspend fun buscarPorCedula(cedula: String): Result<Usuario>
+    suspend fun login(cedula: String, clave: String): Result<Usuario>
+}
 
-    suspend fun listar(): Result<List<Usuario>> = safeApiCall {
+class UsuarioRepositoryRemote @Inject constructor(
+    private val apiService: ApiService
+) : UsuarioRepository {
+    override suspend fun listar(): Result<List<Usuario>> = safeApiCall {
         apiService.getAllUsuarios()
     }
 
-    suspend fun insertar(usuario: Usuario): Result<Unit> = safeApiCall {
+    override suspend fun insertar(usuario: Usuario): Result<Unit> = safeApiCall {
         val response = apiService.insertUsuario(usuario)
         if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun modificar(usuario: Usuario): Result<Unit> = safeApiCall {
+    override suspend fun modificar(usuario: Usuario): Result<Unit> = safeApiCall {
         val response = apiService.updateUsuario(usuario)
         if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun eliminar(id: Long): Result<Unit> = safeApiCall {
+    override suspend fun eliminar(id: Long): Result<Unit> = safeApiCall {
         val response = apiService.deleteUsuario(id)
         if (response.isSuccessful) Unit else throw HttpException(response)
     }
 
-    suspend fun buscarPorCedula(cedula: String): Result<Usuario> = safeApiCall {
+    override suspend fun buscarPorCedula(cedula: String): Result<Usuario> = safeApiCall {
         apiService.getUsuarioByCedula(cedula)
     }
 
-    suspend fun login(cedula: String, clave: String): Result<Usuario> = safeApiCall {
+    override suspend fun login(cedula: String, clave: String): Result<Usuario> = safeApiCall {
         apiService.login(cedula, clave)
     }
 
@@ -43,4 +52,73 @@ class UsuarioRepository @Inject constructor(
             Result.failure(e)
         }
     }
+}
+
+class UsuarioRepositoryLocal @Inject constructor(
+    private val usuarioDao: UsuarioDao
+) : UsuarioRepository {
+    override suspend fun listar(): Result<List<Usuario>> = try {
+        Result.success(usuarioDao.getAll())
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun insertar(usuario: Usuario): Result<Unit> = try {
+        usuarioDao.insert(usuario)
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun modificar(usuario: Usuario): Result<Unit> = try {
+        usuarioDao.update(usuario)
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun eliminar(id: Long): Result<Unit> = try {
+        usuarioDao.delete(id)
+        Result.success(Unit)
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun buscarPorCedula(cedula: String): Result<Usuario> = try {
+        val usuario = usuarioDao.getByCedula(cedula)
+        if (usuario != null) Result.success(usuario) else Result.failure(NoSuchElementException("Usuario no encontrado"))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+
+    override suspend fun login(cedula: String, clave: String): Result<Usuario> = try {
+        val usuario = usuarioDao.login(cedula, clave)
+        if (usuario != null) Result.success(usuario) else Result.failure(NoSuchElementException("Credenciales inválidas"))
+    } catch (e: Exception) {
+        Result.failure(e)
+    }
+}
+
+class UsuarioRepositoryImpl @Inject constructor(
+    private val remote: UsuarioRepositoryRemote,
+    private val local: UsuarioRepositoryLocal,
+    private val isLocalMode: Boolean
+) : UsuarioRepository {
+    override suspend fun listar(): Result<List<Usuario>> =
+        if (isLocalMode) local.listar() else remote.listar()
+
+    override suspend fun insertar(usuario: Usuario): Result<Unit> =
+        if (isLocalMode) local.insertar(usuario) else remote.insertar(usuario)
+
+    override suspend fun modificar(usuario: Usuario): Result<Unit> =
+        if (isLocalMode) local.modificar(usuario) else remote.modificar(usuario)
+
+    override suspend fun eliminar(id: Long): Result<Unit> =
+        if (isLocalMode) local.eliminar(id) else remote.eliminar(id)
+
+    override suspend fun buscarPorCedula(cedula: String): Result<Usuario> =
+        if (isLocalMode) local.buscarPorCedula(cedula) else remote.buscarPorCedula(cedula)
+
+    override suspend fun login(cedula: String, clave: String): Result<Usuario> =
+        if (isLocalMode) local.login(cedula, clave) else remote.login(cedula, clave)
 }

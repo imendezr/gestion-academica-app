@@ -14,16 +14,24 @@ import com.example.gestionacademicaapp.databinding.ActivityLoginBinding
 import com.example.gestionacademicaapp.ui.MainActivity
 import com.example.gestionacademicaapp.ui.common.state.ErrorType
 import com.example.gestionacademicaapp.ui.common.state.UiState
+import com.example.gestionacademicaapp.utils.ConfigManager
 import com.example.gestionacademicaapp.utils.Notificador
 import com.example.gestionacademicaapp.utils.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class LoginActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityLoginBinding
     private val viewModel: LoginViewModel by viewModels()
+
+    @Inject
+    lateinit var configManager: ConfigManager
+
+    @Inject
+    lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,6 +43,12 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun setupViews() {
+        // Initialize mode switch
+        binding.switchMode.isChecked = configManager.isLocalMode()
+        binding.switchMode.setOnCheckedChangeListener { _, isChecked ->
+            configManager.setLocalMode(isChecked)
+        }
+
         binding.btnLogin.setOnClickListener {
             val email = binding.etUsername.text.toString().trim()
             val password = binding.etPassword.text.toString().trim()
@@ -106,7 +120,7 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun onLoginSuccess(usuario: Usuario) {
-        SessionManager.setUsuario(this, usuario)
+        sessionManager.setUsuario(usuario)
         val intent = Intent(this, MainActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
@@ -115,7 +129,7 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (SessionManager.isLoggedIn(this)) {
+        if (sessionManager.isLoggedIn()) {
             val intent = Intent(this, MainActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)

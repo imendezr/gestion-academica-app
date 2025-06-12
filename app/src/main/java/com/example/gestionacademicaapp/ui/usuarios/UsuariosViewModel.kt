@@ -1,6 +1,5 @@
 package com.example.gestionacademicaapp.ui.usuarios
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionacademicaapp.data.api.model.Alumno
@@ -35,7 +34,8 @@ class UsuariosViewModel @Inject constructor(
     private val usuarioRepository: UsuarioRepository,
     private val alumnoRepository: AlumnoRepository,
     private val profesorRepository: ProfesorRepository,
-    private val carreraRepository: CarreraRepository
+    private val carreraRepository: CarreraRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val reloadTrigger = MutableSharedFlow<Unit>(replay = 1).apply { tryEmit(Unit) }
@@ -83,9 +83,11 @@ class UsuariosViewModel @Inject constructor(
                             _editingUserData.value = usuario to datosIniciales
                         }
                         .onFailure {
-                            _actionState.value = UiState.Error("Error al cargar datos del alumno", ErrorType.GENERAL)
+                            _actionState.value =
+                                UiState.Error("Error al cargar datos del alumno", ErrorType.GENERAL)
                         }
                 }
+
                 "Profesor" -> {
                     profesorRepository.buscarPorCedula(usuario.cedula)
                         .onSuccess { profesor ->
@@ -95,9 +97,13 @@ class UsuariosViewModel @Inject constructor(
                             _editingUserData.value = usuario to datosIniciales
                         }
                         .onFailure {
-                            _actionState.value = UiState.Error("Error al cargar datos del profesor", ErrorType.GENERAL)
+                            _actionState.value = UiState.Error(
+                                "Error al cargar datos del profesor",
+                                ErrorType.GENERAL
+                            )
                         }
                 }
+
                 else -> {
                     _editingUserData.value = usuario to datosIniciales
                 }
@@ -124,7 +130,10 @@ class UsuariosViewModel @Inject constructor(
                     usuarioRepository.buscarPorCedula(cedula)
                         .onSuccess { existingUser ->
                             if (idUsuario == null || existingUser.idUsuario != idUsuario) {
-                                _actionState.value = UiState.Error("Ya existe un usuario con esta cédula", ErrorType.VALIDATION)
+                                _actionState.value = UiState.Error(
+                                    "Ya existe un usuario con esta cédula",
+                                    ErrorType.VALIDATION
+                                )
                                 return@launch
                             }
                             performSaveUsuario(datos, idUsuario, cedula, tipo, clave)
@@ -132,7 +141,8 @@ class UsuariosViewModel @Inject constructor(
                         .onFailure { performSaveUsuario(datos, idUsuario, cedula, tipo, clave) }
                 }
                 .onFailure {
-                    _actionState.value = UiState.Error(it.message ?: "Datos inválidos", ErrorType.VALIDATION)
+                    _actionState.value =
+                        UiState.Error(it.message ?: "Datos inválidos", ErrorType.VALIDATION)
                 }
         }
     }
@@ -157,7 +167,8 @@ class UsuariosViewModel @Inject constructor(
                         "Alumno" -> saveAlumno(datos, cedula)
                         "Profesor" -> saveProfesor(datos, cedula)
                         else -> {
-                            _actionState.value = UiState.Success(message = "Usuario creado exitosamente")
+                            _actionState.value =
+                                UiState.Success(message = "Usuario creado exitosamente")
                             triggerReload()
                         }
                     }
@@ -166,7 +177,9 @@ class UsuariosViewModel @Inject constructor(
                     _actionState.value = UiState.Error(it.toUserMessage(), mapErrorType(it))
                 }
         } else {
-            val oldCedula = usuarioRepository.buscarPorCedula(idUsuario.toString()).getOrNull()?.cedula ?: cedula
+            val oldCedula =
+                usuarioRepository.buscarPorCedula(idUsuario.toString()).getOrNull()?.cedula
+                    ?: cedula
             when (tipo) {
                 "Alumno" -> updateAlumno(datos, oldCedula, cedula)
                 "Profesor" -> updateProfesor(datos, oldCedula, cedula)
@@ -174,7 +187,8 @@ class UsuariosViewModel @Inject constructor(
             }.onSuccess {
                 usuarioRepository.modificar(usuario)
                     .onSuccess {
-                        _actionState.value = UiState.Success(message = "Usuario actualizado exitosamente")
+                        _actionState.value =
+                            UiState.Success(message = "Usuario actualizado exitosamente")
                         triggerReload()
                     }
                     .onFailure {
@@ -186,11 +200,12 @@ class UsuariosViewModel @Inject constructor(
         }
     }
 
-    fun deleteUsuario(idUsuario: Long, context: Context) {
+    fun deleteUsuario(idUsuario: Long) {
         viewModelScope.launch {
             _actionState.value = UiState.Loading
-            if (idUsuario == SessionManager.getUserId(context)) {
-                _actionState.value = UiState.Error("No puedes eliminarte a ti mismo", ErrorType.DEPENDENCY)
+            if (idUsuario == sessionManager.getUserId()) {
+                _actionState.value =
+                    UiState.Error("No puedes eliminarte a ti mismo", ErrorType.DEPENDENCY)
                 return@launch
             }
             usuarioRepository.eliminar(idUsuario)
@@ -215,19 +230,67 @@ class UsuariosViewModel @Inject constructor(
         val validator = UsuarioValidator()
         return when {
             datos["cedula"].isNullOrBlank() -> Result.failure(Exception("La cédula es obligatoria"))
-            validator.validateCedula(datos["cedula"]!!) != null -> Result.failure(Exception(validator.validateCedula(datos["cedula"]!!)))
+            validator.validateCedula(datos["cedula"]!!) != null -> Result.failure(
+                Exception(
+                    validator.validateCedula(datos["cedula"]!!)
+                )
+            )
+
             datos["tipo"].isNullOrBlank() -> Result.failure(Exception("El tipo de usuario es obligatorio"))
-            validator.validateTipo(datos["tipo"]!!) != null -> Result.failure(Exception(validator.validateTipo(datos["tipo"]!!)))
+            validator.validateTipo(datos["tipo"]!!) != null -> Result.failure(
+                Exception(
+                    validator.validateTipo(
+                        datos["tipo"]!!
+                    )
+                )
+            )
+
             idUsuario == null && datos["clave"].isNullOrBlank() -> Result.failure(Exception("La clave es obligatoria para nuevos usuarios"))
-            validator.validateClave(datos["clave"] ?: "", idUsuario != null) != null -> Result.failure(Exception(validator.validateClave(datos["clave"] ?: "", idUsuario != null)))
-            datos["tipo"] == "Alumno" && (datos["nombre"].isNullOrBlank() || validator.validateNombre(datos["nombre"]!!) != null) -> Result.failure(Exception("Nombre inválido"))
-            datos["tipo"] == "Alumno" && (datos["email"].isNullOrBlank() || validator.validateEmail(datos["email"]!!) != null) -> Result.failure(Exception("Email inválido"))
-            datos["tipo"] == "Alumno" && (datos["fechaNacimiento"].isNullOrBlank() || validator.validateFechaNacimiento(datos["fechaNacimiento"]!!) != null) -> Result.failure(Exception("Fecha de nacimiento inválida"))
-            datos["tipo"] == "Alumno" && (datos["carrera"].isNullOrBlank() || validator.validateCarrera(datos["carrera"]!!, _carreras.value) != null) -> Result.failure(Exception("Carrera inválida"))
-            datos["tipo"] == "Alumno" && !datos["telefono"].isNullOrBlank() && validator.validateTelefono(datos["telefono"]!!) != null -> Result.failure(Exception(validator.validateTelefono(datos["telefono"]!!)))
-            datos["tipo"] == "Profesor" && (datos["nombre"].isNullOrBlank() || validator.validateNombre(datos["nombre"]!!) != null) -> Result.failure(Exception("Nombre inválido"))
-            datos["tipo"] == "Profesor" && (datos["email"].isNullOrBlank() || validator.validateEmail(datos["email"]!!) != null) -> Result.failure(Exception("Email inválido"))
-            datos["tipo"] == "Profesor" && !datos["telefono"].isNullOrBlank() && validator.validateTelefono(datos["telefono"]!!) != null -> Result.failure(Exception(validator.validateTelefono(datos["telefono"]!!)))
+            validator.validateClave(
+                datos["clave"] ?: "",
+                idUsuario != null
+            ) != null -> Result.failure(
+                Exception(
+                    validator.validateClave(
+                        datos["clave"] ?: "",
+                        idUsuario != null
+                    )
+                )
+            )
+
+            datos["tipo"] == "Alumno" && (datos["nombre"].isNullOrBlank() || validator.validateNombre(
+                datos["nombre"]!!
+            ) != null) -> Result.failure(Exception("Nombre inválido"))
+
+            datos["tipo"] == "Alumno" && (datos["email"].isNullOrBlank() || validator.validateEmail(
+                datos["email"]!!
+            ) != null) -> Result.failure(Exception("Email inválido"))
+
+            datos["tipo"] == "Alumno" && (datos["fechaNacimiento"].isNullOrBlank() || validator.validateFechaNacimiento(
+                datos["fechaNacimiento"]!!
+            ) != null) -> Result.failure(Exception("Fecha de nacimiento inválida"))
+
+            datos["tipo"] == "Alumno" && (datos["carrera"].isNullOrBlank() || validator.validateCarrera(
+                datos["carrera"]!!,
+                _carreras.value
+            ) != null) -> Result.failure(Exception("Carrera inválida"))
+
+            datos["tipo"] == "Alumno" && !datos["telefono"].isNullOrBlank() && validator.validateTelefono(
+                datos["telefono"]!!
+            ) != null -> Result.failure(Exception(validator.validateTelefono(datos["telefono"]!!)))
+
+            datos["tipo"] == "Profesor" && (datos["nombre"].isNullOrBlank() || validator.validateNombre(
+                datos["nombre"]!!
+            ) != null) -> Result.failure(Exception("Nombre inválido"))
+
+            datos["tipo"] == "Profesor" && (datos["email"].isNullOrBlank() || validator.validateEmail(
+                datos["email"]!!
+            ) != null) -> Result.failure(Exception("Email inválido"))
+
+            datos["tipo"] == "Profesor" && !datos["telefono"].isNullOrBlank() && validator.validateTelefono(
+                datos["telefono"]!!
+            ) != null -> Result.failure(Exception(validator.validateTelefono(datos["telefono"]!!)))
+
             else -> Result.success(Unit)
         }
     }
@@ -248,12 +311,20 @@ class UsuariosViewModel @Inject constructor(
                 triggerReload()
             }
             .onFailure {
-                _actionState.value = UiState.Error("Error al guardar datos del alumno", mapErrorType(it))
+                _actionState.value =
+                    UiState.Error("Error al guardar datos del alumno", mapErrorType(it))
             }
     }
 
-    private suspend fun updateAlumno(datos: Map<String, String>, oldCedula: String, newCedula: String): Result<Unit> {
-        val existingAlumno = alumnoRepository.buscarPorCedula(oldCedula).getOrNull() ?: return Result.failure(Exception("Alumno no encontrado"))
+    private suspend fun updateAlumno(
+        datos: Map<String, String>,
+        oldCedula: String,
+        newCedula: String
+    ): Result<Unit> {
+        val existingAlumno =
+            alumnoRepository.buscarPorCedula(oldCedula).getOrNull() ?: return Result.failure(
+                Exception("Alumno no encontrado")
+            )
         val alumno = Alumno(
             idAlumno = existingAlumno.idAlumno,
             cedula = newCedula,
@@ -280,12 +351,20 @@ class UsuariosViewModel @Inject constructor(
                 triggerReload()
             }
             .onFailure {
-                _actionState.value = UiState.Error("Error al guardar datos del profesor", mapErrorType(it))
+                _actionState.value =
+                    UiState.Error("Error al guardar datos del profesor", mapErrorType(it))
             }
     }
 
-    private suspend fun updateProfesor(datos: Map<String, String>, oldCedula: String, newCedula: String): Result<Unit> {
-        val existingProfesor = profesorRepository.buscarPorCedula(oldCedula).getOrNull() ?: return Result.failure(Exception("Profesor no encontrado"))
+    private suspend fun updateProfesor(
+        datos: Map<String, String>,
+        oldCedula: String,
+        newCedula: String
+    ): Result<Unit> {
+        val existingProfesor =
+            profesorRepository.buscarPorCedula(oldCedula).getOrNull() ?: return Result.failure(
+                Exception("Profesor no encontrado")
+            )
         val profesor = Profesor(
             idProfesor = existingProfesor.idProfesor,
             cedula = newCedula,
@@ -300,7 +379,10 @@ class UsuariosViewModel @Inject constructor(
         viewModelScope.launch {
             carreraRepository.listar()
                 .onSuccess { _carreras.value = it }
-                .onFailure { _actionState.value = UiState.Error("No se pudieron cargar las carreras", ErrorType.GENERAL) }
+                .onFailure {
+                    _actionState.value =
+                        UiState.Error("No se pudieron cargar las carreras", ErrorType.GENERAL)
+                }
         }
     }
 

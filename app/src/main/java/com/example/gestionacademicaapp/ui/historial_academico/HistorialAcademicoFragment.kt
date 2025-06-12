@@ -26,6 +26,7 @@ import com.example.gestionacademicaapp.utils.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.util.Locale
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class HistorialAcademicoFragment : Fragment() {
@@ -37,6 +38,9 @@ class HistorialAcademicoFragment : Fragment() {
     private val adapter: MatriculaAdapter by lazy {
         MatriculaAdapter()
     }
+
+    @Inject
+    lateinit var sessionManager: SessionManager
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -57,11 +61,14 @@ class HistorialAcademicoFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val isAlumno = SessionManager.hasRole(requireContext(), "Alumno")
-        Log.d("HistorialAcademicoFragment", "User role: ${if (isAlumno) "Alumno" else "Administrador"}")
+        val isAlumno = sessionManager.hasRole("Alumno")
+        Log.d(
+            "HistorialAcademicoFragment",
+            "User role: ${if (isAlumno) "Alumno" else "Administrador"}"
+        )
 
         val cedula = if (isAlumno) {
-            SessionManager.getUsuario(requireContext())?.cedula?.also {
+            sessionManager.getUsuario()?.cedula?.also {
                 Log.d("HistorialAcademicoFragment", "Using session cedula: $it")
             } ?: run {
                 Log.e("HistorialAcademicoFragment", "No user logged in")
@@ -72,7 +79,7 @@ class HistorialAcademicoFragment : Fragment() {
                     anchorView = null
                 )
                 findNavController().popBackStack()
-                return@onViewCreated
+                return
             }
         } else {
             val args = try {
@@ -94,7 +101,8 @@ class HistorialAcademicoFragment : Fragment() {
 
         (requireActivity() as AppCompatActivity).supportActionBar?.apply {
             setDisplayHomeAsUpEnabled(!isAlumno)
-            title = getString(if (isAlumno) R.string.mi_historial_academico else R.string.historial_academico)
+            title =
+                getString(if (isAlumno) R.string.mi_historial_academico else R.string.historial_academico)
         }
 
         viewModel.loadHistorial(cedula)
@@ -123,13 +131,14 @@ class HistorialAcademicoFragment : Fragment() {
                 recyclerView.isVisible = false
                 tvEmptyState.isVisible = false
             }
+
             is UiState.Success -> {
                 progressBar.isVisible = false
                 val matriculas = state.data ?: emptyList()
                 recyclerView.isVisible = matriculas.isNotEmpty()
                 tvEmptyState.isVisible = matriculas.isEmpty()
                 tvEmptyState.text = getString(
-                    if (SessionManager.hasRole(requireContext(), "Alumno"))
+                    if (sessionManager.hasRole("Alumno"))
                         R.string.historial_vacio_alumno
                     else
                         R.string.historial_vacio
@@ -137,6 +146,7 @@ class HistorialAcademicoFragment : Fragment() {
                 adapter.submitList(matriculas)
                 Log.d("HistorialAcademicoFragment", "Loaded ${matriculas.size} matriculas")
             }
+
             is UiState.Error -> {
                 progressBar.isVisible = false
                 recyclerView.isVisible = false
@@ -174,7 +184,8 @@ class MatriculaAdapter : BaseAdapter<MatriculaAlumnoDto, MatriculaAdapter.Matric
                 matricula.nombreCurso
             )
             tvGrupo.text = itemView.context.getString(R.string.grupo, matricula.numeroGrupo)
-            tvProfesor.text = itemView.context.getString(R.string.profesor, matricula.nombreProfesor)
+            tvProfesor.text =
+                itemView.context.getString(R.string.profesor, matricula.nombreProfesor)
             tvNota.text = itemView.context.getString(
                 R.string.nota,
                 when (matricula.nota) {
@@ -207,11 +218,17 @@ class MatriculaAdapter : BaseAdapter<MatriculaAlumnoDto, MatriculaAdapter.Matric
 
     companion object {
         private val MatriculaDiffCallback = object : DiffUtil.ItemCallback<MatriculaAlumnoDto>() {
-            override fun areItemsTheSame(oldItem: MatriculaAlumnoDto, newItem: MatriculaAlumnoDto): Boolean {
+            override fun areItemsTheSame(
+                oldItem: MatriculaAlumnoDto,
+                newItem: MatriculaAlumnoDto
+            ): Boolean {
                 return oldItem.idMatricula == newItem.idMatricula
             }
 
-            override fun areContentsTheSame(oldItem: MatriculaAlumnoDto, newItem: MatriculaAlumnoDto): Boolean {
+            override fun areContentsTheSame(
+                oldItem: MatriculaAlumnoDto,
+                newItem: MatriculaAlumnoDto
+            ): Boolean {
                 return oldItem == newItem
             }
         }

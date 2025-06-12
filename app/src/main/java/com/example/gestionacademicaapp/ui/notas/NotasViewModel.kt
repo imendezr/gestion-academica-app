@@ -1,6 +1,5 @@
 package com.example.gestionacademicaapp.ui.notas
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gestionacademicaapp.R
@@ -16,7 +15,6 @@ import com.example.gestionacademicaapp.utils.ResourceProvider
 import com.example.gestionacademicaapp.utils.SessionManager
 import com.example.gestionacademicaapp.utils.toUserMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -39,7 +37,7 @@ class NotasViewModel @Inject constructor(
     private val matriculaRepository: MatriculaRepository,
     private val alumnoRepository: AlumnoRepository,
     private val resourceProvider: ResourceProvider,
-    @ApplicationContext private val context: Context
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val reloadTrigger = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
@@ -77,11 +75,16 @@ class NotasViewModel @Inject constructor(
 
     private fun loadProfesor() {
         viewModelScope.launch {
-            val usuario = SessionManager.getUsuario(context)
+            val usuario = sessionManager.getUsuario()
             if (usuario != null) {
                 cedulaProfesor = usuario.cedula
             } else {
-                _actionState.emit(UiState.Error(getString(R.string.error_no_profesor), ErrorType.GENERAL))
+                _actionState.emit(
+                    UiState.Error(
+                        getString(R.string.error_no_profesor),
+                        ErrorType.GENERAL
+                    )
+                )
             }
         }
     }
@@ -96,11 +99,21 @@ class NotasViewModel @Inject constructor(
             _actionState.emit(UiState.Loading)
             try {
                 if (nota !in 0..100) {
-                    _actionState.emit(UiState.Error(getString(R.string.error_nota_rango), ErrorType.VALIDATION))
+                    _actionState.emit(
+                        UiState.Error(
+                            getString(R.string.error_nota_rango),
+                            ErrorType.VALIDATION
+                        )
+                    )
                     return@launch
                 }
                 if (idGrupo == null) {
-                    _actionState.emit(UiState.Error(getString(R.string.error_no_grupo_seleccionado), ErrorType.VALIDATION))
+                    _actionState.emit(
+                        UiState.Error(
+                            getString(R.string.error_no_grupo_seleccionado),
+                            ErrorType.VALIDATION
+                        )
+                    )
                     return@launch
                 }
                 matriculaRepository.buscarPorId(idMatricula).fold(
@@ -122,7 +135,12 @@ class NotasViewModel @Inject constructor(
                         )
                     },
                     onFailure = { e ->
-                        _actionState.emit(UiState.Error(getString(R.string.error_matricula_no_encontrada), ErrorType.GENERAL))
+                        _actionState.emit(
+                            UiState.Error(
+                                getString(R.string.error_matricula_no_encontrada),
+                                ErrorType.GENERAL
+                            )
+                        )
                     }
                 )
             } catch (e: Exception) {
@@ -150,7 +168,11 @@ class NotasViewModel @Inject constructor(
 
     private fun mapErrorType(throwable: Throwable): ErrorType = when {
         throwable is HttpException && throwable.code() in 400..499 -> ErrorType.VALIDATION
-        throwable.message?.contains("dependencias", ignoreCase = true) == true -> ErrorType.DEPENDENCY
+        throwable.message?.contains(
+            "dependencias",
+            ignoreCase = true
+        ) == true -> ErrorType.DEPENDENCY
+
         else -> ErrorType.GENERAL
     }
 

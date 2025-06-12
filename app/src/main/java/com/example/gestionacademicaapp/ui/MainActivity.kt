@@ -7,6 +7,7 @@ import android.view.Menu
 import android.view.MenuItem
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.fragment.findNavController
@@ -17,10 +18,15 @@ import androidx.navigation.ui.setupWithNavController
 import com.example.gestionacademicaapp.R
 import com.example.gestionacademicaapp.databinding.ActivityMainBinding
 import com.example.gestionacademicaapp.ui.login.LoginActivity
+import com.example.gestionacademicaapp.utils.ConfigManager
 import com.example.gestionacademicaapp.utils.Notificador
 import com.example.gestionacademicaapp.utils.RolePermissions
 import com.example.gestionacademicaapp.utils.SessionManager
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -28,6 +34,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var appBarConfiguration: AppBarConfiguration
     private lateinit var binding: ActivityMainBinding
     private lateinit var navController: NavController
+
+    @Inject
+    lateinit var configManager: ConfigManager
+
+    @Inject
+    lateinit var sessionManager: SessionManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,7 +74,7 @@ class MainActivity : AppCompatActivity() {
         setupActionBarWithNavController(navController, appBarConfiguration)
         binding.navView.setupWithNavController(navController)
 
-        val userRole = SessionManager.getUserRole(this)
+        val userRole = sessionManager.getUserRole()
         Log.d("MainActivity", "User Role: $userRole")
 
         userRole?.let { setupMenuVisibility(it) }
@@ -94,6 +106,7 @@ class MainActivity : AppCompatActivity() {
                 showLogoutConfirmationDialog()
                 true
             }
+
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -107,19 +120,35 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (!SessionManager.isLoggedIn(this)) {
+        if (!sessionManager.isLoggedIn()) {
             val intent = Intent(this, LoginActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
             finish()
+        } else if (configManager.isLocalMode()) {
+            // Warn if local DB is empty
+            lifecycleScope.launch {
+                val userCount = withContext(Dispatchers.IO) {
+                    sessionManager.usuarioDao.getAll().size
+                }
+                if (userCount == 0) {
+                    Notificador.show(
+                        view = findViewById(android.R.id.content),
+                        mensaje = "Local mode enabled, but no users found. Please sync data or use remote mode.",
+                        colorResId = R.color.colorWarning,
+                        anchorView = null,
+                        duracion = 5000
+                    )
+                }
+            }
         }
     }
 
     private fun showLogoutConfirmationDialog() {
         AlertDialog.Builder(this)
-            .setTitle("Cerrar Sesión")
-            .setMessage("¿Estás seguro de que deseas cerrar sesión?")
-            .setPositiveButton("Sí") { _, _ ->
+            .setTitle("Logout")
+            .setMessage("Are you sure you want to log out?")
+            .setPositiveButton("Yes") { _, _ ->
                 performLogout()
             }
             .setNegativeButton("No") { dialog, _ ->
@@ -130,7 +159,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun performLogout() {
-        SessionManager.clear(this)
+        sessionManager.clear()
         val intent = Intent(this, LoginActivity::class.java)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         startActivity(intent)
@@ -141,9 +170,9 @@ class MainActivity : AppCompatActivity() {
         val menu = binding.navView.menu
         RolePermissions.DESTINATION_ROLES.forEach { (destinationId, roles) ->
             val isVisible = if (destinationId == R.id.nav_historial) {
-                SessionManager.hasRole(this, "Alumno") // Solo visible para "Alumno"
+                sessionManager.hasRole("Alumno")
             } else {
-                roles.isEmpty() || SessionManager.hasAnyRole(this, roles)
+                roles.isEmpty() || sessionManager.hasAnyRole(roles)
             }
             menu.findItem(destinationId)?.isVisible = isVisible
         }
@@ -152,11 +181,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun restrictAccessToDestination(destination: NavDestination) {
         val requiredRoles = RolePermissions.DESTINATION_ROLES[destination.id] ?: emptyList()
-        if (requiredRoles.isNotEmpty() && !SessionManager.hasAnyRole(this, requiredRoles)) {
+        if (requiredRoles.isNotEmpty() && !sessionManager.hasAnyRole(requiredRoles)) {
             navController.navigate(RolePermissions.DEFAULT_DESTINATION)
             Notificador.show(
                 view = findViewById(android.R.id.content),
-                mensaje = "Acceso denegado",
+                mensaje = "Access denied",
                 colorResId = R.color.colorError,
                 anchorView = null
             )
@@ -165,6 +194,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkDestinationAccess(destinationId: Int): Boolean {
         val requiredRoles = RolePermissions.DESTINATION_ROLES[destinationId] ?: emptyList()
-        return requiredRoles.isEmpty() || SessionManager.hasAnyRole(this, requiredRoles)
+        return requiredRoles.isEmpty() || sessionManager.hasAnyRole(requiredRoles)
     }
 }
